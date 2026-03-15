@@ -1,104 +1,104 @@
 #!/bin/bash
 
 # ============================================================
-#  SCRIPT PARA TRAERSE LOS CAMBIOS DE MASTER A TU RAMA
-#  Uso: ./actualizar-desde-master.sh
+#  SCRIPT TO PULL CHANGES FROM MASTER INTO YOUR BRANCH
+#  Usage: ./actualizar-desde-master.sh
 # ============================================================
 
-# ▼▼▼ CAMBIA ESTE VALOR POR EL NOMBRE DE TU RAMA ▼▼▼
-nombreRama="Yannick"
-# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+# ▼▼▼ CHANGE THIS VALUE TO YOUR BRANCH NAME ▼▼▼
+branchName="Yannick"
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-# --- Colores para mensajes ---
-VERDE='\033[0;32m'
-ROJO='\033[0;31m'
-AMARILLO='\033[1;33m'
-AZUL='\033[0;34m'
+# --- Colors for messages ---
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 RESET='\033[0m'
 
 echo ""
-echo -e "${AZUL}============================================${RESET}"
-echo -e "${AZUL}   ACTUALIZAR TU RAMA DESDE MASTER         ${RESET}"
-echo -e "${AZUL}============================================${RESET}"
+echo -e "${BLUE}============================================${RESET}"
+echo -e "${BLUE}   UPDATE YOUR BRANCH FROM MASTER          ${RESET}"
+echo -e "${BLUE}============================================${RESET}"
 echo ""
 
-# Verificar que se ha configurado el nombre de rama
-if [ -z "$nombreRama" ]; then
-    echo -e "${ROJO}ERROR: No has configurado tu nombre de rama.${RESET}"
-    echo -e "Abre el archivo ${AMARILLO}actualizar-desde-master.sh${RESET} y edita la variable ${AMARILLO}nombreRama${RESET}."
-    echo -e "Ejemplo: ${VERDE}nombreRama=\"ana\"${RESET}"
+# Check that the branch name has been configured
+if [ -z "$branchName" ]; then
+    echo -e "${RED}ERROR: You have not configured your branch name.${RESET}"
+    echo -e "Open the file ${YELLOW}actualizar-desde-master.sh${RESET} and edit the variable ${YELLOW}branchName${RESET}."
+    echo -e "Example: ${GREEN}branchName=\"ana\"${RESET}"
     echo ""
     exit 1
 fi
 
-echo -e "Rama de trabajo: ${VERDE}$nombreRama${RESET}"
-echo -e "Se traerán los cambios de: ${VERDE}master${RESET}"
+echo -e "Working branch: ${GREEN}$branchName${RESET}"
+echo -e "Changes will be pulled from: ${GREEN}master${RESET}"
 echo ""
 
-# Paso 1: Asegurarse de estar en la rama correcta
-echo -e "${AMARILLO}[1/4] Cambiando a tu rama '$nombreRama'...${RESET}"
-git checkout "$nombreRama" 2>&1
+# Step 1: Make sure you are on the correct branch
+echo -e "${YELLOW}[1/4] Switching to your branch '$branchName'...${RESET}"
+git checkout "$branchName" 2>&1
 if [ $? -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}ERROR: No se pudo cambiar a la rama '$nombreRama'.${RESET}"
-    echo -e "Comprueba que el nombre de la rama es correcto."
+    echo -e "${RED}ERROR: Could not switch to branch '$branchName'.${RESET}"
+    echo -e "Check that the branch name is correct."
     echo ""
     exit 1
 fi
-echo -e "${VERDE}OK${RESET}"
+echo -e "${GREEN}OK${RESET}"
 echo ""
 
-# Paso 2: Actualizar tu rama con los últimos cambios del servidor
-echo -e "${AMARILLO}[2/4] Actualizando tu rama con los últimos cambios del servidor...${RESET}"
-git pull origin "$nombreRama" 2>&1
+# Step 2: Update your branch with the latest changes from the server
+echo -e "${YELLOW}[2/4] Updating your branch with the latest changes from the server...${RESET}"
+git pull origin "$branchName" 2>&1
 if [ $? -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}ERROR: Hubo un problema al actualizar tu rama.${RESET}"
-    echo -e "Contacta con el responsable del proyecto."
+    echo -e "${RED}ERROR: There was a problem updating your branch.${RESET}"
+    echo -e "Contact the project maintainer."
     echo ""
     exit 1
 fi
-echo -e "${VERDE}OK${RESET}"
+echo -e "${GREEN}OK${RESET}"
 echo ""
 
-# Paso 3: Descargar los últimos cambios de master
-echo -e "${AMARILLO}[3/4] Descargando los últimos cambios de master...${RESET}"
+# Step 3: Download the latest changes from master
+echo -e "${YELLOW}[3/4] Downloading the latest changes from master...${RESET}"
 git fetch origin master 2>&1
 if [ $? -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}ERROR: No se pudieron descargar los cambios de master.${RESET}"
-    echo -e "Comprueba tu conexión a internet."
+    echo -e "${RED}ERROR: Could not download the changes from master.${RESET}"
+    echo -e "Check your internet connection."
     echo ""
     exit 1
 fi
-echo -e "${VERDE}OK${RESET}"
+echo -e "${GREEN}OK${RESET}"
 echo ""
 
-# Paso 4: Integrar los cambios de master en tu rama
-echo -e "${AMARILLO}[4/4] Integrando los cambios de master en tu rama '$nombreRama'...${RESET}"
+# Step 4: Integrate the changes from master into your branch
+echo -e "${YELLOW}[4/4] Integrating master changes into your branch '$branchName'...${RESET}"
 git merge origin/master --no-edit 2>&1
-MERGE_RESULTADO=$?
+MERGE_RESULT=$?
 
-if [ $MERGE_RESULTADO -ne 0 ]; then
+if [ $MERGE_RESULT -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}============================================${RESET}"
-    echo -e "${ROJO}  CONFLICTO DETECTADO                       ${RESET}"
-    echo -e "${ROJO}============================================${RESET}"
+    echo -e "${RED}============================================${RESET}"
+    echo -e "${RED}  CONFLICT DETECTED                         ${RESET}"
+    echo -e "${RED}============================================${RESET}"
     echo ""
-    echo -e "Hay cambios en master que entran en conflicto con tu rama."
-    echo -e "Necesitas resolver el conflicto manualmente o pedir ayuda."
+    echo -e "There are changes in master that conflict with your branch."
+    echo -e "You need to resolve the conflict manually or ask for help."
     echo ""
-    echo -e "Archivos con conflicto:"
+    echo -e "Files with conflicts:"
     git diff --name-only --diff-filter=U
     echo ""
-    echo -e "${AMARILLO}Para cancelar el merge y volver al estado anterior, ejecuta:${RESET}"
-    echo -e "${AZUL}  git merge --abort${RESET}"
+    echo -e "${YELLOW}To cancel the merge and go back to the previous state, run:${RESET}"
+    echo -e "${BLUE}  git merge --abort${RESET}"
     echo ""
     exit 1
 fi
 
 echo ""
-echo -e "${VERDE}============================================${RESET}"
-echo -e "${VERDE}  ¡Tu rama está actualizada con master!     ${RESET}"
-echo -e "${VERDE}============================================${RESET}"
+echo -e "${GREEN}============================================${RESET}"
+echo -e "${GREEN}  Your branch is up to date with master!   ${RESET}"
+echo -e "${GREEN}============================================${RESET}"
 echo ""
