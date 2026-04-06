@@ -1,0 +1,84 @@
+<ion-content class="login-content">
+  <div class="login-wrapper">
+
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="6" r="2.5" fill="#4A6FA5"/>
+          <circle cx="6" cy="18" r="2.5" fill="#4A6FA5"/>
+          <circle cx="22" cy="18" r="2.5" fill="#4A6FA5"/>
+          <circle cx="14" cy="22" r="2" fill="#4A6FA5"/>
+          <line x1="14" y1="6" x2="6" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="14" y1="6" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="6" y1="18" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="14" y1="22" x2="6" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="14" y1="22" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <span class="brand-name">ORION</span>
+    </div>
+
+    <!-- Avatar -->
+    <div class="avatar-container">
+      <div class="avatar-circle">
+        <img src="assets/avatar-default.png" alt="avatar" class="avatar-img"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"/>
+        <div class="avatar-fallback">
+          <svg width="70" height="70" viewBox="0 0 70 70" fill="none">
+            <circle cx="35" cy="26" r="14" fill="#c8a882"/>
+            <ellipse cx="35" cy="58" rx="22" ry="14" fill="#c8a882"/>
+            <!-- hair -->
+            <ellipse cx="35" cy="20" rx="15" ry="10" fill="#d4882a"/>
+            <ellipse cx="22" cy="28" rx="5" ry="10" fill="#d4882a"/>
+            <ellipse cx="48" cy="28" rx="5" ry="10" fill="#d4882a"/>
+            <!-- dress -->
+            <path d="M16 56 Q35 48 54 56 L54 70 L16 70 Z" fill="#c0392b"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-card">
+
+      <div class="input-group">
+        <div class="input-icon">
+          <ion-icon name="person-outline"></ion-icon>
+        </div>
+        <input
+          type="email"
+          placeholder="example@gmail.com"
+          class="custom-input"
+          [(ngModel)]="email"
+        />
+      </div>
+
+      <div class="input-group">
+        <div class="input-icon">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+        </div>
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          placeholder="••••••••••"
+          class="custom-input"
+          [(ngModel)]="password"
+        />
+        <div class="input-icon-right" (click)="togglePassword()">
+          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        </div>
+      </div>
+
+      <div class="forgot-password">
+        <a (click)="goToForgotPassword()">¿Has olvidado tu contraseña?</a>
+      </div>
+
+      <button class="btn-login" (click)="login()">
+        Iniciar sesión
+      </button>
+
+      <div class="register-link">
+        <a (click)="goToRegister()">Crea una cuenta</a>
+      </div>
+
+    </div>
+  </div>
+</ion-content>
