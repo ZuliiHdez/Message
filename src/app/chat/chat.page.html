@@ -1,0 +1,115 @@
+<!-- chat.page.html -->
+<ion-content class="chat-content" #scrollContent>
+
+  <!-- Header -->
+  <div class="chat-header">
+    <button class="back-btn" (click)="goBack()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+
+    <div class="contact-info">
+      <div class="contact-avatar" [style.background]="contact.avatarColor">
+        <img *ngIf="contact.photoUrl" [src]="contact.photoUrl" class="avatar-img"/>
+        <ion-icon *ngIf="!contact.photoUrl" name="person"></ion-icon>
+        <div class="status-dot" [ngClass]="contact.status"></div>
+      </div>
+      <div class="contact-text">
+        <span class="contact-name">{{ contact.name }}</span>
+        <span class="contact-status" [ngClass]="contact.status">{{ getStatusLabel(contact.status) }}</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-btn">
+        <ion-icon name="call-outline"></ion-icon>
+      </button>
+      <button class="icon-btn">
+        <ion-icon name="videocam-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mensajes -->
+  <div class="messages-container" #messagesContainer>
+
+    <ng-container *ngFor="let group of messageGroups">
+
+      <!-- Separador de fecha -->
+      <div class="date-separator">
+        <span>{{ group.date }}</span>
+      </div>
+
+      <!-- Mensajes del día -->
+      <ng-container *ngFor="let msg of group.messages">
+        <div class="message-row" [ngClass]="msg.isMine ? 'mine' : 'theirs'">
+
+          <!-- Burbuja de texto -->
+          <div class="bubble" *ngIf="msg.content && !msg.image_url">
+            <p>{{ msg.content }}</p>
+            <span class="msg-time">{{ msg.time }}</span>
+          </div>
+
+          <!-- Imagen -->
+          <div class="bubble image-bubble" *ngIf="msg.image_url">
+            <img [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url)"/>
+            <p *ngIf="msg.content" class="image-caption">{{ msg.content }}</p>
+            <span class="msg-time">{{ msg.time }}</span>
+          </div>
+
+        </div>
+      </ng-container>
+
+    </ng-container>
+
+    <!-- Indicador de escritura -->
+    <div class="typing-indicator" *ngIf="isTyping">
+      <div class="bubble theirs-bubble">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Preview imagen seleccionada -->
+  <div class="image-preview" *ngIf="selectedImage">
+    <img [src]="selectedImageUrl"/>
+    <button class="remove-image" (click)="removeImage()">
+      <ion-icon name="close-circle"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Input área -->
+  <div class="input-area">
+    <button class="input-icon-btn" (click)="openOptions()">
+      <ion-icon name="ellipsis-vertical"></ion-icon>
+    </button>
+
+    <div class="input-box">
+      <input
+        type="text"
+        placeholder="Escribe un mensaje..."
+        [(ngModel)]="messageText"
+        (keyup.enter)="sendMessage()"
+      />
+      <button class="emoji-btn" (click)="toggleEmoji()">
+        <ion-icon name="happy-outline"></ion-icon>
+      </button>
+    </div>
+
+    <button class="input-icon-btn" (click)="pickImage()">
+      <ion-icon name="camera-outline"></ion-icon>
+      <input type="file" #fileInput accept="image/*" (change)="onImageSelected($event)" style="display:none"/>
+    </button>
+
+    <button class="send-btn" (click)="sendMessage()" *ngIf="messageText.trim() || selectedImage">
+      <ion-icon name="send"></ion-icon>
+    </button>
+
+    <button class="input-icon-btn mic-btn" *ngIf="!messageText.trim() && !selectedImage">
+      <ion-icon name="mic-outline"></ion-icon>
+    </button>
+  </div>
+
+</ion-content>

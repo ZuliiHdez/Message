@@ -6,7 +6,7 @@
 # ============================================================
 
 # ▼▼▼ CAMBIA ESTE VALOR POR EL NOMBRE DE TU RAMA ▼▼▼
-nombreRama=""
+nombreRama="Aythami"
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 # --- Colores para mensajes ---
