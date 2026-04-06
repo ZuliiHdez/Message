@@ -1,0 +1,142 @@
+<ion-content class="register-content">
+  <div class="register-wrapper">
+
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="6" r="2.5" fill="#4A6FA5"/>
+          <circle cx="6" cy="18" r="2.5" fill="#4A6FA5"/>
+          <circle cx="22" cy="18" r="2.5" fill="#4A6FA5"/>
+          <circle cx="14" cy="22" r="2" fill="#4A6FA5"/>
+          <line x1="14" y1="6" x2="6" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="14" y1="6" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="6" y1="18" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="14" y1="22" x2="6" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+          <line x1="14" y1="22" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <span class="brand-name">ORION</span>
+    </div>
+
+    <div class="page-title">
+      <h2>Crea una cuenta</h2>
+      <p>Completa tus datos para registrarte</p>
+    </div>
+
+    <div class="form-card">
+
+      <div class="input-group" [class.error]="errors.nombre">
+        <div class="input-icon">
+          <ion-icon name="person-outline"></ion-icon>
+        </div>
+        <input
+          type="text"
+          placeholder="Nombre"
+          class="custom-input"
+          [(ngModel)]="form.nombre"
+          (ngModelChange)="clearError('nombre')"
+        />
+      </div>
+      <span class="error-msg" *ngIf="errors.nombre">{{ errors.nombre }}</span>
+
+      <div class="input-group" [class.error]="errors.apellido">
+        <div class="input-icon">
+          <ion-icon name="person-outline"></ion-icon>
+        </div>
+        <input
+          type="text"
+          placeholder="Apellido"
+          class="custom-input"
+          [(ngModel)]="form.apellido"
+          (ngModelChange)="clearError('apellido')"
+        />
+      </div>
+      <span class="error-msg" *ngIf="errors.apellido">{{ errors.apellido }}</span>
+
+      <div class="input-group" [class.error]="errors.fechaNacimiento">
+        <div class="input-icon">
+          <ion-icon name="calendar-outline"></ion-icon>
+        </div>
+        <input
+          type="date"
+          class="custom-input date-input"
+          [(ngModel)]="form.fechaNacimiento"
+          (ngModelChange)="clearError('fechaNacimiento')"
+        />
+      </div>
+      <span class="error-msg" *ngIf="errors.fechaNacimiento">{{ errors.fechaNacimiento }}</span>
+
+      <div class="input-group" [class.error]="errors.username">
+        <div class="input-icon">
+          <ion-icon name="at-outline"></ion-icon>
+        </div>
+        <input
+          type="text"
+          placeholder="Nombre de usuario"
+          class="custom-input"
+          [(ngModel)]="form.username"
+          (ngModelChange)="clearError('username')"
+        />
+      </div>
+      <span class="error-msg" *ngIf="errors.username">{{ errors.username }}</span>
+
+      <div class="input-group" [class.error]="errors.email">
+        <div class="input-icon">
+          <ion-icon name="mail-outline"></ion-icon>
+        </div>
+        <input
+          type="email"
+          placeholder="example@gmail.com"
+          class="custom-input"
+          [(ngModel)]="form.email"
+          (ngModelChange)="clearError('email')"
+        />
+      </div>
+      <span class="error-msg" *ngIf="errors.email">{{ errors.email }}</span>
+
+      <div class="input-group" [class.error]="errors.password">
+        <div class="input-icon">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+        </div>
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          placeholder="Contraseña"
+          class="custom-input"
+          [(ngModel)]="form.password"
+          (ngModelChange)="clearError('password')"
+        />
+        <div class="input-icon-right" (click)="togglePassword()">
+          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        </div>
+      </div>
+      <span class="error-msg" *ngIf="errors.password">{{ errors.password }}</span>
+
+      <div class="input-group" [class.error]="errors.confirmPassword">
+        <div class="input-icon">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+        </div>
+        <input
+          [type]="showConfirmPassword ? 'text' : 'password'"
+          placeholder="Confirmar contraseña"
+          class="custom-input"
+          [(ngModel)]="form.confirmPassword"
+          (ngModelChange)="clearError('confirmPassword')"
+        />
+        <div class="input-icon-right" (click)="toggleConfirmPassword()">
+          <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        </div>
+      </div>
+      <span class="error-msg" *ngIf="errors.confirmPassword">{{ errors.confirmPassword }}</span>
+
+      <button class="btn-register" (click)="register()" [disabled]="loading">
+        <span *ngIf="!loading">Crear cuenta</span>
+        <ion-spinner name="crescent" *ngIf="loading"></ion-spinner>
+      </button>
+
+      <div class="login-link">
+        ¿Ya tienes cuenta? <a (click)="goToLogin()">Inicia sesión</a>
+      </div>
+
+    </div>
+  </div>
+</ion-content>
