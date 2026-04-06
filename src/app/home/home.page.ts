@@ -143,13 +143,34 @@ ngOnInit() {
   }
 
   openChat(contact: Contact) {
-    console.log('Abrir chat con:', contact.name);
+    this.router.navigate(['/chat'], {
+      queryParams: {
+        id: contact.id,
+        name: contact.name,
+        color: contact.avatarColor,
+      }
+    });
   }
 
   openGroup(group: Group) {
-    console.log('Abrir grupo:', group.name);
+    this.router.navigate(['/chat'], {
+      queryParams: {
+        id: group.id,
+        name: group.name,
+        color: group.avatarColor,
+        photo: group.photoUrl || '',
+      }
+    });
   }
 
   goToSettings() {
+  }
+
+  goToAddContact() {
+    this.router.navigate(['/add-contact']);
+  }
+
+  goToPeticiones() {
+    this.router.navigate(['/peticiones']);
   }
 }
