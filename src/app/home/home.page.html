@@ -58,6 +58,14 @@
 
   <div class="list-container" *ngIf="activeTab === 'chats'">
 
+    <div *ngIf="isLoading" style="text-align:center; padding: 2rem; color: #888;">
+      Cargando contactos...
+    </div>
+
+    <div *ngIf="!isLoading && groupedContacts.length === 0" style="text-align:center; padding: 2rem; color: #888;">
+      No tienes contactos aún
+    </div>
+
     <ng-container *ngFor="let group of groupedContacts">
       <div class="status-separator">
         <div class="status-dot-small" [ngClass]="group.status"></div>
@@ -66,7 +74,8 @@
       <div class="contact-item" *ngFor="let contact of group.contacts" (click)="openChat(contact)">
         <div class="contact-avatar-wrap">
           <div class="contact-avatar" [style.background]="contact.avatarColor">
-            <ion-icon name="person"></ion-icon>
+            <img *ngIf="contact.avatarUrl" [src]="contact.avatarUrl" class="contact-avatar-img"/>
+            <ion-icon *ngIf="!contact.avatarUrl" name="person"></ion-icon>
           </div>
           <div class="status-dot-small" [ngClass]="contact.status"></div>
         </div>
@@ -79,6 +88,14 @@
   </div>
 
   <div class="list-container" *ngIf="activeTab === 'grupos'">
+
+    <div *ngIf="isLoading" style="text-align:center; padding: 2rem; color: #888;">
+      Cargando grupos...
+    </div>
+
+    <div *ngIf="!isLoading && groupCategories.length === 0" style="text-align:center; padding: 2rem; color: #888;">
+      No perteneces a ningún grupo aún
+    </div>
 
     <ng-container *ngFor="let category of groupCategories">
 
@@ -93,8 +110,8 @@
       <ng-container *ngIf="category.expanded">
         <div class="group-item" *ngFor="let group of category.groups" (click)="openGroup(group)">
           <div class="group-avatar" [style.background]="group.avatarColor">
-            <img *ngIf="group.photoUrl" [src]="group.photoUrl" class="group-avatar-img"/>
-            <ion-icon *ngIf="!group.photoUrl" name="people"></ion-icon>
+            <img *ngIf="group.avatarUrl" [src]="group.avatarUrl" class="group-avatar-img"/>
+            <ion-icon *ngIf="!group.avatarUrl" name="people"></ion-icon>
           </div>
           <div class="group-info">
             <span class="group-name">{{ group.name }}</span>

@@ -86,8 +86,9 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     // Cargar mensajes
     await this.loadMessages();
 
-    // Suscribirse a mensajes en tiempo real
+    // Suscribirse a mensajes en tiempo real (solo del otro usuario, los propios ya se añaden en sendMessage)
     this.chatService.subscribeToMessages(this.contact.id, (msg) => {
+      if (msg.sender_id === this.myId) return;
       const formatted = this.formatMessage(msg);
       this.addMessageToGroups(formatted);
       this.shouldScroll = true;

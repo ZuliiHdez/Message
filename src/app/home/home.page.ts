@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { FriendshipService } from '../services/friendship.service';
 
 interface Contact {
-  id: number;
+  id: string;
   name: string;
   bio: string;
   status: 'online' | 'away' | 'busy' | 'offline';
   avatarColor: string;
+  avatarUrl: string;
 }
 
 interface ContactGroup {
@@ -19,10 +21,10 @@ interface ContactGroup {
 }
 
 interface Group {
-  id: number;
+  id: string;
   name: string;
   avatarColor: string;
-  photoUrl?: string;
+  avatarUrl?: string;
 }
 
 interface GroupCategory {
@@ -42,28 +44,16 @@ export class HomePage implements OnInit {
 
   activeTab: 'chats' | 'grupos' = 'chats';
   searchQuery = '';
+  isLoading = false;
 
   currentUser = {
-    name: 'Iria',
-    bio: 'Soy nueva',
+    name: 'Usuario',
+    bio: 'Hey, estoy usando Orion',
     status: 'online',
     photoUrl: '',
   };
 
-  allContacts: Contact[] = [
-    { id: 1,  name: 'Ana',       bio: 'Carpe diem 😏',             status: 'online',  avatarColor: '#27ae60' },
-    { id: 2,  name: 'Jaime',     bio: 'Working...',                status: 'online',  avatarColor: '#2980b9' },
-    { id: 3,  name: 'Carmen',    bio: 'Feliz y viviendo 😁',       status: 'away',    avatarColor: '#e67e22' },
-    { id: 4,  name: 'Miguel',    bio: 'De vacaciones...',          status: 'away',    avatarColor: '#8e44ad' },
-    { id: 5,  name: 'Alejandro', bio: 'Durmiendo, no molestar...', status: 'busy',    avatarColor: '#c0392b' },
-    { id: 6,  name: 'José',      bio: 'En una entrevista',         status: 'busy',    avatarColor: '#d35400' },
-    { id: 7,  name: 'Laura',     bio: 'Sin conexión',              status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 8,  name: 'Pedro',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 9,  name: 'Sofia',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 10, name: 'Carlos',    bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 11, name: 'Marta',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-  ];
-
+  allContacts: Contact[] = [];
   filteredContacts: Contact[] = [];
   groupedContacts: ContactGroup[] = [];
 
@@ -74,50 +64,62 @@ export class HomePage implements OnInit {
     { status: 'offline' as const, label: 'Desconectado' },
   ];
 
-  groupCategories: GroupCategory[] = [
-    {
-      name: 'Amigos',
-      expanded: false,
-      groups: [
-        { id: 1, name: 'Grupo Amigos',  avatarColor: '#27ae60' },
-        { id: 2, name: 'Salidas finde', avatarColor: '#2980b9' },
-      ]
-    },
-    {
-      name: 'Trabajo',
-      expanded: true,
-      groups: [
-        { id: 3, name: 'Grupo PAMN',    avatarColor: '#e74c3c' },
-        { id: 4, name: 'Trabajo tarde', avatarColor: '#f39c12' },
-        { id: 5, name: 'Proyecto TFG',  avatarColor: '#7f8c8d' },
-      ]
-    },
-    {
-      name: 'Familia',
-      expanded: true,
-      groups: [
-        { id: 6, name: 'Family', avatarColor: '#8e44ad' },
-      ]
-    },
-    {
-      name: 'Sin asignar',
-      expanded: false,
-      groups: []
-    },
-  ];
+  groupCategories: GroupCategory[] = [];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private friendshipService: FriendshipService) {}
 
-ngOnInit() {
-  const stored = localStorage.getItem('lastUser');
-  if (stored) {
-    const user = JSON.parse(stored);
-    this.currentUser.name     = user.name     || 'Usuario';
-    this.currentUser.photoUrl = user.photoUrl || '';
-    this.currentUser.bio      = user.status   || 'Hey, estoy usando Orion'; // ← añade esto
+  async ngOnInit() {
+    const stored = localStorage.getItem('lastUser');
+    if (stored) {
+      const user = JSON.parse(stored);
+      this.currentUser.name     = user.name     || 'Usuario';
+      this.currentUser.photoUrl = user.photoUrl || '';
+      this.currentUser.bio      = user.status   || 'Hey, estoy usando Orion';
+    }
+    await this.loadData();
   }
-  this.filterContacts();
-}
+
+  async loadData() {
+    this.isLoading = true;
+    try {
+      await Promise.all([this.loadContacts(), this.loadGroups()]);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async loadContacts() {
+    try {
+      const friends = await this.friendshipService.getFriends();
+      this.allContacts = friends;
+      this.filterContacts();
+    } catch (e) {
+      console.error('Error cargando contactos:', e);
+    }
+  }
+
+  async loadGroups() {
+    try {
+      const groups = await this.friendshipService.getGroups();
+      if (groups.length > 0) {
+        this.groupCategories = [{
+          name: 'Mis grupos',
+          expanded: true,
+          groups: groups.map(g => ({
+            id: g.id,
+            name: g.name,
+            avatarColor: '#2980b9',
+            avatarUrl: g.avatar_url || '',
+          })),
+        }];
+      } else {
+        this.groupCategories = [];
+      }
+    } catch (e) {
+      console.error('Error cargando grupos:', e);
+      this.groupCategories = [];
+    }
+  }
 
   filterContacts() {
     const q = this.searchQuery.toLowerCase().trim();
@@ -148,6 +150,7 @@ ngOnInit() {
         id: contact.id,
         name: contact.name,
         color: contact.avatarColor,
+        photo: contact.avatarUrl || '',
       }
     });
   }
@@ -158,7 +161,7 @@ ngOnInit() {
         id: group.id,
         name: group.name,
         color: group.avatarColor,
-        photo: group.photoUrl || '',
+        photo: group.avatarUrl || '',
       }
     });
   }
