@@ -28,7 +28,7 @@ export class ResetPasswordPage implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.supabase.getClient().auth.onAuthStateChange((event) => {
+    this.supabase.getClient().auth.onAuthStateChange((event: any) => {
       if (event === 'PASSWORD_RECOVERY') {
         console.log('Sesión de recuperación activa');
       }

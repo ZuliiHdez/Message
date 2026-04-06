@@ -27,6 +27,18 @@ const routes: Routes = [
     import('./userlogin//reset-password/reset-password.page').then(m => m.ResetPasswordPage)
 },
   {
+    path: 'chat',
+    loadComponent: () => import('./chat/chat.page').then(m => m.ChatPage)
+  },
+  {
+    path: 'add-contact',
+    loadComponent: () => import('./add-contact/add-contact.page').then(m => m.AddContactPage)
+  },
+  {
+    path: 'peticiones',
+    loadComponent: () => import('./peticiones/peticiones.page').then(m => m.PeticionesPage)
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full'
