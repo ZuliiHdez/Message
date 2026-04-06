@@ -68,3 +68,7 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Scripts locales
+subir-cambios.sh
+actualizar-desde-master.sh
