@@ -1,20 +1,108 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="home-content" [scrollY]="false">
+  <div class="header">
+    <div class="header-top">
+      <div class="user-info">
+        <div class="avatar-wrap">
+          <div class="user-avatar">
+            <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
+              <circle cx="34" cy="26" r="13" fill="#c8a882"/>
+              <ellipse cx="34" cy="56" rx="21" ry="13" fill="#c8a882"/>
+              <ellipse cx="34" cy="20" rx="14" ry="9" fill="#d4882a"/>
+              <ellipse cx="21" cy="27" rx="5" ry="9" fill="#d4882a"/>
+              <ellipse cx="47" cy="27" rx="5" ry="9" fill="#d4882a"/>
+              <path d="M15 54 Q34 46 53 54 L53 68 L15 68 Z" fill="#c0392b"/>
+            </svg>
+          </div>
+          <div class="status-dot online"></div>
+        </div>
+        <div class="user-text">
+          <h2>{{ currentUser.name }}</h2>
+          <p>{{ currentUser.bio }}</p>
+        </div>
+      </div>
+      <button class="settings-btn" (click)="goToSettings()">
+        <ion-icon name="settings-outline"></ion-icon>
+      </button>
+    </div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+    <div class="search-bar">
+      <ion-icon name="search-outline"></ion-icon>
+      <input type="text" placeholder="" [(ngModel)]="searchQuery" (ngModelChange)="filterContacts()"/>
+    </div>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+    <div class="quick-actions">
+      <button class="action-btn" (click)="goToPeticiones()">
+        <ion-icon name="mail-outline"></ion-icon>
+        <span>Peticiones</span>
+      </button>
+      <button class="action-btn" (click)="goToAddContact()">
+        <ion-icon name="person-add-outline"></ion-icon>
+        <span>Añadir contacto</span>
+      </button>
+      <button class="action-btn">
+        <ion-icon name="people-outline"></ion-icon>
+        <span>Crear grupo</span>
+      </button>
+    </div>
   </div>
+
+  <div class="tabs-container">
+    <button class="tab-btn" [class.active]="activeTab === 'chats'" (click)="activeTab = 'chats'">
+      Chats
+    </button>
+    <div class="tab-divider"></div>
+    <button class="tab-btn" [class.active]="activeTab === 'grupos'" (click)="activeTab = 'grupos'">
+      Grupos
+    </button>
+  </div>
+
+  <div class="list-container" *ngIf="activeTab === 'chats'">
+
+    <ng-container *ngFor="let group of groupedContacts">
+      <div class="status-separator">
+        <div class="status-dot-small" [ngClass]="group.status"></div>
+        <span>{{ group.label }} ({{ group.contacts.length }})</span>
+      </div>
+      <div class="contact-item" *ngFor="let contact of group.contacts" (click)="openChat(contact)">
+        <div class="contact-avatar-wrap">
+          <div class="contact-avatar" [style.background]="contact.avatarColor">
+            <ion-icon name="person"></ion-icon>
+          </div>
+          <div class="status-dot-small" [ngClass]="contact.status"></div>
+        </div>
+        <div class="contact-info">
+          <span class="contact-name">{{ contact.name }}</span>
+          <span class="contact-bio">{{ contact.bio }}</span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <div class="list-container" *ngIf="activeTab === 'grupos'">
+
+    <ng-container *ngFor="let category of groupCategories">
+
+      <div class="category-header" (click)="toggleCategory(category)">
+        <ion-icon
+          [name]="category.expanded ? 'chevron-down-outline' : 'chevron-forward-outline'"
+          class="chevron">
+        </ion-icon>
+        <span>{{ category.name }} ({{ category.groups.length }})</span>
+      </div>
+
+      <ng-container *ngIf="category.expanded">
+        <div class="group-item" *ngFor="let group of category.groups" (click)="openGroup(group)">
+          <div class="group-avatar" [style.background]="group.avatarColor">
+            <img *ngIf="group.photoUrl" [src]="group.photoUrl" class="group-avatar-img"/>
+            <ion-icon *ngIf="!group.photoUrl" name="people"></ion-icon>
+          </div>
+          <div class="group-info">
+            <span class="group-name">{{ group.name }}</span>
+          </div>
+        </div>
+      </ng-container>
+
+    </ng-container>
+  </div>
+
 </ion-content>
