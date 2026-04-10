@@ -143,6 +143,7 @@ ngOnInit() {
   }
 
   openChat(contact: Contact) {
+    console.log('CONTACT OBJ:', contact);
     this.router.navigate(['/chat'], {
       queryParams: {
         id: contact.id,

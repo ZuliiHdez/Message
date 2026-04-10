@@ -49,13 +49,33 @@
             <span class="msg-time">{{ msg.time }}</span>
           </div>
 
-          <!-- Imagen -->
+          <!-- Imagen normal o view-once -->
           <div class="bubble image-bubble" *ngIf="msg.image_url">
-            <img [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url)"/>
+
+            <ng-container *ngIf="msg.view_once; else normalImage">
+              <ion-button
+                *ngIf="!msg.viewed_at"
+                size="small"
+                (click)="openViewOncePhoto(msg)">
+                Foto ansehen
+              </ion-button>
+
+              <div *ngIf="msg.viewed_at" class="view-once-info">
+                <p>Foto wurde bereits angesehen</p>
+              </div>
+            </ng-container>
+
+            <ng-template #normalImage>
+              <img
+                [src]="msg.image_url"
+                class="msg-image"
+                (click)="openImage(msg.image_url)"
+              />
+            </ng-template>
+
             <p *ngIf="msg.content" class="image-caption">{{ msg.content }}</p>
             <span class="msg-time">{{ msg.time }}</span>
           </div>
-
         </div>
       </ng-container>
 
@@ -73,12 +93,12 @@
   </div>
 
   <!-- Preview imagen seleccionada -->
-  <div class="image-preview" *ngIf="selectedImage">
-    <img [src]="selectedImageUrl"/>
-    <button class="remove-image" (click)="removeImage()">
-      <ion-icon name="close-circle"></ion-icon>
-    </button>
-  </div>
+<div class="image-preview" *ngIf="selectedImageUrl">
+  <img [src]="selectedImageUrl"/>
+  <button class="remove-image" (click)="removeImage()">
+    <ion-icon name="close-circle"></ion-icon>
+  </button>
+</div>
 
   <!-- Input área -->
   <div class="input-area">
@@ -98,10 +118,24 @@
       </button>
     </div>
 
-    <button class="input-icon-btn" (click)="pickImage()">
-      <ion-icon name="camera-outline"></ion-icon>
-      <input type="file" #fileInput accept="image/*" (change)="onImageSelected($event)" style="display:none"/>
-    </button>
+<!-- 👁️ View Once Toggle -->
+<button 
+  class="input-icon-btn" 
+  [class.active]="viewOnceMode && selectedImage"
+  [disabled]="!selectedImage"
+  (click)="selectedImage && (viewOnceMode = !viewOnceMode)"
+>
+  <ion-icon 
+    [name]="viewOnceMode ? 'eye-off' : 'eye'"
+    [style.color]="viewOnceMode && selectedImage ? '#4caf50' : ''">
+  </ion-icon>
+</button>
+
+<!-- 📷 Kamera -->
+<button class="input-icon-btn" (click)="pickImage()">
+  <ion-icon name="camera-outline"></ion-icon>
+  <input type="file" #fileInput accept="image/*" (change)="onImageSelected($event)" style="display:none"/>
+</button>
 
     <button class="send-btn" (click)="sendMessage()" *ngIf="messageText.trim() || selectedImage">
       <ion-icon name="send"></ion-icon>
@@ -113,3 +147,19 @@
   </div>
 
 </ion-content>
+<!-- FULLSCREEN IMAGE MODAL -->
+<ion-modal
+  [isOpen]="!!fullscreenImage"
+  (didDismiss)="closeFullscreenImage()"
+  cssClass="image-modal"
+>
+  <ng-template>
+    <div class="image-modal-content" (click)="closeFullscreenImage()">
+      <img
+        [src]="fullscreenImage"
+        class="fullscreen-modal-image"
+        (click)="$event.stopPropagation()"
+      />
+    </div>
+  </ng-template>
+</ion-modal>
