@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { SupabaseService } from '../services/supabase.service';
 
 interface Contact {
-  id: number;
+  id: string;
   name: string;
   bio: string;
   status: 'online' | 'away' | 'busy' | 'offline';
@@ -50,19 +51,7 @@ export class HomePage implements OnInit {
     photoUrl: '',
   };
 
-  allContacts: Contact[] = [
-    { id: 1,  name: 'Ana',       bio: 'Carpe diem 😏',             status: 'online',  avatarColor: '#27ae60' },
-    { id: 2,  name: 'Jaime',     bio: 'Working...',                status: 'online',  avatarColor: '#2980b9' },
-    { id: 3,  name: 'Carmen',    bio: 'Feliz y viviendo 😁',       status: 'away',    avatarColor: '#e67e22' },
-    { id: 4,  name: 'Miguel',    bio: 'De vacaciones...',          status: 'away',    avatarColor: '#8e44ad' },
-    { id: 5,  name: 'Alejandro', bio: 'Durmiendo, no molestar...', status: 'busy',    avatarColor: '#c0392b' },
-    { id: 6,  name: 'José',      bio: 'En una entrevista',         status: 'busy',    avatarColor: '#d35400' },
-    { id: 7,  name: 'Laura',     bio: 'Sin conexión',              status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 8,  name: 'Pedro',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 9,  name: 'Sofia',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 10, name: 'Carlos',    bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 11, name: 'Marta',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-  ];
+ allContacts: Contact[] = [];
 
   filteredContacts: Contact[] = [];
   groupedContacts: ContactGroup[] = [];
@@ -106,17 +95,21 @@ export class HomePage implements OnInit {
     },
   ];
 
-  constructor(private router: Router) {}
+  constructor(
+  private router: Router,
+  private supabaseService: SupabaseService
+) {}
 
-ngOnInit() {
+async ngOnInit() {
   const stored = localStorage.getItem('lastUser');
   if (stored) {
     const user = JSON.parse(stored);
-    this.currentUser.name     = user.name     || 'Usuario';
+    this.currentUser.name = user.name || 'Usuario';
     this.currentUser.photoUrl = user.photoUrl || '';
-    this.currentUser.bio      = user.status   || 'Hey, estoy usando Orion'; // ← añade esto
+    this.currentUser.bio = user.status || 'Hey, estoy usando Orion';
   }
-  this.filterContacts();
+
+  await this.loadContacts();
 }
 
   filterContacts() {
@@ -174,4 +167,34 @@ ngOnInit() {
   goToPeticiones() {
     this.router.navigate(['/peticiones']);
   }
+  async loadContacts() {
+  const client = this.supabaseService.getClient();
+
+  const {
+    data: { session }
+  } = await client.auth.getSession();
+
+  const myId = session?.user?.id;
+  if (!myId) return;
+
+  const { data, error } = await client
+    .from('profiles')
+    .select('id, full_name, status')
+    .neq('id', myId);
+
+  if (error) {
+    console.error('Fehler beim Laden der Kontakte:', error);
+    return;
+  }
+
+  this.allContacts = (data || []).map((profile: any) => ({
+    id: profile.id,
+    name: profile.full_name || 'Sin nombre',
+    bio: profile.status || '',
+    status: 'offline',
+    avatarColor: '#7f8c8d',
+  }));
+
+  this.filterContacts();
+}
 }

@@ -53,17 +53,30 @@
           <div class="bubble image-bubble" *ngIf="msg.image_url">
 
             <ng-container *ngIf="msg.view_once; else normalImage">
-              <ion-button
-                *ngIf="!msg.viewed_at"
-                size="small"
-                (click)="openViewOncePhoto(msg)">
-                Foto ansehen
-              </ion-button>
 
-              <div *ngIf="msg.viewed_at" class="view-once-info">
-                <p>Foto wurde bereits angesehen</p>
-              </div>
-            </ng-container>
+  <!-- If it's MY message -->
+<ng-container *ngIf="msg.isMine; else receivedViewOnce">
+  <div class="view-once-info">
+    <p *ngIf="!msg.viewed_at">📷 One-time photo sent</p>
+    <p *ngIf="msg.viewed_at">✅ Viewed</p>
+  </div>
+</ng-container>
+
+  <!-- When I am the RECIPIENT -->
+  <ng-template #receivedViewOnce>
+    <ion-button
+      *ngIf="!msg.viewed_at"
+      size="small"
+      (click)="openViewOncePhoto(msg)">
+      Foto ansehen
+    </ion-button>
+
+    <div *ngIf="msg.viewed_at" class="view-once-info">
+      <p>This photo has already been viewed</p>
+    </div>
+  </ng-template>
+
+</ng-container>
 
             <ng-template #normalImage>
               <img

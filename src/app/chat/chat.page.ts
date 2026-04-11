@@ -55,7 +55,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   selectedImageUrl = '';
   sending = false;
   viewOnceMode = false;
-  demoMode = true;
+  demoMode = false;
   fullscreenImage: string | null = null;
   private shouldScroll = false;
   private statusChannel: any = null;
@@ -259,22 +259,24 @@ async sendMessage() {
       }
     }
 
-    // 🔹 Nachricht lokal anzeigen (immer!)
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      sender_id: this.myId,
-      receiver_id: this.contact.id,
-      content: trimmedMessage,
-      image_url: imageUrl || '',
-      created_at: new Date().toISOString(),
-      isMine: true,
-      time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-      view_once: this.viewOnceMode && !!imageUrl,
-      viewed_at: null,
-      viewed_by: null,
-    };
+    // 🔹 Nachricht nur im Demo-Modus lokal anzeigen
+    if (this.demoMode) {
+      const newMsg: Message = {
+        id: Date.now().toString(),
+        sender_id: this.myId,
+        receiver_id: this.contact.id,
+        content: trimmedMessage,
+        image_url: imageUrl || '',
+        created_at: new Date().toISOString(),
+        isMine: true,
+        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        view_once: this.viewOnceMode && !!imageUrl,
+        viewed_at: null,
+        viewed_by: null,
+      };
 
-    this.addMessageToGroups(newMsg);
+      this.addMessageToGroups(newMsg);
+    }
 
     // 🔹 Reset
     this.messageText = '';
@@ -316,27 +318,22 @@ async sendMessage() {
   this.fullscreenImage = url;
 }
 async openViewOncePhoto(msg: Message) {
+  if (msg.isMine) return;
+
   if (msg.viewed_at) {
     alert('Dieses Foto wurde bereits angesehen.');
     return;
   }
 
   try {
-    // 👉 1. Bild anzeigen
     this.fullscreenImage = msg.image_url;
 
-    // 👉 2. kleine Verzögerung damit UI Zeit hat
-    setTimeout(async () => {
+    if (!this.demoMode) {
+      await this.chatService.markMessageAsViewed(msg.id);
+    }
 
-      if (!this.demoMode) {
-        await this.chatService.markMessageAsViewed(msg.id);
-      }
-
-      msg.viewed_at = new Date().toISOString();
-      msg.viewed_by = this.myId;
-
-    }, 300); // 300ms reicht
-
+    msg.viewed_at = new Date().toISOString();
+    msg.viewed_by = this.myId;
   } catch (e) {
     console.error('Fehler beim Markieren als angesehen:', e);
   }
