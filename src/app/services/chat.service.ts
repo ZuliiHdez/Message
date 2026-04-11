@@ -47,6 +47,38 @@ export class ChatService {
 
     if (error) throw error;
   }
+    async markMessageAsViewed(messageId: string) {
+    const myId = await this.getCurrentUserId();
+
+    const { error } = await this.db
+      .from('messages')
+      .update({
+        viewed_at: new Date().toISOString(),
+        viewed_by: myId
+      })
+      .eq('id', messageId)
+      .is('viewed_at', null);
+
+    if (error) throw error;
+  }
+
+  async sendViewOnceMessage(receiverId: string, content: string, imageUrl?: string) {
+    const myId = await this.getCurrentUserId();
+
+    const { error } = await this.db
+      .from('messages')
+      .insert({
+        sender_id: myId,
+        receiver_id: receiverId,
+        content: content || null,
+        image_url: imageUrl || null,
+        view_once: true,
+        viewed_at: null,
+        viewed_by: null,
+      });
+
+    if (error) throw error;
+  }
 
   async uploadImage(file: File): Promise<string> {
     const myId = await this.getCurrentUserId();
@@ -68,26 +100,28 @@ export class ChatService {
 
   // ── Realtime ───────────────────────────────────────────────
 
-  subscribeToMessages(otherUserId: string, callback: (msg: any) => void) {
-    this.unsubscribe();
-    this.channel = this.db
-      .channel(`chat-${otherUserId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload: any) => {
-          const msg = payload.new;
-          // Solo notificar si pertenece a esta conversación
-          if (
-            (msg.sender_id === otherUserId) ||
-            (msg.receiver_id === otherUserId)
-          ) {
-            callback(msg);
-          }
+ async subscribeToMessages(otherUserId: string, callback: (msg: any) => void) {
+  const myId = await this.getCurrentUserId();
+
+  this.unsubscribe();
+  this.channel = this.db
+    .channel(`chat-${otherUserId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages' },
+      (payload: any) => {
+        const msg = payload.new;
+
+        if (
+          (msg.sender_id === otherUserId && msg.receiver_id === myId) ||
+          (msg.sender_id === myId && msg.receiver_id === otherUserId)
+        ) {
+          callback(msg);
         }
-      )
-      .subscribe();
-  }
+      }
+    )
+    .subscribe();
+}
 
   unsubscribe() {
     if (this.channel) {

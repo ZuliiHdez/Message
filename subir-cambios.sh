@@ -1,118 +1,121 @@
 #!/bin/bash
 
 # ============================================================
-#  SCRIPT PARA SUBIR CAMBIOS A TU RAMA PERSONAL
-#  Uso: ./subir-cambios.sh
+#  SCRIPT TO PUSH YOUR CHANGES TO YOUR PERSONAL BRANCH
+#  Usage: ./subir-cambios.sh
 # ============================================================
 
+# ▼▼▼ CHANGE THIS VALUE TO YOUR BRANCH NAME ▼▼▼
+branchName="Yannick"
+# ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 # ▼▼▼ CAMBIA ESTE VALOR POR EL NOMBRE DE TU RAMA ▼▼▼
 nombreRama="Aythami"
 # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-# --- Colores para mensajes ---
-VERDE='\033[0;32m'
-ROJO='\033[0;31m'
-AMARILLO='\033[1;33m'
-AZUL='\033[0;34m'
+# --- Colors for messages ---
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 RESET='\033[0m'
 
 echo ""
-echo -e "${AZUL}============================================${RESET}"
-echo -e "${AZUL}       SUBIR CAMBIOS A TU RAMA             ${RESET}"
-echo -e "${AZUL}============================================${RESET}"
+echo -e "${BLUE}============================================${RESET}"
+echo -e "${BLUE}       PUSH CHANGES TO YOUR BRANCH         ${RESET}"
+echo -e "${BLUE}============================================${RESET}"
 echo ""
 
-# Verificar que se ha configurado el nombre de rama
-if [ -z "$nombreRama" ]; then
-    echo -e "${ROJO}ERROR: No has configurado tu nombre de rama.${RESET}"
-    echo -e "Abre el archivo ${AMARILLO}subir-cambios.sh${RESET} y edita la variable ${AMARILLO}nombreRama${RESET}."
-    echo -e "Ejemplo: ${VERDE}nombreRama=\"ana\"${RESET}"
+# Check that the branch name has been configured
+if [ -z "$branchName" ]; then
+    echo -e "${RED}ERROR: You have not configured your branch name.${RESET}"
+    echo -e "Open the file ${YELLOW}subir-cambios.sh${RESET} and edit the variable ${YELLOW}branchName${RESET}."
+    echo -e "Example: ${GREEN}branchName=\"ana\"${RESET}"
     echo ""
     exit 1
 fi
 
-echo -e "Rama de trabajo: ${VERDE}$nombreRama${RESET}"
+echo -e "Working branch: ${GREEN}$branchName${RESET}"
 echo ""
 
-# Paso 1: Asegurarse de estar en la rama correcta
-echo -e "${AMARILLO}[1/4] Cambiando a tu rama '$nombreRama'...${RESET}"
-git checkout "$nombreRama" 2>&1
+# Step 1: Make sure you are on the correct branch
+echo -e "${YELLOW}[1/4] Switching to your branch '$branchName'...${RESET}"
+git checkout "$branchName" 2>&1
 if [ $? -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}ERROR: No se pudo cambiar a la rama '$nombreRama'.${RESET}"
-    echo -e "Comprueba que el nombre de la rama es correcto."
+    echo -e "${RED}ERROR: Could not switch to branch '$branchName'.${RESET}"
+    echo -e "Check that the branch name is correct."
     echo ""
     exit 1
 fi
-echo -e "${VERDE}OK${RESET}"
+echo -e "${GREEN}OK${RESET}"
 echo ""
 
-# Paso 2: Descargar los últimos cambios del servidor
-echo -e "${AMARILLO}[2/4] Descargando los últimos cambios del servidor...${RESET}"
-git pull origin "$nombreRama" 2>&1
-PULL_RESULTADO=$?
+# Step 2: Download the latest changes from the server
+echo -e "${YELLOW}[2/4] Downloading the latest changes from the server...${RESET}"
+git pull origin "$branchName" 2>&1
+PULL_RESULT=$?
 
-if [ $PULL_RESULTADO -ne 0 ]; then
+if [ $PULL_RESULT -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}ERROR: Hubo un problema al descargar los cambios.${RESET}"
-    echo -e "Puede haber un conflicto. Contacta con el responsable del proyecto."
+    echo -e "${RED}ERROR: There was a problem downloading the changes.${RESET}"
+    echo -e "There may be a conflict. Contact the project maintainer."
     echo ""
     exit 1
 fi
-echo -e "${VERDE}OK - Rama actualizada${RESET}"
+echo -e "${GREEN}OK - Branch updated${RESET}"
 echo ""
 
-# Paso 3: Ver qué archivos han cambiado
-echo -e "${AMARILLO}[3/4] Archivos modificados:${RESET}"
+# Step 3: See which files have changed
+echo -e "${YELLOW}[3/4] Modified files:${RESET}"
 git status --short
 echo ""
 
-# Comprobar si hay cambios para subir
+# Check if there are changes to push
 if [ -z "$(git status --porcelain)" ]; then
-    echo -e "${VERDE}No hay cambios nuevos que subir. ¡Tu rama ya está al día!${RESET}"
+    echo -e "${GREEN}No new changes to push. Your branch is already up to date!${RESET}"
     echo ""
     exit 0
 fi
 
-# Pedir mensaje del commit
-echo -e "Escribe un mensaje breve describiendo qué has hecho:"
-echo -e "${AZUL}(Ejemplo: 'Añadir pantalla de login', 'Arreglar bug en el menú')${RESET}"
+# Ask for a commit message
+echo -e "Write a short message describing what you did:"
+echo -e "${BLUE}(Example: 'Add login screen', 'Fix bug in the menu')${RESET}"
 echo -n "> "
-read mensajeCommit
+read commitMessage
 
-if [ -z "$mensajeCommit" ]; then
+if [ -z "$commitMessage" ]; then
     echo ""
-    echo -e "${ROJO}ERROR: El mensaje no puede estar vacío.${RESET}"
+    echo -e "${RED}ERROR: The message cannot be empty.${RESET}"
     echo ""
     exit 1
 fi
 
-# Paso 4: Guardar y subir los cambios
+# Step 4: Save and push the changes
 echo ""
-echo -e "${AMARILLO}[4/4] Guardando y subiendo los cambios...${RESET}"
+echo -e "${YELLOW}[4/4] Saving and pushing the changes...${RESET}"
 
 git add .
-git commit -m "$mensajeCommit"
+git commit -m "$commitMessage"
 
 if [ $? -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}ERROR: No se pudo crear el commit.${RESET}"
+    echo -e "${RED}ERROR: Could not create the commit.${RESET}"
     echo ""
     exit 1
 fi
 
-git push origin "$nombreRama"
+git push origin "$branchName"
 
 if [ $? -ne 0 ]; then
     echo ""
-    echo -e "${ROJO}ERROR: No se pudo subir al servidor.${RESET}"
-    echo -e "Comprueba tu conexión a internet o contacta con el responsable."
+    echo -e "${RED}ERROR: Could not push to the server.${RESET}"
+    echo -e "Check your internet connection or contact the project maintainer."
     echo ""
     exit 1
 fi
 
 echo ""
-echo -e "${VERDE}============================================${RESET}"
-echo -e "${VERDE}  ¡Cambios subidos correctamente!           ${RESET}"
-echo -e "${VERDE}============================================${RESET}"
+echo -e "${GREEN}============================================${RESET}"
+echo -e "${GREEN}  Changes pushed successfully!              ${RESET}"
+echo -e "${GREEN}============================================${RESET}"
 echo ""
