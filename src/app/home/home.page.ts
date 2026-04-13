@@ -167,7 +167,7 @@ export class HomePage implements OnInit {
   }
 
   goToCrearGrupo() {
-    this.router.navigate(['/crear-grupo']);
+    this.router.navigate(['/create-group']);
   }
 
   goToSettings() {

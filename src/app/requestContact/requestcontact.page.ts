@@ -7,8 +7,8 @@ import { FriendshipService } from '../services/friendship.service';
 
 @Component({
   selector: 'app-peticiones',
-  templateUrl: './peticiones.page.html',
-  styleUrls: ['./peticiones.page.scss'],
+  templateUrl: './requestcontact.page.html',
+  styleUrls: ['./requestcontact.page.scss'],
   standalone: true,
   imports: [CommonModule, IonicModule],
 })

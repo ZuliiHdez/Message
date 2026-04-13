@@ -15,9 +15,9 @@ interface Contact {
 }
 
 @Component({
-  selector: 'app-crear-grupo',
-  templateUrl: './crear-grupo.page.html',
-  styleUrls: ['./crear-grupo.page.scss'],
+  selector: 'app-create-group',
+  templateUrl: './create-group.page.html',
+  styleUrls: ['./create-group.page.scss'],
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
