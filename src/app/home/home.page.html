@@ -5,41 +5,62 @@
         <div class="avatar-wrap">
           <div class="user-avatar">
             <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
-              <circle cx="34" cy="26" r="13" fill="#c8a882"/>
-              <ellipse cx="34" cy="56" rx="21" ry="13" fill="#c8a882"/>
-              <ellipse cx="34" cy="20" rx="14" ry="9" fill="#d4882a"/>
-              <ellipse cx="21" cy="27" rx="5" ry="9" fill="#d4882a"/>
-              <ellipse cx="47" cy="27" rx="5" ry="9" fill="#d4882a"/>
-              <path d="M15 54 Q34 46 53 54 L53 68 L15 68 Z" fill="#c0392b"/>
+              <circle cx="34" cy="26" r="13" fill="#c8a882" />
+              <ellipse cx="34" cy="56" rx="21" ry="13" fill="#c8a882" />
+              <ellipse cx="34" cy="20" rx="14" ry="9" fill="#d4882a" />
+              <ellipse cx="21" cy="27" rx="5" ry="9" fill="#d4882a" />
+              <ellipse cx="47" cy="27" rx="5" ry="9" fill="#d4882a" />
+              <path d="M15 54 Q34 46 53 54 L53 68 L15 68 Z" fill="#c0392b" />
             </svg>
           </div>
           <div class="status-dot online"></div>
         </div>
+
         <div class="user-text">
           <h2>{{ currentUser.name }}</h2>
           <p>{{ currentUser.bio }}</p>
         </div>
       </div>
-      <button class="settings-btn" (click)="goToSettings()">
-        <ion-icon name="settings-outline"></ion-icon>
-      </button>
+
+      <div class="header-actions">
+  <div class="theme-switch">
+    <ion-icon class="theme-moon" name="moon"></ion-icon>
+
+    <ion-toggle
+      [checked]="darkMode"
+      (ionChange)="toggleDarkMode()"
+      mode="ios"
+    ></ion-toggle>
+  </div>
+
+  <button class="settings-btn" (click)="goToSettings()" type="button">
+    <ion-icon name="settings-outline"></ion-icon>
+  </button>
+</div>
     </div>
 
     <div class="search-bar">
       <ion-icon name="search-outline"></ion-icon>
-      <input type="text" placeholder="" [(ngModel)]="searchQuery" (ngModelChange)="filterContacts()"/>
+      <input
+        type="text"
+        placeholder="Buscar..."
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="filterContacts()"
+      />
     </div>
 
     <div class="quick-actions">
-      <button class="action-btn" (click)="goToPeticiones()">
+      <button class="action-btn" (click)="goToPeticiones()" type="button">
         <ion-icon name="mail-outline"></ion-icon>
         <span>Peticiones</span>
       </button>
-      <button class="action-btn" (click)="goToAddContact()">
+
+      <button class="action-btn" (click)="goToAddContact()" type="button">
         <ion-icon name="person-add-outline"></ion-icon>
         <span>Añadir contacto</span>
       </button>
-      <button class="action-btn">
+
+      <button class="action-btn" type="button">
         <ion-icon name="people-outline"></ion-icon>
         <span>Crear grupo</span>
       </button>
@@ -47,29 +68,46 @@
   </div>
 
   <div class="tabs-container">
-    <button class="tab-btn" [class.active]="activeTab === 'chats'" (click)="activeTab = 'chats'">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'chats'"
+      (click)="activeTab = 'chats'"
+      type="button"
+    >
       Chats
     </button>
+
     <div class="tab-divider"></div>
-    <button class="tab-btn" [class.active]="activeTab === 'grupos'" (click)="activeTab = 'grupos'">
+
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'grupos'"
+      (click)="activeTab = 'grupos'"
+      type="button"
+    >
       Grupos
     </button>
   </div>
 
   <div class="list-container" *ngIf="activeTab === 'chats'">
-
     <ng-container *ngFor="let group of groupedContacts">
       <div class="status-separator">
         <div class="status-dot-small" [ngClass]="group.status"></div>
         <span>{{ group.label }} ({{ group.contacts.length }})</span>
       </div>
-      <div class="contact-item" *ngFor="let contact of group.contacts" (click)="openChat(contact)">
+
+      <div
+        class="contact-item"
+        *ngFor="let contact of group.contacts"
+        (click)="openChat(contact)"
+      >
         <div class="contact-avatar-wrap">
           <div class="contact-avatar" [style.background]="contact.avatarColor">
             <ion-icon name="person"></ion-icon>
           </div>
           <div class="status-dot-small" [ngClass]="contact.status"></div>
         </div>
+
         <div class="contact-info">
           <span class="contact-name">{{ contact.name }}</span>
           <span class="contact-bio">{{ contact.bio }}</span>
@@ -79,30 +117,35 @@
   </div>
 
   <div class="list-container" *ngIf="activeTab === 'grupos'">
-
     <ng-container *ngFor="let category of groupCategories">
-
       <div class="category-header" (click)="toggleCategory(category)">
         <ion-icon
           [name]="category.expanded ? 'chevron-down-outline' : 'chevron-forward-outline'"
-          class="chevron">
-        </ion-icon>
+          class="chevron"
+        ></ion-icon>
         <span>{{ category.name }} ({{ category.groups.length }})</span>
       </div>
 
       <ng-container *ngIf="category.expanded">
-        <div class="group-item" *ngFor="let group of category.groups" (click)="openGroup(group)">
+        <div
+          class="group-item"
+          *ngFor="let group of category.groups"
+          (click)="openGroup(group)"
+        >
           <div class="group-avatar" [style.background]="group.avatarColor">
-            <img *ngIf="group.photoUrl" [src]="group.photoUrl" class="group-avatar-img"/>
+            <img
+              *ngIf="group.photoUrl"
+              [src]="group.photoUrl"
+              class="group-avatar-img"
+            />
             <ion-icon *ngIf="!group.photoUrl" name="people"></ion-icon>
           </div>
+
           <div class="group-info">
             <span class="group-name">{{ group.name }}</span>
           </div>
         </div>
       </ng-container>
-
     </ng-container>
   </div>
-
 </ion-content>

@@ -1,11 +1,9 @@
-// chat.page.ts
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChatService } from '../services/chat.service';
-
 
 interface Message {
   id: string;
@@ -34,7 +32,6 @@ interface MessageGroup {
   imports: [CommonModule, FormsModule, IonicModule],
 })
 export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
-
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('fileInput') fileInput!: ElementRef;
 
@@ -56,7 +53,9 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   sending = false;
   viewOnceMode = false;
   demoMode = false;
+  darkMode = false;
   fullscreenImage: string | null = null;
+
   private shouldScroll = false;
   private statusChannel: any = null;
 
@@ -66,46 +65,48 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     private chatService: ChatService
   ) {}
 
-async ngOnInit() {
-  // Leer datos del contacto desde query params
-  this.route.queryParams.subscribe(params => {
-    this.contact.id = params['id'] || '';
-    this.contact.name = params['name'] || 'Contacto';
-    this.contact.bio = params['bio'] || '';
-    this.contact.avatarColor = params['color'] || '#4a6fa5';
-    this.contact.photoUrl = params['photo'] || '';
-  });
+  async ngOnInit() {
+    // Dark mode from home page
+    const savedTheme = localStorage.getItem('darkMode');
+    this.darkMode = savedTheme === 'true';
+    document.body.classList.toggle('dark-theme', this.darkMode);
 
-  this.myId = await this.chatService.getCurrentUserId();
-  console.log('MY ID:', this.myId);
-  console.log('CONTACT ID:', this.contact.id);
-
-  if (!this.demoMode) {
-    // Marcarme como online
-    await this.chatService.setUserStatus('online');
-
-    // Cargar estado del contacto
-    this.contact.status = await this.chatService.getUserStatus(this.contact.id) as any;
-
-    // Suscribirse a cambios de estado del contacto en tiempo real
-    this.statusChannel = this.chatService.subscribeToUserStatus(
-      this.contact.id,
-      (status) => { this.contact.status = status as any; }
-    );
-  }
-
-  // Cargar mensajes
-  await this.loadMessages();
-
-  if (!this.demoMode) {
-    // Suscribirse a mensajes en tiempo real
-    await this.chatService.subscribeToMessages(this.contact.id, (msg) => {
-      const formatted = this.formatMessage(msg);
-      this.addMessageToGroups(formatted);
-      this.shouldScroll = true;
+    // Contact from query params
+    this.route.queryParams.subscribe(params => {
+      this.contact.id = params['id'] || '';
+      this.contact.name = params['name'] || 'Contacto';
+      this.contact.bio = params['bio'] || '';
+      this.contact.avatarColor = params['color'] || '#4a6fa5';
+      this.contact.photoUrl = params['photo'] || '';
     });
+
+    this.myId = await this.chatService.getCurrentUserId();
+    console.log('MY ID:', this.myId);
+    console.log('CONTACT ID:', this.contact.id);
+
+    if (!this.demoMode) {
+      await this.chatService.setUserStatus('online');
+
+      this.contact.status = await this.chatService.getUserStatus(this.contact.id) as any;
+
+      this.statusChannel = this.chatService.subscribeToUserStatus(
+        this.contact.id,
+        (status) => {
+          this.contact.status = status as any;
+        }
+      );
+    }
+
+    await this.loadMessages();
+
+    if (!this.demoMode) {
+      await this.chatService.subscribeToMessages(this.contact.id, (msg) => {
+        const formatted = this.formatMessage(msg);
+        this.addMessageToGroups(formatted);
+        this.shouldScroll = true;
+      });
+    }
   }
-}
 
   ngAfterViewChecked() {
     if (this.shouldScroll) {
@@ -121,58 +122,60 @@ async ngOnInit() {
     }
   }
 
-async loadMessages() {
-  if (this.demoMode) {
-    const fakeMessages: Message[] = [
-      {
-        id: '1',
-        sender_id: this.myId,
-        receiver_id: this.contact.id,
-        content: 'Hallo 👋',
-        image_url: '',
-        created_at: new Date().toISOString(),
-        isMine: true,
-        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-      },
-      {
-        id: '2',
-        sender_id: this.contact.id || 'other-user',
-        receiver_id: this.myId,
-        content: 'Schau dir das Bild an',
-        image_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="%236aa9df"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="24">Normales Foto</text></svg>',
-        created_at: new Date().toISOString(),
-        isMine: false,
-        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-        view_once: false,
-        viewed_at: null,
-        viewed_by: null,
-      },
-      {
-        id: '3',
-        sender_id: this.contact.id || 'other-user',
-        receiver_id: this.myId,
-        content: 'Dieses Foto nur einmal 👀',
-        image_url: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="%23222222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="24">View Once</text></svg>',
-        created_at: new Date().toISOString(),
-        isMine: false,
-        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-        view_once: true,
-        viewed_at: null,
-        viewed_by: null,
-      }
-    ];
+  async loadMessages() {
+    if (this.demoMode) {
+      const fakeMessages: Message[] = [
+        {
+          id: '1',
+          sender_id: this.myId,
+          receiver_id: this.contact.id,
+          content: 'Hallo 👋',
+          image_url: '',
+          created_at: new Date().toISOString(),
+          isMine: true,
+          time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        },
+        {
+          id: '2',
+          sender_id: this.contact.id || 'other-user',
+          receiver_id: this.myId,
+          content: 'Take a look at the picture',
+          image_url:
+            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="%236aa9df"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="24">Normales Foto</text></svg>',
+          created_at: new Date().toISOString(),
+          isMine: false,
+          time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+          view_once: false,
+          viewed_at: null,
+          viewed_by: null,
+        },
+        {
+          id: '3',
+          sender_id: this.contact.id || 'other-user',
+          receiver_id: this.myId,
+          content: 'This photo only once 👀',
+          image_url:
+            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><rect width="100%" height="100%" fill="%23222222"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="white" font-size="24">View Once</text></svg>',
+          created_at: new Date().toISOString(),
+          isMine: false,
+          time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+          view_once: true,
+          viewed_at: null,
+          viewed_by: null,
+        }
+      ];
 
-    this.messageGroups = this.groupByDate(fakeMessages);
+      this.messageGroups = this.groupByDate(fakeMessages);
+      this.shouldScroll = true;
+      return;
+    }
+
+    const raw = await this.chatService.getMessages(this.contact.id);
+    console.log('MESSAGES:', raw);
+    const formatted = raw.map((m: any) => this.formatMessage(m));
+    this.messageGroups = this.groupByDate(formatted);
     this.shouldScroll = true;
-    return;
   }
-
-  const raw = await this.chatService.getMessages(this.contact.id);
-  console.log('MESSAGES:', raw);
-  const formatted = raw.map((m: any) => this.formatMessage(m));
-  this.messageGroups = this.groupByDate(formatted);
-  this.shouldScroll = true;
-}
 
   formatMessage(msg: any): Message {
     const date = new Date(msg.created_at);
@@ -192,7 +195,10 @@ async loadMessages() {
       groups[key].push(msg);
     }
 
-    return Object.entries(groups).map(([date, msgs]) => ({ date, messages: msgs }));
+    return Object.entries(groups).map(([date, msgs]) => ({
+      date,
+      messages: msgs,
+    }));
   }
 
   getDateLabel(dateStr: string): string {
@@ -203,96 +209,103 @@ async loadMessages() {
 
     if (date.toDateString() === today.toDateString()) return 'Hoy';
     if (date.toDateString() === yesterday.toDateString()) return 'Ayer';
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    return date.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   }
 
   addMessageToGroups(msg: Message) {
     const label = this.getDateLabel(msg.created_at);
     const last = this.messageGroups[this.messageGroups.length - 1];
+
     if (last && last.date === label) {
       last.messages.push(msg);
     } else {
       this.messageGroups.push({ date: label, messages: [msg] });
     }
   }
-async sendMessage() {
-  if (this.sending) return;
 
-  const trimmedMessage = this.messageText.trim();
-  const hasImage = !!this.selectedImage;
+  async sendMessage() {
+    if (this.sending) return;
 
-  if (!trimmedMessage && !hasImage) return;
+    const trimmedMessage = this.messageText.trim();
+    const hasImage = !!this.selectedImage;
 
-  // View Once nur für Bilder erlauben
-  if (this.viewOnceMode && !hasImage) {
-    this.viewOnceMode = false;
-  }
+    if (!trimmedMessage && !hasImage) return;
 
-  this.sending = true;
+    // Allow view once only for images
+    if (this.viewOnceMode && !hasImage) {
+      this.viewOnceMode = false;
+    }
 
-  try {
-    let imageUrl: string | undefined;
+    this.sending = true;
 
-    // 🔹 Bild behandeln
-    if (this.selectedImage) {
+    try {
+      let imageUrl: string | undefined;
+
+      // Handle image
+      if (this.selectedImage) {
+        if (this.demoMode) {
+          imageUrl = this.selectedImageUrl;
+        } else {
+          imageUrl = await this.chatService.uploadImage(this.selectedImage);
+        }
+      }
+
+      // Send only in live mode
+      if (!this.demoMode) {
+        if (this.viewOnceMode && imageUrl) {
+          await this.chatService.sendViewOnceMessage(
+            this.contact.id,
+            trimmedMessage,
+            imageUrl
+          );
+        } else {
+          await this.chatService.sendMessage(
+            this.contact.id,
+            trimmedMessage,
+            imageUrl
+          );
+        }
+      }
+
+      // Only add locally in demo mode
       if (this.demoMode) {
-        imageUrl = this.selectedImageUrl;
-      } else {
-        imageUrl = await this.chatService.uploadImage(this.selectedImage);
+        const newMsg: Message = {
+          id: Date.now().toString(),
+          sender_id: this.myId,
+          receiver_id: this.contact.id,
+          content: trimmedMessage,
+          image_url: imageUrl || '',
+          created_at: new Date().toISOString(),
+          isMine: true,
+          time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+          view_once: this.viewOnceMode && !!imageUrl,
+          viewed_at: null,
+          viewed_by: null,
+        };
+
+        this.addMessageToGroups(newMsg);
       }
+
+      // Reset
+      this.messageText = '';
+      this.removeImage();
+      this.shouldScroll = true;
+      this.viewOnceMode = false;
+
+    } catch (e) {
+      console.error('Error enviando mensaje:', e);
+      alert('The message could not be sent. Check the console.');
+    } finally {
+      this.sending = false;
     }
-
-    // 🔹 Nur im echten Modus an Supabase senden
-    if (!this.demoMode) {
-      if (this.viewOnceMode && imageUrl) {
-        await this.chatService.sendViewOnceMessage(
-          this.contact.id,
-          trimmedMessage,
-          imageUrl
-        );
-      } else {
-        await this.chatService.sendMessage(
-          this.contact.id,
-          trimmedMessage,
-          imageUrl
-        );
-      }
-    }
-
-    // 🔹 Nachricht nur im Demo-Modus lokal anzeigen
-    if (this.demoMode) {
-      const newMsg: Message = {
-        id: Date.now().toString(),
-        sender_id: this.myId,
-        receiver_id: this.contact.id,
-        content: trimmedMessage,
-        image_url: imageUrl || '',
-        created_at: new Date().toISOString(),
-        isMine: true,
-        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
-        view_once: this.viewOnceMode && !!imageUrl,
-        viewed_at: null,
-        viewed_by: null,
-      };
-
-      this.addMessageToGroups(newMsg);
-    }
-
-    // 🔹 Reset
-    this.messageText = '';
-    this.removeImage();
-    this.shouldScroll = true;
-    this.viewOnceMode = false;
-
-  } catch (e) {
-    console.error('Error enviando mensaje:', e);
-    alert('Nachricht konnte nicht gesendet werden. Schau in die Konsole.');
-  } finally {
-    this.sending = false;
   }
-}
 
-  // ── Imagen ─────────────────────────────────────────────────
+  // ── Image ─────────────────────────────────────────────────
 
   pickImage() {
     this.fileInput.nativeElement.click();
@@ -301,46 +314,52 @@ async sendMessage() {
   onImageSelected(event: any) {
     const file = event.target.files[0];
     if (!file) return;
+
     this.selectedImage = file;
+
     const reader = new FileReader();
-    reader.onload = (e: any) => { this.selectedImageUrl = e.target.result; };
+    reader.onload = (e: any) => {
+      this.selectedImageUrl = e.target.result;
+    };
     reader.readAsDataURL(file);
   }
 
   removeImage() {
-  this.selectedImage = null;
-  this.selectedImageUrl = '';
-  this.viewOnceMode = false; // 🔥 wichtig!
-  if (this.fileInput) this.fileInput.nativeElement.value = '';
-}
+    this.selectedImage = null;
+    this.selectedImageUrl = '';
+    this.viewOnceMode = false;
+    if (this.fileInput) this.fileInput.nativeElement.value = '';
+  }
 
   openImage(url: string) {
-  this.fullscreenImage = url;
-}
-async openViewOncePhoto(msg: Message) {
-  if (msg.isMine) return;
-
-  if (msg.viewed_at) {
-    alert('Dieses Foto wurde bereits angesehen.');
-    return;
+    this.fullscreenImage = url;
   }
 
-  try {
-    this.fullscreenImage = msg.image_url;
+  async openViewOncePhoto(msg: Message) {
+    if (msg.isMine) return;
 
-    if (!this.demoMode) {
-      await this.chatService.markMessageAsViewed(msg.id);
+    if (msg.viewed_at) {
+      alert('This photo has already been viewed.');
+      return;
     }
 
-    msg.viewed_at = new Date().toISOString();
-    msg.viewed_by = this.myId;
-  } catch (e) {
-    console.error('Fehler beim Markieren als angesehen:', e);
+    try {
+      this.fullscreenImage = msg.image_url;
+
+      if (!this.demoMode) {
+        await this.chatService.markMessageAsViewed(msg.id);
+      }
+
+      msg.viewed_at = new Date().toISOString();
+      msg.viewed_by = this.myId;
+    } catch (e) {
+      console.error('Error marking as read:', e);
+    }
   }
-}
-closeFullscreenImage() {
-  this.fullscreenImage = null;
-}
+
+  closeFullscreenImage() {
+    this.fullscreenImage = null;
+  }
 
   // ── UI ─────────────────────────────────────────────────────
 
@@ -362,7 +381,6 @@ closeFullscreenImage() {
   }
 
   toggleEmoji() {
-    // TODO: integrar selector de emojis (ej: emoji-mart)
     console.log('Abrir selector de emojis');
   }
 
@@ -373,6 +391,4 @@ closeFullscreenImage() {
   goBack() {
     this.router.navigate(['/home']);
   }
- 
-
 }

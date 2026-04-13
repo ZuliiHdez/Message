@@ -44,6 +44,9 @@ export class HomePage implements OnInit {
   activeTab: 'chats' | 'grupos' = 'chats';
   searchQuery = '';
 
+  // 🌙 DARK MODE STATE
+  darkMode = false;
+
   currentUser = {
     name: 'Iria',
     bio: 'Soy nueva',
@@ -51,8 +54,7 @@ export class HomePage implements OnInit {
     photoUrl: '',
   };
 
- allContacts: Contact[] = [];
-
+  allContacts: Contact[] = [];
   filteredContacts: Contact[] = [];
   groupedContacts: ContactGroup[] = [];
 
@@ -68,7 +70,7 @@ export class HomePage implements OnInit {
       name: 'Amigos',
       expanded: false,
       groups: [
-        { id: 1, name: 'Grupo Amigos',  avatarColor: '#27ae60' },
+        { id: 1, name: 'Grupo Amigos', avatarColor: '#27ae60' },
         { id: 2, name: 'Salidas finde', avatarColor: '#2980b9' },
       ]
     },
@@ -76,9 +78,9 @@ export class HomePage implements OnInit {
       name: 'Trabajo',
       expanded: true,
       groups: [
-        { id: 3, name: 'Grupo PAMN',    avatarColor: '#e74c3c' },
+        { id: 3, name: 'Grupo PAMN', avatarColor: '#e74c3c' },
         { id: 4, name: 'Trabajo tarde', avatarColor: '#f39c12' },
-        { id: 5, name: 'Proyecto TFG',  avatarColor: '#7f8c8d' },
+        { id: 5, name: 'Proyecto TFG', avatarColor: '#7f8c8d' },
       ]
     },
     {
@@ -96,28 +98,56 @@ export class HomePage implements OnInit {
   ];
 
   constructor(
-  private router: Router,
-  private supabaseService: SupabaseService
-) {}
+    private router: Router,
+    private supabaseService: SupabaseService
+  ) {}
 
-async ngOnInit() {
-  const stored = localStorage.getItem('lastUser');
-  if (stored) {
-    const user = JSON.parse(stored);
-    this.currentUser.name = user.name || 'Usuario';
-    this.currentUser.photoUrl = user.photoUrl || '';
-    this.currentUser.bio = user.status || 'Hey, estoy usando Orion';
+  async ngOnInit() {
+    // 👤 USER LADEN
+    const stored = localStorage.getItem('lastUser');
+    if (stored) {
+      const user = JSON.parse(stored);
+      this.currentUser.name = user.name || 'Usuario';
+      this.currentUser.photoUrl = user.photoUrl || '';
+      this.currentUser.bio = user.status || 'Hey, estoy usando Orion';
+    }
+
+    // 🌙 DARK MODE LADEN
+   const savedTheme = localStorage.getItem('darkMode');
+    this.darkMode = savedTheme === 'true';
+    document.body.classList.toggle('dark-theme', this.darkMode);  
+    if (this.darkMode) {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+
+    await this.loadContacts();
   }
 
-  await this.loadContacts();
-}
+  // 🌙 TOGGLE DARK MODE
+  toggleDarkMode() {
+  this.darkMode = !this.darkMode;
+  localStorage.setItem('darkMode', String(this.darkMode));
+  document.body.classList.toggle('dark-theme', this.darkMode);
+
+    if (this.darkMode) {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }
 
   filterContacts() {
     const q = this.searchQuery.toLowerCase().trim();
+
     this.filteredContacts = q
       ? this.allContacts.filter(c =>
-          c.name.toLowerCase().includes(q) || c.bio.toLowerCase().includes(q))
+          c.name.toLowerCase().includes(q) ||
+          c.bio.toLowerCase().includes(q)
+        )
       : [...this.allContacts];
+
     this.buildGroups();
   }
 
@@ -136,7 +166,6 @@ async ngOnInit() {
   }
 
   openChat(contact: Contact) {
-    console.log('CONTACT OBJ:', contact);
     this.router.navigate(['/chat'], {
       queryParams: {
         id: contact.id,
@@ -157,8 +186,7 @@ async ngOnInit() {
     });
   }
 
-  goToSettings() {
-  }
+  goToSettings() {}
 
   goToAddContact() {
     this.router.navigate(['/add-contact']);
@@ -167,34 +195,35 @@ async ngOnInit() {
   goToPeticiones() {
     this.router.navigate(['/peticiones']);
   }
+
   async loadContacts() {
-  const client = this.supabaseService.getClient();
+    const client = this.supabaseService.getClient();
 
-  const {
-    data: { session }
-  } = await client.auth.getSession();
+    const {
+      data: { session }
+    } = await client.auth.getSession();
 
-  const myId = session?.user?.id;
-  if (!myId) return;
+    const myId = session?.user?.id;
+    if (!myId) return;
 
-  const { data, error } = await client
-    .from('profiles')
-    .select('id, full_name, status')
-    .neq('id', myId);
+    const { data, error } = await client
+      .from('profiles')
+      .select('id, full_name, status')
+      .neq('id', myId);
 
-  if (error) {
-    console.error('Fehler beim Laden der Kontakte:', error);
-    return;
+    if (error) {
+      console.error('Error loading contacts:', error);
+      return;
+    }
+
+    this.allContacts = (data || []).map((profile: any) => ({
+      id: profile.id,
+      name: profile.full_name || 'Sin nombre',
+      bio: profile.status || '',
+      status: 'offline',
+      avatarColor: '#7f8c8d',
+    }));
+
+    this.filterContacts();
   }
-
-  this.allContacts = (data || []).map((profile: any) => ({
-    id: profile.id,
-    name: profile.full_name || 'Sin nombre',
-    bio: profile.status || '',
-    status: 'offline',
-    avatarColor: '#7f8c8d',
-  }));
-
-  this.filterContacts();
-}
 }
