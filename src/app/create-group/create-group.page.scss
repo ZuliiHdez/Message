@@ -1,0 +1,321 @@
+.crear-grupo-content {
+  --background: #f0f4f8;
+}
+
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #f0f4f8;
+}
+
+// Header
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #7ab8e8, #5a9fd4);
+  padding: 48px 20px 20px;
+
+  .back-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    flex-shrink: 0;
+    &:active { background: rgba(255,255,255,0.35); }
+  }
+
+  h1 {
+    flex: 1;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    font-family: 'Trebuchet MS', sans-serif;
+  }
+}
+
+// Vista previa
+.group-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 20px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e0eaf4;
+
+  .group-avatar-preview {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    color: #fff;
+    transition: background 0.25s;
+    box-shadow: 0 4px 14px rgba(74, 159, 212, 0.35);
+  }
+
+  .group-name-preview {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+    font-family: 'Trebuchet MS', sans-serif;
+    opacity: 0.7;
+    max-width: 240px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// Secciones
+.section {
+  margin-top: 16px;
+  background: #fff;
+  border-top: 1px solid #e0eaf4;
+  border-bottom: 1px solid #e0eaf4;
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #8aa5c8;
+    letter-spacing: 0.6px;
+    padding: 12px 16px 6px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .members-count {
+      background: #4a9fd4;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 10px;
+      padding: 2px 7px;
+      letter-spacing: 0;
+    }
+  }
+}
+
+// Input nombre
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px 14px;
+
+  .input-icon {
+    font-size: 20px;
+    color: #8aa5c8;
+    flex-shrink: 0;
+  }
+
+  input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 15px;
+    color: #2c3e50;
+    font-family: 'Trebuchet MS', sans-serif;
+    &::placeholder { color: #bcd0e4; }
+  }
+
+  .char-count {
+    font-size: 11px;
+    color: #bcd0e4;
+    flex-shrink: 0;
+  }
+}
+
+// Paleta
+.color-palette {
+  display: flex;
+  gap: 12px;
+  padding: 10px 16px 16px;
+  flex-wrap: wrap;
+
+  .color-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-size: 16px;
+    color: #fff;
+
+    &.selected {
+      border-color: rgba(0,0,0,0.2);
+      transform: scale(1.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    &:active { transform: scale(0.9); }
+  }
+}
+
+// Lista de contactos
+.contacts-list {
+  padding: 4px 0 8px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:active { background: #eaf3fb; }
+
+  &.selected {
+    background: #eaf3fb;
+  }
+
+  .contact-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: #fff;
+    flex-shrink: 0;
+    overflow: hidden;
+
+    .avatar-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .contact-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+
+    .contact-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .contact-username {
+      font-size: 12px;
+      color: #8aa5c8;
+      margin-top: 1px;
+    }
+  }
+
+  .check-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #d0e4f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+
+    &.checked {
+      background: #4a9fd4;
+      border-color: #4a9fd4;
+      color: #fff;
+    }
+  }
+}
+
+// Estados vacío / cargando
+.state-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px;
+  color: #8aa5c8;
+
+  ion-icon    { font-size: 44px; opacity: 0.4; }
+  ion-spinner { width: 30px; height: 30px; color: #4a9fd4; }
+  span        { font-size: 13px; text-align: center; }
+}
+
+// Error
+.error-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  background: #fdecea;
+  border-radius: 10px;
+  color: #e74c3c;
+  font-size: 13px;
+
+  ion-icon { font-size: 18px; flex-shrink: 0; }
+}
+
+// FAB crear
+.fab-create {
+  position: fixed;
+  bottom: 24px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #7ab8e8, #4a9fd4);
+    color: #fff;
+    border: none;
+    border-radius: 28px;
+    padding: 14px 32px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Trebuchet MS', sans-serif;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(74, 159, 212, 0.45);
+    transition: transform 0.15s, box-shadow 0.15s, opacity 0.2s;
+
+    ion-icon { font-size: 20px; }
+
+    &:active:not(:disabled) {
+      transform: scale(0.96);
+      box-shadow: 0 2px 8px rgba(74, 159, 212, 0.3);
+    }
+
+    &:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .fab-spinner { width: 20px; height: 20px; }
+  }
+
+  &.disabled button {
+    box-shadow: none;
+  }
+}

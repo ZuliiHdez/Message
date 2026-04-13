@@ -1,0 +1,113 @@
+<ion-content class="crear-grupo-content">
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <div class="page-header">
+      <button class="back-btn" (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+      <h1>Crear grupo</h1>
+    </div>
+
+    <!-- Vista previa del grupo -->
+    <div class="group-preview">
+      <div class="group-avatar-preview" [style.background]="selectedColor">
+        <ion-icon name="people"></ion-icon>
+      </div>
+      <div class="group-name-preview">{{ groupName || 'Nombre del grupo' }}</div>
+    </div>
+
+    <!-- Nombre -->
+    <div class="section">
+      <p class="section-label">NOMBRE DEL GRUPO</p>
+      <div class="input-row">
+        <ion-icon name="people-outline" class="input-icon"></ion-icon>
+        <input
+          type="text"
+          placeholder="Escribe un nombre..."
+          [(ngModel)]="groupName"
+          maxlength="40"
+        />
+        <span class="char-count">{{ groupName.length }}/40</span>
+      </div>
+    </div>
+
+    <!-- Paleta de colores -->
+    <div class="section">
+      <p class="section-label">COLOR DEL GRUPO</p>
+      <div class="color-palette">
+        <button
+          *ngFor="let color of palette"
+          class="color-dot"
+          [style.background]="color"
+          [class.selected]="selectedColor === color"
+          (click)="selectedColor = color">
+          <ion-icon *ngIf="selectedColor === color" name="checkmark"></ion-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Selección de miembros -->
+    <div class="section">
+      <p class="section-label">
+        AÑADIR MIEMBROS
+        <span class="members-count" *ngIf="selectedCount > 0">{{ selectedCount }} seleccionados</span>
+      </p>
+
+      <div class="state-message" *ngIf="loading">
+        <ion-spinner name="crescent"></ion-spinner>
+        <span>Cargando contactos...</span>
+      </div>
+
+      <div class="state-message" *ngIf="!loading && contacts.length === 0">
+        <ion-icon name="people-outline"></ion-icon>
+        <span>No tienes contactos para añadir</span>
+      </div>
+
+      <div class="contacts-list" *ngIf="!loading && contacts.length > 0">
+        <div
+          class="contact-item"
+          *ngFor="let contact of contacts"
+          [class.selected]="contact.selected"
+          (click)="toggleContact(contact)">
+
+          <div class="contact-avatar" [style.background]="contact.avatarColor">
+            <img *ngIf="contact.avatarUrl" [src]="contact.avatarUrl" class="avatar-img"/>
+            <ion-icon *ngIf="!contact.avatarUrl" name="person"></ion-icon>
+          </div>
+
+          <div class="contact-info">
+            <span class="contact-name">{{ contact.name }}</span>
+            <span class="contact-username" *ngIf="contact.username">@{{ contact.username }}</span>
+          </div>
+
+          <div class="check-circle" [class.checked]="contact.selected">
+            <ion-icon name="checkmark"></ion-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-msg" *ngIf="errorMsg">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      {{ errorMsg }}
+    </div>
+
+    <!-- Spacer para que el botón no tape contenido -->
+    <div style="height: 100px;"></div>
+
+  </div>
+
+  <!-- Botón flotante crear -->
+  <div class="fab-create" [class.disabled]="!canCreate">
+    <button (click)="createGroup()" [disabled]="!canCreate || creating">
+      <ion-spinner *ngIf="creating" name="crescent" class="fab-spinner"></ion-spinner>
+      <ng-container *ngIf="!creating">
+        <ion-icon name="checkmark-outline"></ion-icon>
+        <span>Crear grupo</span>
+      </ng-container>
+    </button>
+  </div>
+
+</ion-content>
