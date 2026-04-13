@@ -36,11 +36,7 @@ const routes: Routes = [
   },
   {
     path: 'peticiones',
-    loadComponent: () => import('./peticiones/peticiones.page').then(m => m.PeticionesPage)
-  },
-  {
-    path: 'crear-grupo',
-    loadComponent: () => import('./crear-grupo/crear-grupo.page').then(m => m.CrearGrupoPage)
+    loadComponent: () => import('./requestContact/requestcontact.page').then(m => m.PeticionesPage)
   },
   {
     path: '',
