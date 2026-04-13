@@ -39,6 +39,10 @@ const routes: Routes = [
     loadComponent: () => import('./peticiones/peticiones.page').then(m => m.PeticionesPage)
   },
   {
+    path: 'crear-grupo',
+    loadComponent: () => import('./crear-grupo/crear-grupo.page').then(m => m.CrearGrupoPage)
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full'

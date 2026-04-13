@@ -166,6 +166,10 @@ export class HomePage implements OnInit {
     });
   }
 
+  goToCrearGrupo() {
+    this.router.navigate(['/crear-grupo']);
+  }
+
   goToSettings() {
   }
 
