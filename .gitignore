@@ -71,4 +71,8 @@ Thumbs.db
 
 # Scripts locales
 subir-cambios.sh
+<<<<<<< HEAD
 actualizar-desde-master.sh
+=======
+actualizar-desde-master.sh
+>>>>>>> origin/Aythami
