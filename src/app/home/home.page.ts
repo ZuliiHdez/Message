@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { FriendshipService } from '../services/friendship.service';
+import { ChatService } from '../services/chat.service';
 
 interface Contact {
   id: string;
@@ -40,7 +41,7 @@ interface GroupCategory {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
 
   activeTab: 'chats' | 'grupos' = 'chats';
   searchQuery = '';
@@ -66,7 +67,14 @@ export class HomePage implements OnInit {
 
   groupCategories: GroupCategory[] = [];
 
-  constructor(private router: Router, private friendshipService: FriendshipService) {}
+  private statusChannel: any = null;
+  private readonly onBeforeUnload = () => this.setOffline();
+
+  constructor(
+    private router: Router,
+    private friendshipService: FriendshipService,
+    private chatService: ChatService,
+  ) {}
 
   async ngOnInit() {
     const stored = localStorage.getItem('lastUser');
@@ -76,7 +84,24 @@ export class HomePage implements OnInit {
       this.currentUser.photoUrl = user.photoUrl || '';
       this.currentUser.bio      = user.status   || 'Hey, estoy usando Orion';
     }
+
+    // Marcar al usuario como online
+    await this.chatService.setUserStatus('online');
+
+    // Detectar cierre de pestaña/ventana
+    window.addEventListener('beforeunload', this.onBeforeUnload);
+
     await this.loadData();
+  }
+
+  ngOnDestroy() {
+    this.setOffline();
+    window.removeEventListener('beforeunload', this.onBeforeUnload);
+    this.chatService.unsubscribeContactsStatus(this.statusChannel);
+  }
+
+  private setOffline() {
+    this.chatService.setUserStatus('offline');
   }
 
   async loadData() {
@@ -93,9 +118,31 @@ export class HomePage implements OnInit {
       const friends = await this.friendshipService.getFriends();
       this.allContacts = friends;
       this.filterContacts();
+      this.subscribeToContactsStatus();
     } catch (e) {
       console.error('Error cargando contactos:', e);
     }
+  }
+
+  private subscribeToContactsStatus() {
+    // Cancelar suscripción previa si existe
+    if (this.statusChannel) {
+      this.chatService.unsubscribeContactsStatus(this.statusChannel);
+    }
+
+    const ids = this.allContacts.map(c => c.id);
+    if (ids.length === 0) return;
+
+    this.statusChannel = this.chatService.subscribeToContactsStatus(
+      ids,
+      (userId, status) => {
+        const contact = this.allContacts.find(c => c.id === userId);
+        if (contact) {
+          contact.status = status as Contact['status'];
+          this.buildGroups(); // re-agrupar con el nuevo estado
+        }
+      }
+    );
   }
 
   async loadGroups() {

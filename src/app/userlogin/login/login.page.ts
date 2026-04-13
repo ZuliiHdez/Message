@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from 'src/app/services/supabase.service';
+import { ChatService } from 'src/app/services/chat.service';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +18,7 @@ export class LoginComponent {
   password: string = '';
   showPassword: boolean = false;
 
-  constructor(private router: Router, private supabase: SupabaseService) {}
+  constructor(private router: Router, private supabase: SupabaseService, private chatService: ChatService) {}
 
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -51,6 +52,7 @@ console.log('Profile error:', profileError);
     status: profile?.status || 'Hey, estoy usando Orion'
   }));
 
+  await this.chatService.setUserStatus('online');
   this.router.navigate(['/home']);
 }
 

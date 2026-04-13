@@ -60,48 +60,13 @@ export class FriendshipService {
     return data || [];
   }
 
-  // Aceptar petición y añadir ambos usuarios a sus respectivas listas de contactos
+  // Aceptar petición llamando a la función RPC de la base de datos
   async acceptRequest(friendshipId: string) {
-    // Obtener sender y receiver antes de actualizar
-    const { data: friendship, error: fetchError } = await this.db
-      .from('friendships')
-      .select('sender_id, receiver_id')
-      .eq('id', friendshipId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    // Eliminar la petición (ya no necesaria una vez aceptada)
-    const { error } = await this.db
-      .from('friendships')
-      .delete()
-      .eq('id', friendshipId);
+    const { error } = await this.db.rpc('accept_friendship', {
+      friendship_id: friendshipId
+    });
 
     if (error) throw error;
-
-    // Añadir cada usuario al array contacts del otro (requiere admin para escribir en perfil ajeno)
-    const admin = this.supabase.getAdminClient();
-    const { senderId, receiverId } = { senderId: friendship.sender_id, receiverId: friendship.receiver_id };
-
-    // Traer contacts actuales de ambos
-    const [{ data: senderProfile }, { data: receiverProfile }] = await Promise.all([
-      admin.from('profiles').select('contacts').eq('id', senderId).single(),
-      admin.from('profiles').select('contacts').eq('id', receiverId).single(),
-    ]);
-
-    const senderContacts: string[] = senderProfile?.contacts || [];
-    const receiverContacts: string[] = receiverProfile?.contacts || [];
-
-    await Promise.all([
-      // Añadir receiver a los contactos del sender
-      ...(!senderContacts.includes(receiverId) ? [
-        admin.from('profiles').update({ contacts: [...senderContacts, receiverId] }).eq('id', senderId)
-      ] : []),
-      // Añadir sender a los contactos del receiver
-      ...(!receiverContacts.includes(senderId) ? [
-        admin.from('profiles').update({ contacts: [...receiverContacts, senderId] }).eq('id', receiverId)
-      ] : []),
-    ]);
   }
 
   // Rechazar petición (elimina el registro)
@@ -117,6 +82,7 @@ export class FriendshipService {
   // Obtener contactos del usuario desde su array contacts en profiles
   async getFriends() {
     const myId = await this.currentUserId();
+    const admin = this.supabase.getAdminClient();
 
     // Leer mi array de contactos
     const { data: myProfile, error: profileError } = await this.db
@@ -130,19 +96,33 @@ export class FriendshipService {
     const contactIds: string[] = myProfile?.contacts || [];
     if (contactIds.length === 0) return [];
 
-    // Traer los perfiles de todos los contactos
-    const { data, error } = await this.db
-      .from('profiles')
-      .select('id, full_name, username, avatar_url, user_status')
-      .in('id', contactIds);
+    // Traer perfiles y sesiones activas en paralelo
+    const [{ data: profiles, error }, { data: sessions }] = await Promise.all([
+      this.db
+        .from('profiles')
+        .select('id, full_name, username, avatar_url, user_status')
+        .in('id', contactIds),
+      admin
+        .schema('auth')
+        .from('sessions')
+        .select('user_id')
+        .in('user_id', contactIds)
+        .or(`not_after.is.null,not_after.gt.${new Date().toISOString()}`),
+    ]);
 
     if (error) throw error;
 
-    return (data || []).map((p: any) => ({
+    // IDs con sesión activa en auth.sessions
+    const connectedIds = new Set((sessions || []).map((s: any) => s.user_id));
+
+    return (profiles || []).map((p: any) => ({
       id: p.id as string,
       name: (p.full_name || p.username || 'Usuario') as string,
       bio: (p.username || '') as string,
-      status: (p.user_status || 'offline') as 'online' | 'away' | 'busy' | 'offline',
+      // Si tiene sesión activa → usar su user_status del perfil; si no → offline
+      status: connectedIds.has(p.id)
+        ? (p.user_status || 'online') as 'online' | 'away' | 'busy' | 'offline'
+        : 'offline' as const,
       avatarColor: this.colorFromId(p.id),
       avatarUrl: (p.avatar_url || '') as string,
     }));

@@ -117,6 +117,44 @@ export class ChatService {
       .subscribe();
   }
 
+  // Suscribirse al estado de varios contactos a la vez (para el home)
+  // Antes de notificar, verifica en auth.sessions que el usuario sigue conectado
+  subscribeToContactsStatus(
+    contactIds: string[],
+    callback: (userId: string, status: string) => void
+  ) {
+    return this.db
+      .channel('contacts-status')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles' },
+        async (payload: any) => {
+          const userId: string = payload.new.id;
+          if (!contactIds.includes(userId)) return;
+
+          const hasSession = await this.hasActiveSession(userId);
+          callback(userId, hasSession ? (payload.new.user_status || 'offline') : 'offline');
+        }
+      )
+      .subscribe();
+  }
+
+  async hasActiveSession(userId: string): Promise<boolean> {
+    const admin = this.supabase.getAdminClient();
+    const { data } = await (admin as any)
+      .schema('auth')
+      .from('sessions')
+      .select('user_id')
+      .eq('user_id', userId)
+      .or(`not_after.is.null,not_after.gt.${new Date().toISOString()}`)
+      .limit(1);
+    return (data?.length ?? 0) > 0;
+  }
+
+  unsubscribeContactsStatus(channel: any) {
+    if (channel) this.db.removeChannel(channel);
+  }
+
   async getUserStatus(userId: string): Promise<string> {
     const { data } = await this.db
       .from('profiles')
