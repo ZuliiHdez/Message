@@ -15,13 +15,13 @@ interface Contact {
 }
 
 @Component({
-  selector: 'app-create-group',
+  selector: 'app-crear-grupo',
   templateUrl: './create-group.page.html',
   styleUrls: ['./create-group.page.scss'],
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class CrearGrupoPage implements OnInit {
+export class CreateGroupPage implements OnInit {
 
   groupName = '';
   selectedColor = '#4a9fd4';

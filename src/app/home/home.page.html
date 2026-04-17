@@ -1,125 +1,143 @@
-<ion-content class="home-content" [scrollY]="false">
-  <div class="header">
-    <div class="header-top">
-      <div class="user-info">
-        <div class="avatar-wrap">
-          <div class="user-avatar">
-            <svg width="68" height="68" viewBox="0 0 68 68" fill="none">
-              <circle cx="34" cy="26" r="13" fill="#c8a882"/>
-              <ellipse cx="34" cy="56" rx="21" ry="13" fill="#c8a882"/>
-              <ellipse cx="34" cy="20" rx="14" ry="9" fill="#d4882a"/>
-              <ellipse cx="21" cy="27" rx="5" ry="9" fill="#d4882a"/>
-              <ellipse cx="47" cy="27" rx="5" ry="9" fill="#d4882a"/>
-              <path d="M15 54 Q34 46 53 54 L53 68 L15 68 Z" fill="#c0392b"/>
-            </svg>
-          </div>
-          <div class="status-dot online"></div>
+<ion-content class="home-content">
+
+  <div class="top-nav">
+    <div class="nav-user" (click)="toggleStatusMenu()">
+      <div class="nav-avatar">
+        <img *ngIf="currentUser.photoUrl" [src]="currentUser.photoUrl" class="avatar-img"/>
+        <ion-icon *ngIf="!currentUser.photoUrl" name="person"></ion-icon>
+        <div class="status-dot" [ngClass]="currentUser.status"></div>
+      </div>
+      <div class="nav-info">
+        <span class="nav-title">{{ currentUser.name }}</span>
+        <span class="nav-status">{{ currentUser.bio }}</span>
+      </div>
+
+      <div class="status-menu" *ngIf="showStatusMenu" (click)="$event.stopPropagation()">
+        <p class="status-label">MY STATUS</p>
+        <div class="status-opt" (click)="changeStatus('online')">
+          <div class="dot online"></div><span>Online</span>
+          <ion-icon name="checkmark" *ngIf="currentUser.status==='online'"></ion-icon>
         </div>
-        <div class="user-text">
-          <h2>{{ currentUser.name }}</h2>
-          <p>{{ currentUser.bio }}</p>
+        <div class="status-opt" (click)="changeStatus('away')">
+          <div class="dot away"></div><span>Away</span>
+          <ion-icon name="checkmark" *ngIf="currentUser.status==='away'"></ion-icon>
+        </div>
+        <div class="status-opt" (click)="changeStatus('busy')">
+          <div class="dot busy"></div><span>Busy</span>
+          <ion-icon name="checkmark" *ngIf="currentUser.status==='busy'"></ion-icon>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-opt" (click)="changeStatus('offline')">
+          <div class="dot offline"></div><span>Offline</span>
+          <ion-icon name="checkmark" *ngIf="currentUser.status==='offline'"></ion-icon>
         </div>
       </div>
-      <button class="settings-btn" (click)="goToSettings()">
-        <ion-icon name="settings-outline"></ion-icon>
-      </button>
     </div>
+    <button class="settings-btn" (click)="goToSettings()">
+      <ion-icon name="settings-outline"></ion-icon>
+    </button>
+  </div>
 
-    <div class="search-bar">
-      <ion-icon name="search-outline"></ion-icon>
-      <input type="text" placeholder="" [(ngModel)]="searchQuery" (ngModelChange)="filterContacts()"/>
-    </div>
+  <div class="scroll-area">
 
-    <div class="quick-actions">
-      <button class="action-btn" (click)="goToPeticiones()">
-        <ion-icon name="mail-outline"></ion-icon>
-        <span>Peticiones</span>
-      </button>
-      <button class="action-btn" (click)="goToAddContact()">
+    <div class="search-row">
+      <div class="search-bar">
+        <ion-icon name="search-outline"></ion-icon>
+        <input type="text" [placeholder]="activeTab === 'chats' ? 'Search contacts...' : 'Search groups...'" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()"/>
+      </div>
+      <button class="add-btn" (click)="addContact()">
         <ion-icon name="person-add-outline"></ion-icon>
-        <span>Añadir contacto</span>
-      </button>
-      <button class="action-btn" (click)="goToCrearGrupo()">
-        <ion-icon name="people-outline"></ion-icon>
-        <span>Crear grupo</span>
       </button>
     </div>
-  </div>
 
-  <div class="tabs-container">
-    <button class="tab-btn" [class.active]="activeTab === 'chats'" (click)="activeTab = 'chats'">
-      Chats
-    </button>
-    <div class="tab-divider"></div>
-    <button class="tab-btn" [class.active]="activeTab === 'grupos'" (click)="activeTab = 'grupos'">
-      Grupos
-    </button>
-  </div>
-
-  <div class="list-container" *ngIf="activeTab === 'chats'">
-
-    <div *ngIf="isLoading" style="text-align:center; padding: 2rem; color: #888;">
-      Cargando contactos...
+    <div class="tabs-row">
+      <button
+        class="tab"
+        [class.active]="activeTab === 'chats'"
+        (click)="setTab('chats')">
+        Chats
+      </button>
+      <button
+        class="tab"
+        [class.active]="activeTab === 'grupos'"
+        (click)="setTab('grupos')">
+        Groups
+      </button>
     </div>
 
-    <div *ngIf="!isLoading && groupedContacts.length === 0" style="text-align:center; padding: 2rem; color: #888;">
-      No tienes contactos aún
-    </div>
+    <ng-container *ngIf="activeTab === 'chats'">
+      <ng-container *ngFor="let group of groupedContacts; let gi = index">
 
-    <ng-container *ngFor="let group of groupedContacts">
-      <div class="status-separator">
-        <div class="status-dot-small" [ngClass]="group.status"></div>
-        <span>{{ group.label }} ({{ group.contacts.length }})</span>
-      </div>
-      <div class="contact-item" *ngFor="let contact of group.contacts" (click)="openChat(contact)">
-        <div class="contact-avatar-wrap">
-          <div class="contact-avatar" [style.background]="contact.avatarColor">
-            <img *ngIf="contact.avatarUrl" [src]="contact.avatarUrl" class="contact-avatar-img"/>
-            <ion-icon *ngIf="!contact.avatarUrl" name="person"></ion-icon>
+        <div class="promo-card" *ngIf="gi === 2">
+          <div class="promo-text">
+            <h3>Start something new</h3>
+            <p>Coordinate your weekend plans in a new group chat.</p>
+            <button class="promo-btn" (click)="createGroup()">Create Group</button>
           </div>
-          <div class="status-dot-small" [ngClass]="contact.status"></div>
-        </div>
-        <div class="contact-info">
-          <span class="contact-name">{{ contact.name }}</span>
-          <span class="contact-bio">{{ contact.bio }}</span>
-        </div>
-      </div>
-    </ng-container>
-  </div>
-
-  <div class="list-container" *ngIf="activeTab === 'grupos'">
-
-    <div *ngIf="isLoading" style="text-align:center; padding: 2rem; color: #888;">
-      Cargando grupos...
-    </div>
-
-    <div *ngIf="!isLoading && groupCategories.length === 0" style="text-align:center; padding: 2rem; color: #888;">
-      No perteneces a ningún grupo aún
-    </div>
-
-    <ng-container *ngFor="let category of groupCategories">
-
-      <div class="category-header" (click)="toggleCategory(category)">
-        <ion-icon
-          [name]="category.expanded ? 'chevron-down-outline' : 'chevron-forward-outline'"
-          class="chevron">
-        </ion-icon>
-        <span>{{ category.name }} ({{ category.groups.length }})</span>
-      </div>
-
-      <ng-container *ngIf="category.expanded">
-        <div class="group-item" *ngFor="let group of category.groups" (click)="openGroup(group)">
-          <div class="group-avatar" [style.background]="group.avatarColor">
-            <img *ngIf="group.avatarUrl" [src]="group.avatarUrl" class="group-avatar-img"/>
-            <ion-icon *ngIf="!group.avatarUrl" name="people"></ion-icon>
-          </div>
-          <div class="group-info">
-            <span class="group-name">{{ group.name }}</span>
+          <div class="promo-icon">
+            <ion-icon name="people-outline"></ion-icon>
           </div>
         </div>
+
+        <div class="contact-card" *ngFor="let c of group.contacts" (click)="openChat(c)">
+          <div class="contact-avatar-wrap">
+            <div class="contact-avatar" [style.background]="c.avatarColor">
+              <img *ngIf="c.photoUrl" [src]="c.photoUrl" class="ca-img"/>
+              <ion-icon *ngIf="!c.photoUrl" name="person"></ion-icon>
+            </div>
+            <div class="status-dot" [ngClass]="c.status"></div>
+          </div>
+          <div class="contact-info">
+            <span class="c-name">{{ c.name }}</span>
+            <span class="c-bio">{{ c.bio || getStatusLabel(c.status) }}</span>
+          </div>
+          <span class="c-time">NOW</span>
+        </div>
+
       </ng-container>
-
     </ng-container>
+
+    <ng-container *ngIf="activeTab === 'grupos'">
+      <ng-container *ngFor="let cat of filteredGroupCategories">
+        <div class="category-header" (click)="toggleCategory(cat)">
+          <ion-icon [name]="cat.expanded ? 'chevron-down' : 'chevron-forward'"></ion-icon>
+          <span>{{ cat.name }} ({{ cat.groups.length }})</span>
+        </div>
+        <ng-container *ngIf="cat.expanded">
+          <div class="contact-card" *ngFor="let g of cat.groups" (click)="openGroup(g)">
+            <div class="contact-avatar-wrap">
+              <div class="contact-avatar" [style.background]="g.avatarColor">
+                <ion-icon name="people-outline"></ion-icon>
+              </div>
+            </div>
+            <div class="contact-info">
+              <span class="c-name">{{ g.name }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+
+    <div style="height: 80px"></div>
+  </div>
+
+  <div class="bottom-nav">
+    <button class="bnav-btn active" (click)="goToHome()">
+      <ion-icon name="home-outline"></ion-icon>
+      <span>Contacts</span>
+    </button>
+    <button class="bnav-btn" (click)="createGroup()">
+      <ion-icon name="people-outline"></ion-icon>
+      <span>New Group</span>
+    </button>
+    <button class="bnav-btn" (click)="goToPeticiones()">
+      <ion-icon name="mail-outline"></ion-icon>
+      <span>Requests</span>
+    </button>
+    <button class="bnav-btn" (click)="goToSettings()">
+      <ion-icon name="person-circle-outline"></ion-icon>
+      <span>Profile</span>
+    </button>
   </div>
 
 </ion-content>

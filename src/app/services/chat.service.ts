@@ -1,4 +1,3 @@
-// chat.service.ts
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -7,6 +6,7 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 export class ChatService {
 
   private channel: RealtimeChannel | null = null;
+  private statusChannels = new Map<string, RealtimeChannel>();
 
   constructor(private supabase: SupabaseService) {}
 
@@ -16,8 +16,6 @@ export class ChatService {
     const { data } = await this.db.auth.getSession();
     return data.session?.user.id || '';
   }
-
-  // ── Mensajes ───────────────────────────────────────────────
 
   async getMessages(otherUserId: string) {
     const myId = await this.getCurrentUserId();
@@ -66,8 +64,6 @@ export class ChatService {
     return data.publicUrl;
   }
 
-  // ── Realtime ───────────────────────────────────────────────
-
   subscribeToMessages(otherUserId: string, callback: (msg: any) => void) {
     this.unsubscribe();
     this.channel = this.db
@@ -77,11 +73,7 @@ export class ChatService {
         { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload: any) => {
           const msg = payload.new;
-          // Solo notificar si pertenece a esta conversación
-          if (
-            (msg.sender_id === otherUserId) ||
-            (msg.receiver_id === otherUserId)
-          ) {
+          if (msg.sender_id === otherUserId || msg.receiver_id === otherUserId) {
             callback(msg);
           }
         }
@@ -96,10 +88,44 @@ export class ChatService {
     }
   }
 
-  // ── Estado del usuario ────────────────────────────────────
+  async getGroupMessages(groupId: string) {
+    const { data, error } = await this.db
+      .from('messages')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  async sendGroupMessage(groupId: string, content: string, imageUrl?: string) {
+    const myId = await this.getCurrentUserId();
+    const { error } = await this.db
+      .from('messages')
+      .insert({
+        sender_id: myId,
+        group_id: groupId,
+        content: content || null,
+        image_url: imageUrl || null,
+      });
+    if (error) throw error;
+  }
+
+  subscribeToGroupMessages(groupId: string, callback: (msg: any) => void) {
+    this.unsubscribe();
+    this.channel = this.db
+      .channel(`group-${groupId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `group_id=eq.${groupId}` },
+        (payload: any) => callback(payload.new)
+      )
+      .subscribe();
+  }
 
   async setUserStatus(status: 'online' | 'away' | 'busy' | 'offline') {
     const myId = await this.getCurrentUserId();
+    if (!myId) return;
     await this.db
       .from('profiles')
       .update({ user_status: status, last_seen: new Date().toISOString() })
@@ -107,14 +133,26 @@ export class ChatService {
   }
 
   subscribeToUserStatus(userId: string, callback: (status: string) => void) {
-    return this.db
-      .channel(`status-${userId}`)
+    const existing = this.statusChannels.get(userId);
+    if (existing) {
+      this.db.removeChannel(existing);
+      this.statusChannels.delete(userId);
+    }
+    const ch = this.db
+      .channel(`status-${userId}-${Date.now()}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
         (payload: any) => callback(payload.new['user_status'])
       )
       .subscribe();
+    this.statusChannels.set(userId, ch);
+    return ch;
+  }
+
+  unsubscribeStatusChannels() {
+    this.statusChannels.forEach(ch => this.db.removeChannel(ch));
+    this.statusChannels.clear();
   }
 
   // Suscribirse al estado de varios contactos a la vez (para el home)

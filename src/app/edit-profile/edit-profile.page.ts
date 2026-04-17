@@ -1,0 +1,122 @@
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { IonicModule } from '@ionic/angular';
+import { Router } from '@angular/router';
+import { SupabaseService } from 'src/app/services/supabase.service';
+import { ChatService } from 'src/app/services/chat.service';
+
+@Component({
+  selector: 'app-edit-profile',
+  templateUrl: './edit-profile.page.html',
+  styleUrls: ['./edit-profile.page.scss'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, IonicModule],
+})
+export class EditProfilePage implements OnInit {
+
+  @ViewChild('avatarInput') avatarInput!: ElementRef;
+
+  fullName = '';
+  username = '';
+  personalMessage = '';
+  photoUrl = '';
+  loading = false;
+
+  constructor(
+    private router: Router,
+    private supabase: SupabaseService,
+    private chatService: ChatService
+  ) {}
+
+  async ngOnInit() {
+    const { data: session } = await this.supabase.getClient().auth.getSession();
+    const userId = session.session?.user.id;
+    if (!userId) return;
+
+    const { data: profile } = await this.supabase.getClient()
+      .from('profiles')
+      .select('full_name, username, status, avatar_url')
+      .eq('id', userId)
+      .single();
+
+    if (profile) {
+      this.fullName        = profile.full_name || '';
+      this.username        = profile.username  || '';
+      this.personalMessage = profile.status    || '';
+      this.photoUrl        = profile.avatar_url || '';
+    }
+  }
+
+  pickAvatar() {
+    this.avatarInput.nativeElement.click();
+  }
+
+  async onAvatarSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => { this.photoUrl = e.target.result; };
+    reader.readAsDataURL(file);
+
+    const { data: session } = await this.supabase.getClient().auth.getSession();
+    const userId = session.session?.user.id;
+    if (!userId) return;
+
+    const ext  = file.name.split('.').pop();
+    const path = `avatars/${userId}.${ext}`;
+
+    const { error } = await this.supabase.getClient().storage
+      .from('avatars')
+      .upload(path, file, { upsert: true });
+
+    if (!error) {
+      const { data } = this.supabase.getClient().storage
+        .from('avatars')
+        .getPublicUrl(path);
+      this.photoUrl = data.publicUrl;
+    }
+  }
+
+  async save() {
+    this.loading = true;
+    const { data: session } = await this.supabase.getClient().auth.getSession();
+    const userId = session.session?.user.id;
+    if (!userId) { this.loading = false; return; }
+
+    const { error } = await this.supabase.getClient()
+      .from('profiles')
+      .update({
+        full_name:  this.fullName,
+        status:     this.personalMessage,
+        avatar_url: this.photoUrl,
+      })
+      .eq('id', userId);
+
+    if (!error) {
+      const stored = localStorage.getItem('lastUser');
+      if (stored) {
+        const user = JSON.parse(stored);
+        user.name     = this.fullName;
+        user.status   = this.personalMessage;
+        user.photoUrl = this.photoUrl;
+        localStorage.setItem('lastUser', JSON.stringify(user));
+      }
+      this.router.navigate(['/home']);
+    }
+
+    this.loading = false;
+  }
+
+  async logout() {
+    await this.chatService.setUserStatus('offline');
+    await this.supabase.getClient().auth.signOut();
+    localStorage.removeItem('lastUser');
+    this.router.navigate(['/login']);
+  }
+
+  goBack() {
+    this.router.navigate(['/home']);
+  }
+}

@@ -5,20 +5,16 @@
     </button>
 
     <div class="contact-info">
-      <div class="contact-avatar" [style.background]="contact.avatarColor">
-        <img *ngIf="contact.photoUrl" [src]="contact.photoUrl" class="avatar-img"/>
-        <ion-icon *ngIf="!contact.photoUrl" name="person"></ion-icon>
-        <div class="status-dot" [ngClass]="contact.status"></div>
+      <div class="group-avatar" [style.background]="group.color">
+        <ion-icon name="people"></ion-icon>
       </div>
       <div class="contact-text">
-        <span class="contact-name">{{ contact.name }}</span>
-        <span class="contact-status" [ngClass]="contact.status">{{ getStatusLabel(contact.status) }}</span>
+        <span class="contact-name">{{ group.name }}</span>
+        <span class="contact-status">{{ group.memberCount }} miembros</span>
       </div>
     </div>
 
     <div class="header-actions">
-      <button class="icon-btn"><ion-icon name="videocam-outline"></ion-icon></button>
-      <button class="icon-btn"><ion-icon name="call-outline"></ion-icon></button>
       <button class="icon-btn"><ion-icon name="settings-outline"></ion-icon></button>
     </div>
   </div>
@@ -35,24 +31,25 @@
 
       <ng-container *ngFor="let msg of group.messages">
         <div class="message-row" [ngClass]="msg.isMine ? 'mine' : 'theirs'">
-          <div class="bubble" [class.image-bubble]="msg.image_url">
-            <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url)"/>
-            <p *ngIf="msg.content">{{ msg.content }}</p>
-            <span class="msg-time">{{ msg.time }}</span>
+
+          <div class="sender-avatar" *ngIf="!msg.isMine" [style.background]="msg.senderColor">
+            <img *ngIf="msg.senderPhoto" [src]="msg.senderPhoto" class="av-img"/>
+            <ion-icon *ngIf="!msg.senderPhoto" name="person"></ion-icon>
           </div>
+
+          <div class="bubble-col" [ngClass]="msg.isMine ? 'mine' : 'theirs'">
+            <span class="sender-label" *ngIf="!msg.isMine">{{ msg.senderName }}</span>
+            <div class="bubble" [class.image-bubble]="msg.image_url">
+              <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url)"/>
+              <p *ngIf="msg.content">{{ msg.content }}</p>
+              <span class="msg-time">{{ msg.time }}</span>
+            </div>
+          </div>
+
         </div>
       </ng-container>
 
     </ng-container>
-
-    <div class="typing-indicator" *ngIf="isTyping">
-      <div class="dots">
-        <span class="dot"></span>
-        <span class="dot"></span>
-        <span class="dot"></span>
-      </div>
-      <span class="typing-label">{{ contact.name }} is writing...</span>
-    </div>
   </div>
 
 </ion-content>
@@ -73,12 +70,6 @@
         <input type="file" #fileInput accept="image/*" (change)="onImageSelected($event)" style="display:none"/>
       </button>
       <button class="tool-btn">
-        <ion-icon name="color-wand-outline"></ion-icon>
-      </button>
-      <button class="tool-btn">
-        <ion-icon name="phone-portrait-outline"></ion-icon>
-      </button>
-      <button class="tool-btn" (click)="toggleEmoji()">
         <ion-icon name="happy-outline"></ion-icon>
       </button>
     </div>
@@ -87,12 +78,12 @@
       <div class="input-box">
         <input
           type="text"
-          placeholder="Type a message..."
+          placeholder="Message the group..."
           [(ngModel)]="messageText"
           (keyup.enter)="sendMessage()"
         />
       </div>
-      <button class="send-btn" (click)="sendMessage()">
+      <button class="send-btn" (click)="sendMessage()" [disabled]="sending">
         <ion-icon name="send"></ion-icon>
       </button>
     </div>

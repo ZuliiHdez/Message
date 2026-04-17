@@ -1,97 +1,86 @@
-<!-- add-contact.page.html -->
 <ion-content class="add-contact-content">
   <div class="page-wrapper">
 
-    <!-- Header -->
     <div class="page-header">
       <button class="back-btn" (click)="goBack()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </button>
-      <h1>Añadir contacto</h1>
+      <h1>Add Contact</h1>
     </div>
 
-    <!-- Buscador -->
-    <div class="search-section">
-      <div class="search-bar" [class.active]="searchQuery.length > 0">
-        <ion-icon name="search-outline"></ion-icon>
-        <input
-          type="text"
-          placeholder="Busca por nombre de usuario o email..."
-          [(ngModel)]="searchQuery"
-          (ngModelChange)="onSearch()"
-        />
-        <ion-icon
-          name="close-circle"
-          class="clear-icon"
-          *ngIf="searchQuery.length > 0"
-          (click)="clearSearch()">
-        </ion-icon>
-      </div>
+    <div class="hero-text">
+      <h2>Find your<br/><span class="green">friends.</span></h2>
+      <p>Search by username to start a new chat.</p>
     </div>
 
-    <!-- Estado: buscando -->
-    <div class="state-message" *ngIf="loading">
+    <div class="search-bar" [class.focused]="searchQuery.length > 0">
+      <ion-icon name="search-outline"></ion-icon>
+      <input
+        type="text"
+        placeholder="Search by name or email"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearch()"
+        #searchInput
+      />
+      <ion-icon
+        name="close-circle"
+        class="clear-icon"
+        *ngIf="searchQuery.length > 0"
+        (click)="clearSearch()">
+      </ion-icon>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">
       <ion-spinner name="crescent"></ion-spinner>
-      <span>Buscando...</span>
     </div>
 
-    <!-- Estado: sin resultados -->
-    <div class="state-message" *ngIf="!loading && searchQuery.length > 1 && results.length === 0">
-      <ion-icon name="person-outline"></ion-icon>
-      <span>No se encontró ningún usuario</span>
+    <ng-container *ngIf="!loading && searchQuery.length < 2">
+
+      <div class="empty-illustration">
+        <div class="illustration-circle">
+          <div class="chat-badge"><ion-icon name="chatbubble"></ion-icon></div>
+          <div class="main-icon"><ion-icon name="person-add-outline"></ion-icon></div>
+          <div class="check-badge"><ion-icon name="checkmark"></ion-icon></div>
+        </div>
+        <h3>Start typing to search</h3>
+        <p>Type at least 2 characters to look for Orion Messenger users around the globe.</p>
+      </div>
+
+    </ng-container>
+
+    <div class="empty-state" *ngIf="!loading && searchQuery.length >= 2 && results.length === 0">
+      <ion-icon name="search-outline"></ion-icon>
+      <p>No users found for "<strong>{{ searchQuery }}</strong>"</p>
     </div>
 
-    <!-- Estado: inicial -->
-    <div class="state-message hint" *ngIf="!loading && searchQuery.length === 0">
-      <ion-icon name="people-outline"></ion-icon>
-      <span>Escribe al menos 2 caracteres para buscar</span>
-    </div>
-
-    <!-- Resultados -->
     <div class="results-list" *ngIf="!loading && results.length > 0">
-      <div class="result-item" *ngFor="let user of results">
-
-        <!-- Avatar -->
+      <div class="result-card" *ngFor="let user of results">
         <div class="result-avatar" [style.background]="getAvatarColor(user.id)">
           <img *ngIf="user.avatar_url" [src]="user.avatar_url" class="avatar-img"/>
           <ion-icon *ngIf="!user.avatar_url" name="person"></ion-icon>
         </div>
-
-        <!-- Info -->
         <div class="result-info">
-          <span class="result-name">{{ user.full_name || user.username }}</span>
-          <span class="result-username">@{{ user.username }}</span>
+          <span class="r-name">{{ user.full_name || user.username }}</span>
+          <span class="r-user">@{{ user.username }}</span>
         </div>
-
-        <!-- Botón de acción según estado -->
         <button
           class="action-btn"
           [ngClass]="getButtonClass(user.id)"
           (click)="handleAction(user)"
           [disabled]="loadingIds.includes(user.id)">
-
-          <ion-spinner name="crescent" *ngIf="loadingIds.includes(user.id)" class="btn-spinner"></ion-spinner>
-
+          <ion-spinner *ngIf="loadingIds.includes(user.id)" name="crescent" class="btn-spinner"></ion-spinner>
           <ng-container *ngIf="!loadingIds.includes(user.id)">
             <ng-container [ngSwitch]="userStatuses[user.id]">
-              <span *ngSwitchCase="'none'">
-                <ion-icon name="person-add-outline"></ion-icon>
-              </span>
-              <span *ngSwitchCase="'pending_sent'">
-                <ion-icon name="time-outline"></ion-icon> Enviada
-              </span>
-              <span *ngSwitchCase="'accepted'">
-                <ion-icon name="checkmark-outline"></ion-icon> Amigos
-              </span>
-              <span *ngSwitchDefault>
-                <ion-icon name="person-add-outline"></ion-icon>
-              </span>
+              <ion-icon *ngSwitchCase="'none'"         name="person-add-outline"></ion-icon>
+              <ion-icon *ngSwitchCase="'pending_sent'" name="time-outline"></ion-icon>
+              <ion-icon *ngSwitchCase="'accepted'"     name="checkmark-outline"></ion-icon>
+              <ion-icon *ngSwitchDefault               name="person-add-outline"></ion-icon>
             </ng-container>
           </ng-container>
         </button>
-
       </div>
     </div>
 
+    <div style="height: 40px"></div>
   </div>
 </ion-content>

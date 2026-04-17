@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
   private supabase: SupabaseClient;
-  private supabaseAdmin: SupabaseClient; 
+  private supabaseAdmin: SupabaseClient;
 
   constructor() {
     this.supabase = createClient(
@@ -14,10 +14,9 @@ export class SupabaseService {
       { auth: { persistSession: true, detectSessionInUrl: false } }
     );
 
-    
     this.supabaseAdmin = createClient(
       environment.supabaseURL,
-      environment.supabaseServiceKey  
+      environment.supabaseServiceKey
     );
   }
 
@@ -47,5 +46,5 @@ async register(email: string, password: string, metadata: { username: string, fu
   }
 
   getClient()      { return this.supabase; }
-  getAdminClient() { return this.supabaseAdmin; } 
+  getAdminClient() { return this.supabaseAdmin; }
 }

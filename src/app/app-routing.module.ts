@@ -38,6 +38,19 @@ const routes: Routes = [
     path: 'peticiones',
     loadComponent: () => import('./requestContact/requestcontact.page').then(m => m.PeticionesPage)
   },
+    {
+    path: 'create-group',
+    loadComponent: () => import('./create-group/create-group.page').then(m => m.CreateGroupPage)
+  },
+  {
+    path: 'group-chat',
+    loadComponent: () => import('./group-chat/group-chat.page').then(m => m.GroupChatPage)
+  },
+  {
+  path: 'edit-profile',
+  loadComponent: () =>
+    import('./edit-profile/edit-profile.page').then(m => m.EditProfilePage)
+},
   {
     path: 'create-group',
     loadComponent: () => import('./create-group/create-group.page').then(m => m.CrearGrupoPage)
