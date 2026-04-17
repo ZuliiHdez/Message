@@ -143,6 +143,14 @@
   }
 }
 
+// ── Loading ────────────────────────────
+.home-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+  ion-spinner { --color: #{$primary}; width: 32px; height: 32px; }
+}
+
 // ── Scroll area ────────────────────────
 .scroll-area {
   padding: 0 20px;

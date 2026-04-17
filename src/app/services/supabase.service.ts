@@ -16,7 +16,8 @@ export class SupabaseService {
 
     this.supabaseAdmin = createClient(
       environment.supabaseURL,
-      environment.supabaseServiceKey
+      environment.supabaseServiceKey,
+      { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'sb-admin-token' } }
     );
   }
 

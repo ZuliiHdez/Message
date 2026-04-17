@@ -24,9 +24,38 @@
   </div>
 </ion-header>
 
-<ion-content class="chat-content" #scrollContent>
+<!-- Photo type selection dialog -->
+<div class="photo-type-overlay" *ngIf="showImageTypeDialog" (click)="cancelImageSelection()">
+  <div class="photo-type-sheet" (click)="$event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <p class="sheet-title">Enviar imagen como...</p>
+    <div class="sheet-options">
+      <button class="type-btn normal" (click)="selectImageType(false)">
+        <div class="type-icon-wrap normal">
+          <ion-icon name="image-outline"></ion-icon>
+        </div>
+        <span class="type-label">Normal</span>
+        <span class="type-desc">Visible siempre</span>
+      </button>
+      <button class="type-btn bomb" (click)="selectImageType(true)">
+        <div class="type-icon-wrap bomb">
+          <ion-icon name="flame-outline"></ion-icon>
+        </div>
+        <span class="type-label">Foto privada</span>
+        <span class="type-desc">Solo se ve una vez</span>
+      </button>
+    </div>
+    <button class="sheet-cancel" (click)="cancelImageSelection()">Cancelar</button>
+  </div>
+</div>
 
-  <div class="messages-container" #messagesContainer>
+<ion-content class="chat-content" #scrollContent (click)="closeEmoji()">
+
+  <div class="chat-loading" *ngIf="loadingMessages">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div class="messages-container" #messagesContainer *ngIf="!loadingMessages">
     <ng-container *ngFor="let group of messageGroups">
 
       <div class="date-separator">
@@ -35,11 +64,47 @@
 
       <ng-container *ngFor="let msg of group.messages">
         <div class="message-row" [ngClass]="msg.isMine ? 'mine' : 'theirs'">
-          <div class="bubble" [class.image-bubble]="msg.image_url">
-            <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url)"/>
-            <p *ngIf="msg.content">{{ msg.content }}</p>
-            <span class="msg-time">{{ msg.time }}</span>
-          </div>
+
+          <!-- Normal message -->
+          <ng-container *ngIf="!msg.is_photo_bomb">
+            <div class="bubble" [class.image-bubble]="msg.image_url">
+              <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url); $event.stopPropagation()"/>
+              <p *ngIf="msg.content">{{ msg.content }}</p>
+              <span class="msg-time">{{ msg.time }}</span>
+            </div>
+          </ng-container>
+
+          <!-- Photo bomb message -->
+          <ng-container *ngIf="msg.is_photo_bomb">
+            <div class="bubble photo-bomb-bubble" [class.mine-bomb]="msg.isMine">
+
+              <!-- Mine: private photo label -->
+              <ng-container *ngIf="msg.isMine">
+                <div class="bomb-private" [class.bomb-seen]="!msg.image_url">
+                  <ion-icon [name]="msg.image_url ? 'lock-closed-outline' : 'eye-outline'" class="bomb-icon"></ion-icon>
+                  <span class="bomb-label">{{ msg.image_url ? 'Foto privada' : 'Imagen vista' }}</span>
+                  <span class="bomb-hint">{{ msg.image_url ? 'Solo el receptor puede verla' : 'El receptor ya la ha visto' }}</span>
+                </div>
+              </ng-container>
+
+              <!-- Theirs: tap-to-view -->
+              <ng-container *ngIf="!msg.isMine">
+                <div *ngIf="!openPhotoBombs.has(msg.id) && !explodedPhotoBombs.has(msg.id)"
+                     class="bomb-preview" (click)="viewPhotoBomb(msg.id, msg.image_url)">
+                  <ion-icon name="eye-outline" class="bomb-icon"></ion-icon>
+                  <span class="bomb-tap">Abrir imagen</span>
+                  <span class="bomb-hint">Solo se puede ver una vez</span>
+                </div>
+                <div *ngIf="explodedPhotoBombs.has(msg.id)" class="bomb-exploded">
+                  <ion-icon name="eye-off-outline" class="bomb-icon faded"></ion-icon>
+                  <span>Foto eliminada</span>
+                </div>
+              </ng-container>
+
+              <span class="msg-time">{{ msg.time }}</span>
+            </div>
+          </ng-container>
+
         </div>
       </ng-container>
 
@@ -55,12 +120,33 @@
     </div>
   </div>
 
+  <!-- Full-screen image viewer -->
+  <div class="bomb-viewer-overlay" *ngIf="viewerUrl" (click)="closeViewer()">
+    <div class="viewer-actions" (click)="$event.stopPropagation()">
+      <button class="bomb-viewer-close" (click)="closeViewer()">
+        <ion-icon name="close"></ion-icon>
+      </button>
+      <button class="viewer-download" *ngIf="!viewerIsBomb" (click)="downloadImage(viewerUrl)">
+        <ion-icon name="download-outline"></ion-icon>
+      </button>
+    </div>
+    <img [src]="viewerUrl" class="bomb-viewer-img" (click)="$event.stopPropagation()"/>
+  </div>
+
 </ion-content>
 
 <ion-footer class="ion-no-border chat-footer">
 
+  <!-- Emoji picker -->
+  <div class="emoji-picker-container" *ngIf="showEmojiPicker" (click)="$event.stopPropagation()">
+    <emoji-picker #emojiPicker></emoji-picker>
+  </div>
+
   <div class="image-preview" *ngIf="selectedImage">
-    <img [src]="selectedImageUrl"/>
+    <div class="preview-wrapper">
+      <img [src]="selectedImageUrl"/>
+      <div class="bomb-badge-preview" *ngIf="isPhotoBomb">💣</div>
+    </div>
     <button class="remove-image" (click)="removeImage()">
       <ion-icon name="close-circle"></ion-icon>
     </button>
@@ -78,7 +164,7 @@
       <button class="tool-btn">
         <ion-icon name="phone-portrait-outline"></ion-icon>
       </button>
-      <button class="tool-btn" (click)="toggleEmoji()">
+      <button class="tool-btn" [class.active]="showEmojiPicker" (click)="toggleEmoji(); $event.stopPropagation()">
         <ion-icon name="happy-outline"></ion-icon>
       </button>
     </div>
@@ -90,6 +176,7 @@
           placeholder="Type a message..."
           [(ngModel)]="messageText"
           (keyup.enter)="sendMessage()"
+          (focus)="closeEmoji()"
         />
       </div>
       <button class="send-btn" (click)="sendMessage()">

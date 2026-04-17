@@ -32,7 +32,7 @@ export class ChatService {
     return data || [];
   }
 
-  async sendMessage(receiverId: string, content: string, imageUrl?: string) {
+  async sendMessage(receiverId: string, content: string, imageUrl?: string, isPhotoBomb = false) {
     const myId = await this.getCurrentUserId();
     const { error } = await this.db
       .from('messages')
@@ -41,6 +41,7 @@ export class ChatService {
         receiver_id: receiverId,
         content: content || null,
         image_url: imageUrl || null,
+        is_photo_bomb: isPhotoBomb,
       });
 
     if (error) throw error;
@@ -64,19 +65,27 @@ export class ChatService {
     return data.publicUrl;
   }
 
-  subscribeToMessages(otherUserId: string, callback: (msg: any) => void) {
+  subscribeToMessages(
+    myId: string,
+    otherUserId: string,
+    onInsert: (msg: any) => void,
+    onUpdate: (msg: any) => void = () => {}
+  ) {
     this.unsubscribe();
     this.channel = this.db
-      .channel(`chat-${otherUserId}`)
+      .channel(`chat-${myId}-${otherUserId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${myId}` },
         (payload: any) => {
           const msg = payload.new;
-          if (msg.sender_id === otherUserId || msg.receiver_id === otherUserId) {
-            callback(msg);
-          }
+          if (msg.sender_id === otherUserId) onInsert(msg);
         }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `sender_id=eq.${myId}` },
+        (payload: any) => onUpdate(payload.new)
       )
       .subscribe();
   }
@@ -98,7 +107,7 @@ export class ChatService {
     return data || [];
   }
 
-  async sendGroupMessage(groupId: string, content: string, imageUrl?: string) {
+  async sendGroupMessage(groupId: string, content: string, imageUrl?: string, isPhotoBomb = false) {
     const myId = await this.getCurrentUserId();
     const { error } = await this.db
       .from('messages')
@@ -107,18 +116,28 @@ export class ChatService {
         group_id: groupId,
         content: content || null,
         image_url: imageUrl || null,
+        is_photo_bomb: isPhotoBomb,
       });
     if (error) throw error;
   }
 
-  subscribeToGroupMessages(groupId: string, callback: (msg: any) => void) {
+  subscribeToGroupMessages(
+    groupId: string,
+    onInsert: (msg: any) => void,
+    onUpdate: (msg: any) => void = () => {}
+  ) {
     this.unsubscribe();
     this.channel = this.db
       .channel(`group-${groupId}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `group_id=eq.${groupId}` },
-        (payload: any) => callback(payload.new)
+        (payload: any) => onInsert(payload.new)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `group_id=eq.${groupId}` },
+        (payload: any) => onUpdate(payload.new)
       )
       .subscribe();
   }
@@ -191,6 +210,23 @@ export class ChatService {
 
   unsubscribeContactsStatus(channel: any) {
     if (channel) this.db.removeChannel(channel);
+  }
+
+  async clearPhotoBombImage(messageId: string) {
+    const { error } = await this.db.rpc('clear_photo_bomb_image', { p_message_id: messageId });
+    if (error) throw error;
+  }
+
+  subscribeToProfileContacts(userId: string, callback: () => void) {
+    const ch = this.db
+      .channel(`profile-contacts-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        () => callback()
+      )
+      .subscribe();
+    return ch;
   }
 
   async getUserStatus(userId: string): Promise<string> {

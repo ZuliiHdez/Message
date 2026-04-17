@@ -57,40 +57,8 @@ export class FriendshipService {
   }
 
   async acceptRequest(friendshipId: string) {
-    const { data: friendship, error: fetchError } = await this.db
-      .from('friendships')
-      .select('sender_id, receiver_id')
-      .eq('id', friendshipId)
-      .single();
-
-    if (fetchError) throw fetchError;
-
-    const { error } = await this.db
-      .from('friendships')
-      .delete()
-      .eq('id', friendshipId);
-
+    const { error } = await this.db.rpc('accept_friend_request', { p_friendship_id: friendshipId });
     if (error) throw error;
-
-    const admin = this.supabase.getAdminClient();
-    const { senderId, receiverId } = { senderId: friendship.sender_id, receiverId: friendship.receiver_id };
-
-    const [{ data: senderProfile }, { data: receiverProfile }] = await Promise.all([
-      admin.from('profiles').select('contacts').eq('id', senderId).single(),
-      admin.from('profiles').select('contacts').eq('id', receiverId).single(),
-    ]);
-
-    const senderContacts: string[] = senderProfile?.contacts || [];
-    const receiverContacts: string[] = receiverProfile?.contacts || [];
-
-    await Promise.all([
-      ...(!senderContacts.includes(receiverId) ? [
-        admin.from('profiles').update({ contacts: [...senderContacts, receiverId] }).eq('id', senderId)
-      ] : []),
-      ...(!receiverContacts.includes(senderId) ? [
-        admin.from('profiles').update({ contacts: [...receiverContacts, senderId] }).eq('id', receiverId)
-      ] : []),
-    ]);
   }
 
   async rejectRequest(friendshipId: string) {
@@ -135,14 +103,23 @@ export class FriendshipService {
 
   async getGroups() {
     const myId = await this.currentUserId();
+    if (!myId) return [];
     try {
-      const { data, error } = await this.db
+      const { data: members, error: membersError } = await this.db
         .from('group_members')
-        .select('group:groups(id, name, avatar_url, avatar_color)')
+        .select('group_id')
         .eq('user_id', myId);
 
-      if (error) return [];
-      return ((data || []).map((m: any) => m.group).filter(Boolean)) as Array<{
+      if (membersError || !members?.length) return [];
+
+      const groupIds = members.map((m: any) => m.group_id);
+      const { data: groups, error: groupsError } = await this.db
+        .from('groups')
+        .select('id, name, avatar_url, avatar_color')
+        .in('id', groupIds);
+
+      if (groupsError) return [];
+      return (groups || []) as Array<{
         id: string; name: string; avatar_url: string; avatar_color: string;
       }>;
     } catch {
@@ -171,9 +148,8 @@ export class FriendshipService {
 
   async createGroup(name: string, avatarColor: string, memberIds: string[]) {
     const myId = await this.currentUserId();
-    const admin = this.supabase.getAdminClient();
 
-    const { data: group, error: groupError } = await admin
+    const { data: group, error: groupError } = await this.db
       .from('groups')
       .insert({ name, avatar_color: avatarColor, created_by: myId })
       .select('id')
@@ -184,7 +160,7 @@ export class FriendshipService {
     const allMembers = [...new Set([myId, ...memberIds])];
     const memberRows = allMembers.map(userId => ({ group_id: group.id, user_id: userId }));
 
-    const { error: membersError } = await admin
+    const { error: membersError } = await this.db
       .from('group_members')
       .insert(memberRows);
 

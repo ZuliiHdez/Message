@@ -68,6 +68,9 @@ export class HomePage implements OnInit, OnDestroy {
 
   groupCategories: GroupCategory[] = [];
 
+  private myId = '';
+  private profileChannel: any = null;
+
   constructor(
     private router: Router,
     private chatService: ChatService,
@@ -76,13 +79,20 @@ export class HomePage implements OnInit, OnDestroy {
 
   async ngOnInit() {
     await this.chatService.setUserStatus('online');
+    this.myId = await this.chatService.getCurrentUserId();
     this.loadCurrentUser();
     await this.loadContacts();
     await this.loadGroups();
+
+    // Suscripción en tiempo real: cuando cambia contacts del perfil propio, recargar lista
+    this.profileChannel = this.chatService.subscribeToProfileContacts(this.myId, () => {
+      this.loadContacts();
+    });
   }
 
   ionViewWillEnter() {
     this.loadCurrentUser();
+    this.loadContacts();
     this.loadGroups();
   }
 
@@ -98,9 +108,20 @@ export class HomePage implements OnInit, OnDestroy {
 
   async ngOnDestroy() {
     await this.chatService.setUserStatus('offline');
+    this.chatService.unsubscribeStatusChannels();
+    if (this.profileChannel) {
+      this.chatService.unsubscribeContactsStatus(this.profileChannel);
+      this.profileChannel = null;
+    }
   }
 
+  loadingContacts = false;
+  loadingGroups   = false;
+
   async loadContacts() {
+    this.loadingContacts = true;
+    this.chatService.unsubscribeStatusChannels();
+
     try {
       const friends = await this.friendshipService.getFriends();
       this.allContacts = friends.map(f => ({
@@ -115,8 +136,10 @@ export class HomePage implements OnInit, OnDestroy {
       console.error('Error cargando contactos:', e);
     }
 
+    this.loadingContacts = false;
     this.filterContacts();
 
+    // Suscribirse al estado en tiempo real de cada contacto
     for (const contact of this.allContacts) {
       this.chatService.subscribeToUserStatus(contact.id, (status) => {
         const c = this.allContacts.find(x => x.id === contact.id);
@@ -210,6 +233,7 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   async loadGroups() {
+    this.loadingGroups = true;
     try {
       const groups = await this.friendshipService.getGroups();
       this.groupCategories = groups.length > 0 ? [{
@@ -227,6 +251,7 @@ export class HomePage implements OnInit, OnDestroy {
       this.groupCategories = [];
     }
     this.filteredGroupCategories = [...this.groupCategories];
+    this.loadingGroups = false;
   }
 
   openGroup(group: Group) {

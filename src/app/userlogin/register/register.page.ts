@@ -17,7 +17,6 @@ export class RegisterComponent {
 
   form = {
     nombre: '',
-    apellido: '',
     fechaNacimiento: '',
     username: '',
     email: '',
@@ -49,9 +48,6 @@ export class RegisterComponent {
 
     if (!this.form.nombre.trim())
       this.errors.nombre = 'El nombre es obligatorio';
-
-    if (!this.form.apellido.trim())
-      this.errors.apellido = 'El apellido es obligatorio';
 
     if (!this.form.fechaNacimiento)
       this.errors.fechaNacimiento = 'La fecha de nacimiento es obligatoria';
@@ -88,7 +84,7 @@ async register() {
     this.form.password,
     {
       username: this.form.username,
-      full_name: `${this.form.nombre} ${this.form.apellido}`
+      full_name: this.form.nombre.trim()
     }
   );
 
