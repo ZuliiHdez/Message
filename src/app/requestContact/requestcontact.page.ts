@@ -1,4 +1,3 @@
-// peticiones.page.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
@@ -7,8 +6,8 @@ import { FriendshipService } from '../services/friendship.service';
 
 @Component({
   selector: 'app-peticiones',
-  templateUrl: './peticiones.page.html',
-  styleUrls: ['./peticiones.page.scss'],
+  templateUrl: './requestcontact.page.html',
+  styleUrls: ['./requestcontact.page.scss'],
   standalone: true,
   imports: [CommonModule, IonicModule],
 })
@@ -44,7 +43,6 @@ export class PeticionesPage implements OnInit {
     this.processingIds.push(req.id);
     try {
       await this.friendshipService.acceptRequest(req.id);
-      // Quitar de la lista
       this.requests = this.requests.filter(r => r.id !== req.id);
     } catch (e) {
       console.error('Error aceptando petición:', e);
@@ -70,7 +68,9 @@ export class PeticionesPage implements OnInit {
     return this.colors[index];
   }
 
-  goBack() {
-    this.router.navigate(['/home']);
-  }
+  goBack()            { this.router.navigate(['/home']); }
+  goToHome()          { this.router.navigate(['/home']); }
+  goToCreateGroup()   { this.router.navigate(['/create-group']); }
+  goToRequests()      { }
+  goToProfile()       { this.router.navigate(['/edit-profile']); }
 }

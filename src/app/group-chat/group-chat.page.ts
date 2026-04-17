@@ -4,87 +4,82 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChatService } from '../services/chat.service';
+import { FriendshipService } from '../services/friendship.service';
 
-interface Message {
+interface GroupMessage {
   id: string;
   sender_id: string;
-  receiver_id: string;
+  group_id: string;
   content: string;
   image_url: string;
   created_at: string;
   isMine: boolean;
   time: string;
+  senderName: string;
+  senderColor: string;
+  senderPhoto: string;
 }
 
 interface MessageGroup {
   date: string;
-  messages: Message[];
+  messages: GroupMessage[];
 }
 
 @Component({
-  selector: 'app-chat',
-  templateUrl: './chat.page.html',
-  styleUrls: ['./chat.page.scss'],
+  selector: 'app-group-chat',
+  templateUrl: './group-chat.page.html',
+  styleUrls: ['./group-chat.page.scss'],
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
+export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('fileInput') fileInput!: ElementRef;
 
-  contact = {
-    id: '',
-    name: '',
-    bio: '',
-    status: 'offline' as 'online' | 'away' | 'busy' | 'offline',
-    avatarColor: '#4a6fa5',
-    photoUrl: '',
-  };
+  group = { id: '', name: '', color: '#4a9fd4', memberCount: 0 };
 
   messageText = '';
   messageGroups: MessageGroup[] = [];
   myId = '';
-  isTyping = false;
+  members = new Map<string, { name: string; color: string; photo: string }>();
   selectedImage: File | null = null;
   selectedImageUrl = '';
   sending = false;
   private shouldScroll = false;
-  private statusChannel: any = null;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private chatService: ChatService
+    private chatService: ChatService,
+    private friendshipService: FriendshipService,
   ) {}
 
   async ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      this.contact.id        = params['id']         || '';
-      this.contact.name      = params['name']       || 'Contacto';
-      this.contact.bio       = params['bio']        || '';
-      this.contact.avatarColor = params['color']   || '#4a6fa5';
-      this.contact.photoUrl  = params['photo']      || '';
+      this.group.id    = params['id']    || '';
+      this.group.name  = params['name']  || 'Group';
+      this.group.color = params['color'] || '#4a9fd4';
     });
 
     this.myId = await this.chatService.getCurrentUserId();
 
-    await this.chatService.setUserStatus('online');
-
-    this.contact.status = await this.chatService.getUserStatus(this.contact.id) as any;
-
-    this.statusChannel = this.chatService.subscribeToUserStatus(
-      this.contact.id,
-      (status) => { this.contact.status = status as any; }
-    );
+    const profiles = await this.friendshipService.getGroupMembers(this.group.id);
+    this.group.memberCount = profiles.length;
+    for (const p of profiles) {
+      this.members.set(p.id, {
+        name: p.full_name || p.username || 'Usuario',
+        color: this.colorFromId(p.id),
+        photo: p.avatar_url || '',
+      });
+    }
 
     await this.loadMessages();
 
-    this.chatService.subscribeToMessages(this.contact.id, (msg) => {
-      if (msg.sender_id !== this.contact.id) return;
-      if (msg.receiver_id !== this.myId) return;
+    this.chatService.subscribeToGroupMessages(this.group.id, (msg) => {
+      if (msg.sender_id === this.myId) return;
       const formatted = this.formatMessage(msg);
-      this.addMessageToGroups(formatted);
+      this.addToGroups(formatted);
       this.shouldScroll = true;
     });
   }
@@ -98,36 +93,35 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy() {
     this.chatService.unsubscribe();
-    if (this.statusChannel) {
-      this.chatService['db']?.removeChannel(this.statusChannel);
-    }
   }
 
   async loadMessages() {
-    const raw = await this.chatService.getMessages(this.contact.id);
+    const raw = await this.chatService.getGroupMessages(this.group.id);
     const formatted = raw.map((m: any) => this.formatMessage(m));
     this.messageGroups = this.groupByDate(formatted);
     this.shouldScroll = true;
   }
 
-  formatMessage(msg: any): Message {
+  formatMessage(msg: any): GroupMessage {
     const date = new Date(msg.created_at);
+    const sender = this.members.get(msg.sender_id);
     return {
       ...msg,
       isMine: msg.sender_id === this.myId,
       time: date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+      senderName: sender?.name || 'Usuario',
+      senderColor: sender?.color || '#4a9fd4',
+      senderPhoto: sender?.photo || '',
     };
   }
 
-  groupByDate(messages: Message[]): MessageGroup[] {
-    const groups: { [key: string]: Message[] } = {};
-
+  groupByDate(messages: GroupMessage[]): MessageGroup[] {
+    const groups: { [key: string]: GroupMessage[] } = {};
     for (const msg of messages) {
       const key = this.getDateLabel(msg.created_at);
       if (!groups[key]) groups[key] = [];
       groups[key].push(msg);
     }
-
     return Object.entries(groups).map(([date, msgs]) => ({ date, messages: msgs }));
   }
 
@@ -136,13 +130,12 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
-
     if (date.toDateString() === today.toDateString()) return 'Hoy';
     if (date.toDateString() === yesterday.toDateString()) return 'Ayer';
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  addMessageToGroups(msg: Message) {
+  addToGroups(msg: GroupMessage) {
     const label = this.getDateLabel(msg.created_at);
     const last = this.messageGroups[this.messageGroups.length - 1];
     if (last && last.date === label) {
@@ -159,33 +152,31 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     this.sending = true;
     try {
       let imageUrl: string | undefined;
-
       if (this.selectedImage) {
         imageUrl = await this.chatService.uploadImage(this.selectedImage);
       }
 
-      await this.chatService.sendMessage(
-        this.contact.id,
-        this.messageText.trim(),
-        imageUrl
-      );
+      await this.chatService.sendGroupMessage(this.group.id, this.messageText.trim(), imageUrl);
 
-      const newMsg: Message = {
+      const newMsg: GroupMessage = {
         id: Date.now().toString(),
         sender_id: this.myId,
-        receiver_id: this.contact.id,
+        group_id: this.group.id,
         content: this.messageText.trim(),
         image_url: imageUrl || '',
         created_at: new Date().toISOString(),
         isMine: true,
         time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        senderName: 'Tú',
+        senderColor: '',
+        senderPhoto: '',
       };
-      this.addMessageToGroups(newMsg);
+      this.addToGroups(newMsg);
       this.messageText = '';
       this.removeImage();
       this.shouldScroll = true;
     } catch (e) {
-      console.error('Error enviando mensaje:', e);
+      console.error('Error enviando mensaje de grupo:', e);
     } finally {
       this.sending = false;
     }
@@ -214,16 +205,6 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     window.open(url, '_blank');
   }
 
-  getStatusLabel(status: string): string {
-    const map: any = {
-      online: 'En línea',
-      away: 'Ausente',
-      busy: 'Ocupado',
-      offline: 'Desconectado'
-    };
-    return map[status] || 'Desconectado';
-  }
-
   scrollToBottom() {
     try {
       const el = this.messagesContainer.nativeElement;
@@ -231,15 +212,12 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     } catch {}
   }
 
-  toggleEmoji() {
-    console.log('Abrir selector de emojis');
-  }
-
-  openOptions() {
-    console.log('Abrir opciones');
-  }
-
   goBack() {
     this.router.navigate(['/home']);
+  }
+
+  private colorFromId(id: string): string {
+    const colors = ['#27ae60', '#2980b9', '#e67e22', '#8e44ad', '#c0392b', '#d35400', '#16a085', '#f39c12'];
+    return colors[id.charCodeAt(0) % colors.length];
   }
 }

@@ -1,4 +1,3 @@
-// add-contact.page.ts
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,17 +14,13 @@ import { FriendshipService } from '../services/friendship.service';
 })
 export class AddContactPage {
 
-  searchQuery = '';
+  searchQuery  = '';
   results: any[] = [];
-  loading = false;
+  loading      = false;
   loadingIds: string[] = [];
-
-  // Estado de relación por user id
   userStatuses: Record<string, 'none' | 'pending_sent' | 'pending_received' | 'accepted'> = {};
 
   private searchTimeout: any;
-
-  // Colores para avatares sin foto
   private colors = ['#27ae60','#2980b9','#8e44ad','#e67e22','#c0392b','#16a085','#d35400'];
 
   constructor(
@@ -40,14 +35,13 @@ export class AddContactPage {
       return;
     }
     this.loading = true;
-    // Debounce 400ms para no hacer llamadas en cada tecla
     this.searchTimeout = setTimeout(() => this.doSearch(), 400);
   }
 
   async doSearch() {
     try {
       this.results = await this.friendshipService.searchUsers(this.searchQuery);
-      // Cargar estado de amistad para cada resultado
+
       for (const user of this.results) {
         if (!this.userStatuses[user.id]) {
           this.userStatuses[user.id] =
@@ -55,7 +49,7 @@ export class AddContactPage {
         }
       }
     } catch (e) {
-      console.error('Error buscando usuarios:', e);
+      console.error('Error buscando:', e);
     } finally {
       this.loading = false;
     }
@@ -90,8 +84,7 @@ export class AddContactPage {
   }
 
   getAvatarColor(userId: string): string {
-    const index = userId.charCodeAt(0) % this.colors.length;
-    return this.colors[index];
+    return this.colors[userId.charCodeAt(0) % this.colors.length];
   }
 
   goBack() {

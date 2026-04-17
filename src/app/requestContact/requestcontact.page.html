@@ -1,66 +1,85 @@
-<!-- peticiones.page.html -->
-<ion-content class="peticiones-content">
-  <div class="page-wrapper">
+<ion-content class="requests-content">
 
-    <!-- Header -->
-    <div class="page-header">
-      <button class="back-btn" (click)="goBack()">
-        <ion-icon name="arrow-back-outline"></ion-icon>
-      </button>
-      <h1>Peticiones</h1>
-      <div class="badge" *ngIf="requests.length > 0">{{ requests.length }}</div>
+  <header class="glass-header">
+    <span class="header-title">Friend Requests</span>
+    <div class="req-badge" *ngIf="requests.length > 0">{{ requests.length }}</div>
+  </header>
+
+  <div class="scroll-area">
+
+    <div class="editorial-header">
+      <p class="section-tag">New Connections</p>
+      <h2 class="section-title">
+        Who wants to <span class="accent">connect</span><br/>with you?
+      </h2>
     </div>
 
-    <!-- Cargando -->
-    <div class="state-message" *ngIf="loading">
+    <div class="state-empty" *ngIf="loading">
       <ion-spinner name="crescent"></ion-spinner>
-      <span>Cargando peticiones...</span>
+      <span>Loading requests...</span>
     </div>
 
-    <!-- Sin peticiones -->
-    <div class="state-message" *ngIf="!loading && requests.length === 0">
+    <div class="state-empty" *ngIf="!loading && requests.length === 0">
       <ion-icon name="mail-open-outline"></ion-icon>
-      <span>No tienes peticiones pendientes</span>
+      <span>No pending requests</span>
     </div>
 
-    <!-- Lista de peticiones -->
-    <div class="requests-list" *ngIf="!loading && requests.length > 0">
-      <p class="list-label">Solicitudes de amistad recibidas</p>
+    <div class="cards-list" *ngIf="!loading && requests.length > 0">
+      <div class="request-card" *ngFor="let req of requests">
 
-      <div class="request-item" *ngFor="let req of requests">
-
-        <!-- Avatar -->
-        <div class="request-avatar" [style.background]="getAvatarColor(req.sender.id)">
-          <img *ngIf="req.sender.avatar_url" [src]="req.sender.avatar_url" class="avatar-img"/>
-          <ion-icon *ngIf="!req.sender.avatar_url" name="person"></ion-icon>
+        <div class="card-avatar-wrap">
+          <div class="card-avatar" [style.background]="getAvatarColor(req.sender.id)">
+            <img *ngIf="req.sender.avatar_url" [src]="req.sender.avatar_url" class="av-img"/>
+            <ion-icon *ngIf="!req.sender.avatar_url" name="person"></ion-icon>
+          </div>
         </div>
 
-        <!-- Info -->
-        <div class="request-info">
-          <span class="request-name">{{ req.sender.full_name || req.sender.username }}</span>
-          <span class="request-username">@{{ req.sender.username }}</span>
-        </div>
+        <div class="card-body">
+          <h3 class="card-name">{{ req.sender.full_name || req.sender.username }}</h3>
+          <p class="card-username">@{{ req.sender.username }}</p>
 
-        <!-- Botones aceptar / rechazar -->
-        <div class="request-actions">
-          <button
-            class="btn-accept"
-            (click)="accept(req)"
-            [disabled]="processingIds.includes(req.id)">
-            <ion-spinner *ngIf="processingIds.includes(req.id)" name="crescent" class="btn-spinner"></ion-spinner>
-            <ion-icon *ngIf="!processingIds.includes(req.id)" name="checkmark-outline"></ion-icon>
-          </button>
-
-          <button
-            class="btn-reject"
-            (click)="reject(req)"
-            [disabled]="processingIds.includes(req.id)">
-            <ion-icon name="close-outline"></ion-icon>
-          </button>
+          <div class="card-actions">
+            <button
+              class="btn-accept"
+              (click)="accept(req)"
+              [disabled]="processingIds.includes(req.id)">
+              <ion-spinner *ngIf="processingIds.includes(req.id)" name="crescent" class="btn-spinner"></ion-spinner>
+              <span *ngIf="!processingIds.includes(req.id)">Accept</span>
+            </button>
+            <button
+              class="btn-decline"
+              (click)="reject(req)"
+              [disabled]="processingIds.includes(req.id)">
+              Decline
+            </button>
+          </div>
         </div>
 
       </div>
     </div>
 
+    <div style="height: 100px"></div>
   </div>
+
+  <div class="bottom-nav">
+    <button class="bnav-btn" (click)="goToHome()">
+      <ion-icon name="home-outline"></ion-icon>
+      <span>Contacts</span>
+    </button>
+    <button class="bnav-btn active-fab" (click)="goToCreateGroup()">
+      <div class="fab-circle">
+        <ion-icon name="people-outline"></ion-icon>
+      </div>
+      <span>New Group</span>
+    </button>
+    <button class="bnav-btn active" (click)="goToRequests()">
+      <ion-icon name="mail-outline"></ion-icon>
+      <span>Requests</span>
+    </button>
+    <button class="bnav-btn" (click)="goToProfile()">
+      <ion-icon name="person-circle-outline"></ion-icon>
+      <span>Profile</span>
+    </button>
+  </div>
+
 </ion-content>
