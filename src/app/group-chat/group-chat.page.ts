@@ -6,6 +6,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ChatService } from '../services/chat.service';
 import { FriendshipService } from '../services/friendship.service';
+import { LanguageService } from '../services/language.service';
 import 'emoji-picker-element';
 
 interface GroupMessage {
@@ -74,6 +75,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     private router: Router,
     private chatService: ChatService,
     private friendshipService: FriendshipService,
+    public lang: LanguageService
   ) {}
 
   async ngOnInit() {

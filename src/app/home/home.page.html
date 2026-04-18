@@ -13,22 +13,22 @@
       </div>
 
       <div class="status-menu" *ngIf="showStatusMenu" (click)="$event.stopPropagation()">
-        <p class="status-label">MY STATUS</p>
+        <p class="status-label">{{ lang.t('status_title') }}</p>
         <div class="status-opt" (click)="changeStatus('online')">
-          <div class="dot online"></div><span>Online</span>
+          <div class="dot online"></div><span>{{ lang.t('status_online') }}</span>
           <ion-icon name="checkmark" *ngIf="currentUser.status==='online'"></ion-icon>
         </div>
         <div class="status-opt" (click)="changeStatus('away')">
-          <div class="dot away"></div><span>Away</span>
+          <div class="dot away"></div><span>{{ lang.t('status_away') }}</span>
           <ion-icon name="checkmark" *ngIf="currentUser.status==='away'"></ion-icon>
         </div>
         <div class="status-opt" (click)="changeStatus('busy')">
-          <div class="dot busy"></div><span>Busy</span>
+          <div class="dot busy"></div><span>{{ lang.t('status_busy') }}</span>
           <ion-icon name="checkmark" *ngIf="currentUser.status==='busy'"></ion-icon>
         </div>
         <div class="status-divider"></div>
         <div class="status-opt" (click)="changeStatus('offline')">
-          <div class="dot offline"></div><span>Offline</span>
+          <div class="dot offline"></div><span>{{ lang.t('status_offline') }}</span>
           <ion-icon name="checkmark" *ngIf="currentUser.status==='offline'"></ion-icon>
         </div>
       </div>
@@ -43,7 +43,10 @@
     <div class="search-row">
       <div class="search-bar">
         <ion-icon name="search-outline"></ion-icon>
-        <input type="text" [placeholder]="activeTab === 'chats' ? 'Search contacts...' : 'Search groups...'" [(ngModel)]="searchQuery" (ngModelChange)="onSearch()"/>
+        <input type="text"
+               [placeholder]="activeTab === 'chats' ? lang.t('home_search_contacts') : lang.t('home_search_groups')"
+               [(ngModel)]="searchQuery"
+               (ngModelChange)="onSearch()"/>
       </div>
       <button class="add-btn" (click)="addContact()">
         <ion-icon name="person-add-outline"></ion-icon>
@@ -51,17 +54,11 @@
     </div>
 
     <div class="tabs-row">
-      <button
-        class="tab"
-        [class.active]="activeTab === 'chats'"
-        (click)="setTab('chats')">
-        Chats
+      <button class="tab" [class.active]="activeTab === 'chats'" (click)="setTab('chats')">
+        {{ lang.t('home_tab_chats') }}
       </button>
-      <button
-        class="tab"
-        [class.active]="activeTab === 'grupos'"
-        (click)="setTab('grupos')">
-        Groups
+      <button class="tab" [class.active]="activeTab === 'grupos'" (click)="setTab('grupos')">
+        {{ lang.t('home_tab_groups') }}
       </button>
     </div>
 
@@ -73,9 +70,9 @@
         <ng-container *ngFor="let group of groupedContacts; let gi = index">
           <div class="promo-card" *ngIf="gi === 2">
             <div class="promo-text">
-              <h3>Start something new</h3>
-              <p>Coordinate your weekend plans in a new group chat.</p>
-              <button class="promo-btn" (click)="createGroup()">Create Group</button>
+              <h3>{{ lang.t('home_promo_title') }}</h3>
+              <p>{{ lang.t('home_promo_desc') }}</p>
+              <button class="promo-btn" (click)="createGroup()">{{ lang.t('home_promo_btn') }}</button>
             </div>
             <div class="promo-icon">
               <ion-icon name="people-outline"></ion-icon>
@@ -143,19 +140,19 @@
   <div class="bottom-nav">
     <button class="bnav-btn active" (click)="goToHome()">
       <ion-icon name="home-outline"></ion-icon>
-      <span>Contacts</span>
+      <span>{{ lang.t('nav_contacts') }}</span>
     </button>
     <button class="bnav-btn" (click)="createGroup()">
       <ion-icon name="people-outline"></ion-icon>
-      <span>New Group</span>
+      <span>{{ lang.t('nav_new_group') }}</span>
     </button>
     <button class="bnav-btn" (click)="goToPeticiones()">
       <ion-icon name="mail-outline"></ion-icon>
-      <span>Requests</span>
+      <span>{{ lang.t('nav_requests') }}</span>
     </button>
-    <button class="bnav-btn" (click)="goToProfile()">
+    <button class="bnav-btn" (click)="goToSettings()">
       <ion-icon name="person-circle-outline"></ion-icon>
-      <span>Profile</span>
+      <span>{{ lang.t('nav_profile') }}</span>
     </button>
   </div>
 

@@ -4,7 +4,7 @@
     <button class="back-btn" (click)="goBack()">
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
-    <h1>Settings</h1>
+    <h1>{{ lang.t('settings_title') }}</h1>
   </div>
 
   <div class="scroll-area">
@@ -21,7 +21,7 @@
       <h2 class="profile-name">{{ currentUser.name }}</h2>
       <span class="profile-username">@{{ currentUser.username || 'usuario' }}</span>
       <div class="profile-badge">
-        <span>Edit Profile</span>
+        <span>{{ lang.t('settings_edit_profile') }}</span>
       </div>
     </section>
 
@@ -30,7 +30,7 @@
         <div class="card-icon blue">
           <ion-icon name="notifications-outline"></ion-icon>
         </div>
-        <h3>Notifications</h3>
+        <h3>{{ lang.t('settings_notifications') }}</h3>
       </div>
 
       <div class="toggle-row">
@@ -39,8 +39,8 @@
             <ion-icon name="volume-high-outline"></ion-icon>
           </div>
           <div class="row-text">
-            <span class="row-title">Sound</span>
-            <span class="row-sub">Play sound for incoming messages</span>
+            <span class="row-title">{{ lang.t('settings_sound') }}</span>
+            <span class="row-sub">{{ lang.t('settings_sound_sub') }}</span>
           </div>
         </div>
         <ion-toggle [(ngModel)]="soundEnabled" class="orion-toggle"></ion-toggle>
@@ -54,8 +54,8 @@
             <ion-icon name="phone-portrait-outline"></ion-icon>
           </div>
           <div class="row-text">
-            <span class="row-title">Vibration</span>
-            <span class="row-sub">Haptic feedback on alerts</span>
+            <span class="row-title">{{ lang.t('settings_vibration') }}</span>
+            <span class="row-sub">{{ lang.t('settings_vibration_sub') }}</span>
           </div>
         </div>
         <ion-toggle [(ngModel)]="vibrationEnabled" class="orion-toggle"></ion-toggle>
@@ -67,15 +67,15 @@
         <div class="card-icon green">
           <ion-icon name="color-palette-outline"></ion-icon>
         </div>
-        <h3>Appearance</h3>
+        <h3>{{ lang.t('settings_appearance') }}</h3>
       </div>
 
       <button class="nav-row">
         <div class="row-icon">
           <ion-icon name="moon-outline"></ion-icon>
         </div>
-        <span class="row-title">Theme</span>
-        <span class="nav-row-value">Light</span>
+        <span class="row-title">{{ lang.t('settings_theme') }}</span>
+        <span class="nav-row-value">{{ lang.t('settings_theme_light') }}</span>
       </button>
     </section>
 
@@ -84,20 +84,27 @@
         <div class="card-icon amber">
           <ion-icon name="language-outline"></ion-icon>
         </div>
-        <h3>Language</h3>
+        <h3>{{ lang.t('settings_language') }}</h3>
       </div>
 
-      <p class="card-desc">Choose your preferred language for the interface.</p>
+      <p class="card-desc">{{ lang.t('settings_language_desc') }}</p>
 
-      <div class="select-wrap">
-        <select [(ngModel)]="selectedLanguage" class="lang-select">
-          <option value="en">English (US)</option>
-          <option value="es">Español</option>
-          <option value="fr">Français</option>
-          <option value="de">Deutsch</option>
-          <option value="pt">Português</option>
-        </select>
-        <ion-icon name="chevron-down-outline" class="select-arrow"></ion-icon>
+      <div class="lang-dropdown" [class.open]="showLangDropdown">
+        <button class="lang-trigger" (click)="toggleLangDropdown()">
+          <span [class]="flagClass(currentLangOption.code)" class="lang-flag"></span>
+          <span class="lang-label">{{ currentLangOption.label }}</span>
+          <ion-icon name="chevron-down-outline" class="lang-chevron"></ion-icon>
+        </button>
+        <div class="lang-options" *ngIf="showLangDropdown">
+          <button class="lang-opt"
+                  *ngFor="let l of languages"
+                  [class.selected]="l.value === selectedLanguage"
+                  (click)="selectLanguage(l.value)">
+            <span [class]="flagClass(l.code)" class="lang-flag"></span>
+            <span class="lang-opt-label">{{ l.label }}</span>
+            <ion-icon name="checkmark" class="lang-check" *ngIf="l.value === selectedLanguage"></ion-icon>
+          </button>
+        </div>
       </div>
     </section>
 

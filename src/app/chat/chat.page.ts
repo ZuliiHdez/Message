@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChatService } from '../services/chat.service';
+import { LanguageService } from '../services/language.service';
 import 'emoji-picker-element';
 
 interface Message {
@@ -75,7 +76,8 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private chatService: ChatService
+    private chatService: ChatService,
+    public lang: LanguageService
   ) {}
 
   async ngOnInit() {
@@ -353,8 +355,13 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getStatusLabel(status: string): string {
-    const map: any = { online: 'Online', away: 'Away', busy: 'Busy', offline: 'Offline' };
-    return map[status] || 'Offline';
+    const map: any = {
+      online:  this.lang.t('status_online'),
+      away:    this.lang.t('status_away'),
+      busy:    this.lang.t('status_busy'),
+      offline: this.lang.t('status_offline'),
+    };
+    return map[status] || this.lang.t('status_offline');
   }
 
   scrollToBottom() {

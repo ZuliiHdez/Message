@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { ChatService } from '../services/chat.service';
 import { FriendshipService } from '../services/friendship.service';
+import { LanguageService } from '../services/language.service';
 
 interface Contact {
   id: string;
@@ -76,7 +77,8 @@ export class HomePage implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private chatService: ChatService,
-    private friendshipService: FriendshipService
+    private friendshipService: FriendshipService,
+    public lang: LanguageService
   ) {}
 
   async ngOnInit() {
@@ -160,7 +162,7 @@ export class HomePage implements OnInit, OnDestroy {
         const msg = await this.chatService.getLastMessage(c.id);
         if (!msg) return;
         const isMine = msg.sender_id === myId;
-        const prefix = isMine ? 'Me' : c.name;
+        const prefix = isMine ? this.lang.t('chat_me') : c.name;
         let icon: string | undefined;
         let text: string;
         if (msg.is_photo_bomb) {
@@ -254,8 +256,13 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   getStatusLabel(status: string): string {
-    const map: any = { online: 'Online', away: 'Away', busy: 'Busy', offline: 'Offline' };
-    return map[status] || 'Offline';
+    const map: any = {
+      online:  this.lang.t('status_online'),
+      away:    this.lang.t('status_away'),
+      busy:    this.lang.t('status_busy'),
+      offline: this.lang.t('status_offline'),
+    };
+    return map[status] || this.lang.t('status_offline');
   }
 
   toggleCategory(cat: GroupCategory) {
@@ -307,7 +314,7 @@ export class HomePage implements OnInit, OnDestroy {
         const isMine = msg.sender_id === myId;
         let senderName = 'Member';
         if (isMine) {
-          senderName = 'Me';
+          senderName = this.lang.t('chat_me');
         } else {
           const contact = this.allContacts.find(c => c.id === msg.sender_id);
           if (contact) {

@@ -30,7 +30,9 @@
     <button class="img-preview-close" (click)="cancelImagePreview()">
       <ion-icon name="close"></ion-icon>
     </button>
-    <span class="img-preview-count">{{ selectedImages.length }} {{ selectedImages.length === 1 ? 'image' : 'images' }}</span>
+    <span class="img-preview-count">
+      {{ selectedImages.length }} {{ selectedImages.length === 1 ? lang.t('chat_image_count_one') : lang.t('chat_image_count_many') }}
+    </span>
     <div class="img-preview-spacer"></div>
   </div>
 
@@ -57,7 +59,7 @@
     <div class="preview-input-row">
       <input type="text"
              class="preview-caption"
-             placeholder="Add a caption..."
+             [placeholder]="lang.t('chat_caption')"
              [(ngModel)]="captionText"
              (keyup.enter)="sendFromPreview()"/>
       <button class="preview-bomb-btn"
@@ -106,24 +108,22 @@
           <ng-container *ngIf="msg.is_photo_bomb">
             <div class="bubble photo-bomb-bubble" [class.mine-bomb]="msg.isMine">
 
-              <!-- Mine: private photo label -->
               <ng-container *ngIf="msg.isMine">
                 <div class="bomb-private" [class.bomb-seen]="!msg.image_url">
                   <ion-icon [name]="msg.image_url ? 'lock-closed-outline' : 'eye-outline'" class="bomb-icon"></ion-icon>
-                  <span class="bomb-label">{{ msg.image_url ? 'Private photo' : 'Image seen' }}</span>
+                  <span class="bomb-label">{{ msg.image_url ? lang.t('chat_private_photo') : lang.t('chat_image_seen') }}</span>
                 </div>
               </ng-container>
 
-              <!-- Theirs: tap-to-view -->
               <ng-container *ngIf="!msg.isMine">
                 <div *ngIf="!openPhotoBombs.has(msg.id) && !explodedPhotoBombs.has(msg.id)"
                      class="bomb-preview" (click)="viewPhotoBomb(msg.id, msg.image_url)">
                   <ion-icon name="eye-outline" class="bomb-icon"></ion-icon>
-                  <span class="bomb-tap">Open image</span>
+                  <span class="bomb-tap">{{ lang.t('chat_open_image') }}</span>
                 </div>
                 <div *ngIf="explodedPhotoBombs.has(msg.id)" class="bomb-exploded">
                   <ion-icon name="eye-off-outline" class="bomb-icon faded"></ion-icon>
-                  <span>Image deleted</span>
+                  <span>{{ lang.t('chat_image_deleted') }}</span>
                 </div>
               </ng-container>
 
@@ -142,7 +142,7 @@
         <span class="dot"></span>
         <span class="dot"></span>
       </div>
-      <span class="typing-label">{{ contact.name }} is writing...</span>
+      <span class="typing-label">{{ contact.name }} {{ lang.t('chat_is_writing') }}</span>
     </div>
   </div>
 
@@ -163,7 +163,6 @@
 
 <ion-footer class="ion-no-border chat-footer">
 
-  <!-- Emoji picker -->
   <div class="emoji-picker-container" *ngIf="showEmojiPicker" (click)="$event.stopPropagation()">
     <emoji-picker #emojiPicker></emoji-picker>
   </div>
@@ -187,13 +186,11 @@
 
     <div class="input-row">
       <div class="input-box">
-        <input
-          type="text"
-          placeholder="Type a message..."
-          [(ngModel)]="messageText"
-          (keyup.enter)="sendMessage()"
-          (focus)="closeEmoji()"
-        />
+        <input type="text"
+               [placeholder]="lang.t('chat_type')"
+               [(ngModel)]="messageText"
+               (keyup.enter)="sendMessage()"
+               (focus)="closeEmoji()"/>
       </div>
       <button class="send-btn" (click)="sendMessage()">
         <ion-icon name="send"></ion-icon>

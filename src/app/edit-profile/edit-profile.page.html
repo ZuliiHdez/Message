@@ -6,7 +6,7 @@
     <div class="view-wrapper">
 
       <div class="view-header">
-        <span class="view-title">Profile</span>
+        <span class="view-title">{{ lang.t('profile_title') }}</span>
         <button class="edit-icon-btn" (click)="startEditing()">
           <ion-icon name="create-outline"></ion-icon>
         </button>
@@ -20,16 +20,16 @@
           </div>
           <div class="status-badge online"></div>
         </div>
-        <h2 class="view-name">{{ fullName || 'Your Name' }}</h2>
+        <h2 class="view-name">{{ fullName || lang.t('profile_your_name') }}</h2>
         <span class="view-username">@{{ username }}</span>
       </div>
 
       <div class="discord-status" (click)="startEditing()">
         <div class="ds-emoji">{{ statusEmoji || '💬' }}</div>
         <div class="ds-body">
-          <span class="ds-label">CUSTOM STATUS</span>
+          <span class="ds-label">{{ lang.t('profile_custom_status') }}</span>
           <span class="ds-text" [class.ds-placeholder]="!statusText">
-            {{ statusText || 'Set a status…' }}
+            {{ statusText || lang.t('profile_set_status') }}
           </span>
         </div>
         <ion-icon name="chevron-forward-outline" class="ds-arrow"></ion-icon>
@@ -41,7 +41,7 @@
             <ion-icon name="person-outline"></ion-icon>
           </div>
           <div class="view-row-text">
-            <span class="view-row-label">Full Name</span>
+            <span class="view-row-label">{{ lang.t('profile_full_name') }}</span>
             <span class="view-row-value">{{ fullName || '—' }}</span>
           </div>
         </div>
@@ -51,7 +51,7 @@
             <ion-icon name="at-outline"></ion-icon>
           </div>
           <div class="view-row-text">
-            <span class="view-row-label">Username</span>
+            <span class="view-row-label">{{ lang.t('profile_username') }}</span>
             <span class="view-row-value">@{{ username || '—' }}</span>
           </div>
         </div>
@@ -59,7 +59,7 @@
 
       <button class="logout-btn" (click)="logout()">
         <ion-icon name="log-out-outline"></ion-icon>
-        <span>Log Out</span>
+        <span>{{ lang.t('profile_logout') }}</span>
       </button>
 
       <div style="height: 100px"></div>
@@ -68,19 +68,19 @@
     <div class="bottom-nav">
       <button class="bnav-btn" (click)="goToHome()">
         <ion-icon name="home-outline"></ion-icon>
-        <span>Contacts</span>
+        <span>{{ lang.t('nav_contacts') }}</span>
       </button>
       <button class="bnav-btn" (click)="goToCreateGroup()">
         <ion-icon name="people-outline"></ion-icon>
-        <span>New Group</span>
+        <span>{{ lang.t('nav_new_group') }}</span>
       </button>
       <button class="bnav-btn" (click)="goToRequests()">
         <ion-icon name="mail-outline"></ion-icon>
-        <span>Requests</span>
+        <span>{{ lang.t('nav_requests') }}</span>
       </button>
       <button class="bnav-btn active">
         <ion-icon name="person-circle-outline"></ion-icon>
-        <span>Profile</span>
+        <span>{{ lang.t('nav_profile') }}</span>
       </button>
     </div>
 
@@ -95,7 +95,7 @@
         <button class="back-btn" (click)="cancelEditing()">
           <ion-icon name="arrow-back-outline"></ion-icon>
         </button>
-        <h1>Edit Profile</h1>
+        <h1>{{ lang.t('profile_edit_title') }}</h1>
       </div>
 
       <div class="avatar-section">
@@ -107,31 +107,31 @@
           <div class="status-badge online"></div>
           <input type="file" #avatarInput accept="image/*" (change)="onAvatarSelected($event)" style="display:none"/>
         </div>
-        <a class="change-photo-link" (click)="pickAvatar()">Change profile picture</a>
+        <a class="change-photo-link" (click)="pickAvatar()">{{ lang.t('profile_change_photo') }}</a>
       </div>
 
       <div class="form-card">
         <div class="field-group">
-          <label>Full Name</label>
-          <input type="text" [(ngModel)]="fullName" placeholder="Your name"/>
+          <label>{{ lang.t('profile_full_name') }}</label>
+          <input type="text" [(ngModel)]="fullName" [placeholder]="lang.t('profile_your_name')"/>
         </div>
 
         <div class="field-group">
-          <label>Username</label>
+          <label>{{ lang.t('profile_username') }}</label>
           <div class="input-wrap locked">
             <ion-icon name="lock-closed-outline" class="lock-icon"></ion-icon>
             <input type="text" [(ngModel)]="username" disabled/>
           </div>
-          <span class="hint">Usernames are verified and cannot be changed.</span>
+          <span class="hint">{{ lang.t('profile_username_hint') }}</span>
         </div>
 
         <div class="field-group">
-          <label>Status</label>
+          <label>{{ lang.t('profile_status') }}</label>
           <div class="status-edit-wrap">
             <button class="status-emoji-btn" type="button" (click)="showEmojiGrid = !showEmojiGrid">
               {{ statusEmoji || '😊' }}
             </button>
-            <input type="text" [(ngModel)]="statusText" placeholder="What's your status?" (focus)="showEmojiGrid = false"/>
+            <input type="text" [(ngModel)]="statusText" [placeholder]="lang.t('profile_whats_status')" (focus)="showEmojiGrid = false"/>
           </div>
           <div class="emoji-grid" *ngIf="showEmojiGrid">
             <button *ngFor="let e of commonEmojis" class="emoji-cell" type="button" (click)="pickEmoji(e)">{{ e }}</button>
@@ -142,7 +142,7 @@
 
       <button class="btn-primary" (click)="save()" [disabled]="loading">
         <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
-        <span *ngIf="!loading">Save Changes</span>
+        <span *ngIf="!loading">{{ lang.t('profile_save') }}</span>
       </button>
 
       <div style="height: 40px"></div>

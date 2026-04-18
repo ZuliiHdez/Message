@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from 'src/app/services/supabase.service';
 import { ChatService } from 'src/app/services/chat.service';
+import { LanguageService } from 'src/app/services/language.service';
 
 @Component({
   selector: 'app-edit-profile',
@@ -37,7 +38,8 @@ export class EditProfilePage implements OnInit {
   constructor(
     private router: Router,
     private supabase: SupabaseService,
-    private chatService: ChatService
+    private chatService: ChatService,
+    public lang: LanguageService
   ) {}
 
   async ngOnInit() {
