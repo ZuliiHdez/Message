@@ -10,10 +10,10 @@
     </div>
 
     <div class="login-card">
-      <h2 class="card-title">Welcome back</h2>
+      <h2 class="card-title">{{ lang.t('auth_login_title') }}</h2>
 
       <div class="field-group">
-        <label>Email Address</label>
+        <label>{{ lang.t('auth_email_label') }}</label>
         <div class="input-wrap">
           <ion-icon name="at-outline" class="input-icon"></ion-icon>
           <input type="email" placeholder="messenger@orion.com" [(ngModel)]="email"/>
@@ -21,7 +21,7 @@
       </div>
 
       <div class="field-group">
-        <label>Password</label>
+        <label>{{ lang.t('auth_password_label') }}</label>
         <div class="input-wrap">
           <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
           <input [type]="showPassword ? 'text' : 'password'" placeholder="••••••••" [(ngModel)]="password"/>
@@ -36,21 +36,21 @@
       <div class="row-actions">
         <label class="remember-me">
           <input type="checkbox" [(ngModel)]="rememberMe"/>
-          <span>Remember me</span>
+          <span>{{ lang.t('auth_remember_me') }}</span>
         </label>
-        <a class="forgot-link" (click)="goToForgot()">Forgot password?</a>
+        <a class="forgot-link" (click)="goToForgot()">{{ lang.t('auth_forgot_password') }}</a>
       </div>
 
       <button class="btn-primary" (click)="login()" [disabled]="loading">
         <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
-        <span *ngIf="!loading">Sign In</span>
+        <span *ngIf="!loading">{{ lang.t('auth_sign_in') }}</span>
       </button>
 
       <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
     </div>
 
     <div class="login-footer">
-      <p>Don't have an account? <a (click)="goToRegister()">Create new account</a></p>
+      <p>{{ lang.t('auth_no_account') }} <a (click)="goToRegister()">{{ lang.t('auth_create_account') }}</a></p>
     </div>
 
   </div>

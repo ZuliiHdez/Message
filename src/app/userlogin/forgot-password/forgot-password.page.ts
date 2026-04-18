@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from 'src/app/services/supabase.service';
+import { LanguageService } from 'src/app/services/language.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -21,19 +22,20 @@ export class ForgotPasswordPage {
 
   constructor(
     private router: Router,
-    private supabase: SupabaseService
+    private supabase: SupabaseService,
+    public lang: LanguageService
   ) {}
 
   async sendResetEmail() {
     this.errorMsg = '';
 
     if (!this.email.trim()) {
-      this.errorMsg = 'Enter your email';
+      this.errorMsg = this.lang.t('auth_err_email_enter');
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
-      this.errorMsg = 'Invalid email';
+      this.errorMsg = this.lang.t('auth_err_email_invalid');
       return;
     }
 
@@ -50,7 +52,7 @@ export class ForgotPasswordPage {
     this.loading = false;
 
     if (error) {
-      this.errorMsg = 'An error occurred. Please try again.';
+      this.errorMsg = this.lang.t('auth_err_generic');
       console.error('Error reset password:', error.message);
       return;
     }

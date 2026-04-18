@@ -13,12 +13,35 @@
       </div>
 
       <div class="view-avatar-section">
-        <div class="avatar-ring">
-          <div class="avatar-circle">
-            <img *ngIf="photoUrl" [src]="photoUrl" class="avatar-img"/>
-            <ion-icon *ngIf="!photoUrl" name="person-outline"></ion-icon>
+        <div class="avatar-ring-wrap">
+          <div class="avatar-ring" (click)="toggleAvailabilityMenu($event)">
+            <div class="avatar-circle">
+              <img *ngIf="photoUrl" [src]="photoUrl" class="avatar-img"/>
+              <ion-icon *ngIf="!photoUrl" name="person-outline"></ion-icon>
+            </div>
+            <div class="status-badge" [ngClass]="availability"></div>
           </div>
-          <div class="status-badge online"></div>
+
+          <div class="availability-menu" *ngIf="showAvailabilityMenu" (click)="$event.stopPropagation()">
+            <p class="avail-label">{{ lang.t('status_title') }}</p>
+            <div class="avail-opt" (click)="changeAvailability('online')">
+              <div class="dot online"></div><span>{{ lang.t('status_online') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='online'"></ion-icon>
+            </div>
+            <div class="avail-opt" (click)="changeAvailability('away')">
+              <div class="dot away"></div><span>{{ lang.t('status_away') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='away'"></ion-icon>
+            </div>
+            <div class="avail-opt" (click)="changeAvailability('busy')">
+              <div class="dot busy"></div><span>{{ lang.t('status_busy') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='busy'"></ion-icon>
+            </div>
+            <div class="avail-divider"></div>
+            <div class="avail-opt" (click)="changeAvailability('offline')">
+              <div class="dot offline"></div><span>{{ lang.t('status_offline') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='offline'"></ion-icon>
+            </div>
+          </div>
         </div>
         <h2 class="view-name">{{ fullName || lang.t('profile_your_name') }}</h2>
         <span class="view-username">@{{ username }}</span>

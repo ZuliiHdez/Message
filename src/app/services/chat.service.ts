@@ -151,7 +151,7 @@ export class ChatService {
       .eq('id', myId);
   }
 
-  subscribeToUserStatus(userId: string, callback: (status: string) => void) {
+  subscribeToUserStatus(userId: string, callback: (status: string, avatarUrl?: string) => void) {
     const existing = this.statusChannels.get(userId);
     if (existing) {
       this.db.removeChannel(existing);
@@ -162,7 +162,7 @@ export class ChatService {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
-        (payload: any) => callback(payload.new['user_status'])
+        (payload: any) => callback(payload.new['user_status'], payload.new['avatar_url'])
       )
       .subscribe();
     this.statusChannels.set(userId, ch);
@@ -262,5 +262,33 @@ export class ChatService {
       .eq('id', userId)
       .single();
     return data?.user_status || 'offline';
+  }
+
+  subscribeToIncomingMessages(myId: string, callback: (msg: any) => void): any {
+    const ch = this.db
+      .channel(`home-msgs-${myId}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${myId}` },
+        (payload: any) => callback(payload.new)
+      )
+      .subscribe();
+    return ch;
+  }
+
+  subscribeToIncomingGroupMessages(groupId: string, callback: (msg: any) => void): any {
+    const ch = this.db
+      .channel(`home-group-${groupId}-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
+        (payload: any) => callback(payload.new)
+      )
+      .subscribe();
+    return ch;
+  }
+
+  removeChannel(ch: any) {
+    if (ch) this.db.removeChannel(ch);
   }
 }

@@ -101,7 +101,8 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
     // Siempre refrescar myId por si cambió la sesión
     this.myId = await this.chatService.getCurrentUserId();
-    await this.chatService.setUserStatus('online');
+    const savedStatus = localStorage.getItem('lastUserAvailability') as any;
+    await this.chatService.setUserStatus(savedStatus || 'online');
     this.contact.status = await this.chatService.getUserStatus(this.contact.id) as any;
 
     if (this.statusChannel) {

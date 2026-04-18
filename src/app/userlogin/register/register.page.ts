@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
+import { LanguageService } from '../../services/language.service';
 
 
 @Component({
@@ -29,7 +30,7 @@ export class RegisterComponent {
   showConfirmPassword = false;
   loading = false;
 
-  constructor(private router: Router, private supabase: SupabaseService) {}
+  constructor(private router: Router, private supabase: SupabaseService, public lang: LanguageService) {}
 
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -47,30 +48,30 @@ export class RegisterComponent {
     this.errors = {};
 
     if (!this.form.nombre.trim())
-      this.errors.nombre = 'Name is required';
+      this.errors.nombre = this.lang.t('auth_err_name_required');
 
     if (!this.form.fechaNacimiento)
-      this.errors.fechaNacimiento = 'Date of birth is required';
+      this.errors.fechaNacimiento = this.lang.t('auth_err_dob_required');
 
     if (!this.form.username.trim())
-      this.errors.username = 'Username is required';
+      this.errors.username = this.lang.t('auth_err_username_required');
     else if (this.form.username.length < 3)
-      this.errors.username = 'Minimum 3 characters';
+      this.errors.username = this.lang.t('auth_err_username_min');
 
     if (!this.form.email.trim())
-      this.errors.email = 'Email is required';
+      this.errors.email = this.lang.t('auth_err_email_required');
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email))
-      this.errors.email = 'Invalid email';
+      this.errors.email = this.lang.t('auth_err_email_invalid');
 
     if (!this.form.password)
-      this.errors.password = 'Password is required';
+      this.errors.password = this.lang.t('auth_err_password_required');
     else if (this.form.password.length < 6)
-      this.errors.password = 'Minimum 6 characters';
+      this.errors.password = this.lang.t('auth_err_password_min');
 
     if (!this.form.confirmPassword)
-      this.errors.confirmPassword = 'Confirm your password';
+      this.errors.confirmPassword = this.lang.t('auth_err_confirm_required');
     else if (this.form.password !== this.form.confirmPassword)
-      this.errors.confirmPassword = 'Passwords do not match';
+      this.errors.confirmPassword = this.lang.t('auth_err_passwords_mismatch');
 
     return Object.keys(this.errors).length === 0;
   }
@@ -90,9 +91,9 @@ async register() {
 
   if (error) {
     if (error.message.includes('already registered')) {
-      this.errors.email = 'This email is already registered';
+      this.errors.email = this.lang.t('auth_err_email_taken');
     } else {
-      this.errors.email = error.message;
+      this.errors.email = this.lang.t('auth_err_generic');
     }
     this.loading = false;
     return;

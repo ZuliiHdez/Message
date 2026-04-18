@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from 'src/app/services/supabase.service';
+import { LanguageService } from 'src/app/services/language.service';
 
 @Component({
   selector: 'app-login',
@@ -20,7 +21,7 @@ export class LoginComponent {
   loading      = false;
   errorMsg     = '';
 
-  constructor(private router: Router, private supabase: SupabaseService) {}
+  constructor(private router: Router, private supabase: SupabaseService, public lang: LanguageService) {}
 
   async login() {
     if (!this.email || !this.password) {

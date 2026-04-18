@@ -61,6 +61,9 @@ export class HomePage implements OnInit, OnDestroy {
   filteredGroupCategories: GroupCategory[] = [];
   lastMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string }>();
   lastGroupMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string }>();
+  unreadContactIds = new Set<string>();
+  unreadGroupIds = new Set<string>();
+  private homeChannels: any[] = [];
 
   statusGroups = [
     { status: 'online'  as const, label: 'Online' },
@@ -82,7 +85,8 @@ export class HomePage implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
-    await this.chatService.setUserStatus('online');
+    const saved = localStorage.getItem('lastUserAvailability') as any;
+    await this.chatService.setUserStatus(saved || 'online');
     this.myId = await this.chatService.getCurrentUserId();
     this.loadCurrentUser();
     await this.loadContacts();
@@ -98,9 +102,13 @@ export class HomePage implements OnInit, OnDestroy {
     this.myId = await this.chatService.getCurrentUserId();
     this.lastMessagePreviews.clear();
     this.lastGroupMessagePreviews.clear();
+    this.unreadContactIds.clear();
+    this.unreadGroupIds.clear();
+    this.cleanupHomeChannels();
     this.loadCurrentUser();
-    this.loadContacts();
-    this.loadGroups();
+    await this.loadContacts();
+    await this.loadGroups();
+    this.setupHomeSubscriptions();
   }
 
   private loadCurrentUser() {
@@ -111,15 +119,67 @@ export class HomePage implements OnInit, OnDestroy {
       this.currentUser.photoUrl = user.photoUrl || '';
       this.currentUser.bio      = user.status   || 'Hey, I\'m using Orion';
     }
+    const avail = localStorage.getItem('lastUserAvailability') as any;
+    if (avail) this.currentUser.status = avail;
   }
 
   async ngOnDestroy() {
     await this.chatService.setUserStatus('offline');
     this.chatService.unsubscribeStatusChannels();
+    this.cleanupHomeChannels();
     if (this.profileChannel) {
       this.chatService.unsubscribeContactsStatus(this.profileChannel);
       this.profileChannel = null;
     }
+  }
+
+  private cleanupHomeChannels() {
+    for (const ch of this.homeChannels) this.chatService.removeChannel(ch);
+    this.homeChannels = [];
+  }
+
+  private setupHomeSubscriptions() {
+    const msgCh = this.chatService.subscribeToIncomingMessages(this.myId, (msg) => {
+      const contact = this.allContacts.find(c => c.id === msg.sender_id);
+      if (contact) {
+        this.lastMessagePreviews.set(contact.id, this.buildContactPreview(contact.name, msg, false));
+        this.unreadContactIds.add(contact.id);
+      }
+    });
+    this.homeChannels.push(msgCh);
+
+    const allGroups: Group[] = ([] as Group[]).concat(...this.groupCategories.map(cat => cat.groups));
+    for (const g of allGroups) {
+      const ch = this.chatService.subscribeToIncomingGroupMessages(g.id, async (msg) => {
+        if (msg.sender_id === this.myId) return;
+        let senderName = 'Member';
+        const contact = this.allContacts.find(c => c.id === msg.sender_id);
+        if (contact) senderName = contact.name;
+        else {
+          const name = await this.friendshipService.getProfileName(msg.sender_id);
+          if (name) senderName = name;
+        }
+        this.lastGroupMessagePreviews.set(g.id, this.buildContactPreview(senderName, msg, false));
+        this.unreadGroupIds.add(g.id);
+      });
+      this.homeChannels.push(ch);
+    }
+  }
+
+  private buildContactPreview(senderName: string, msg: any, isMine: boolean): { prefix: string; icon?: string; text: string } {
+    const prefix = isMine ? this.lang.t('chat_me') : senderName;
+    let icon: string | undefined;
+    let text: string;
+    if (msg.is_photo_bomb) {
+      icon = isMine ? (msg.image_url ? 'lock-closed-outline' : 'eye-outline') : (msg.image_url ? 'eye-outline' : 'eye-off-outline');
+      text = isMine ? (msg.image_url ? 'Private photo' : 'Image seen') : (msg.image_url ? 'Open image' : 'Image deleted');
+    } else if (msg.image_url) {
+      icon = 'camera-outline';
+      text = 'Image';
+    } else {
+      text = msg.content || '';
+    }
+    return { prefix, icon, text };
   }
 
   loadingContacts = false;
@@ -148,9 +208,13 @@ export class HomePage implements OnInit, OnDestroy {
     this.loadLastMessages();
 
     for (const contact of this.allContacts) {
-      this.chatService.subscribeToUserStatus(contact.id, (status) => {
+      this.chatService.subscribeToUserStatus(contact.id, (status, avatarUrl) => {
         const c = this.allContacts.find(x => x.id === contact.id);
-        if (c) { c.status = status as any; this.filterContacts(); }
+        if (c) {
+          c.status = status as any;
+          if (avatarUrl !== undefined) c.photoUrl = avatarUrl;
+          this.filterContacts();
+        }
       });
     }
   }
@@ -162,24 +226,11 @@ export class HomePage implements OnInit, OnDestroy {
         const msg = await this.chatService.getLastMessage(c.id);
         if (!msg) return;
         const isMine = msg.sender_id === myId;
-        const prefix = isMine ? this.lang.t('chat_me') : c.name;
-        let icon: string | undefined;
-        let text: string;
-        if (msg.is_photo_bomb) {
-          if (isMine) {
-            icon = msg.image_url ? 'lock-closed-outline' : 'eye-outline';
-            text = msg.image_url ? 'Private photo' : 'Image seen';
-          } else {
-            icon = msg.image_url ? 'eye-outline' : 'eye-off-outline';
-            text = msg.image_url ? 'Open image' : 'Image deleted';
-          }
-        } else if (msg.image_url) {
-          icon = 'camera-outline';
-          text = 'Image';
-        } else {
-          text = msg.content || '';
+        this.lastMessagePreviews.set(c.id, this.buildContactPreview(c.name, msg, isMine));
+        if (!isMine) {
+          const lastRead = localStorage.getItem(`orion_last_read_${c.id}`);
+          if (!lastRead || msg.created_at > lastRead) this.unreadContactIds.add(c.id);
         }
-        this.lastMessagePreviews.set(c.id, { prefix, icon, text });
       } catch {}
     }));
   }
@@ -247,6 +298,7 @@ export class HomePage implements OnInit, OnDestroy {
   async changeStatus(status: 'online' | 'away' | 'busy' | 'offline') {
     this.currentUser.status = status;
     this.showStatusMenu = false;
+    localStorage.setItem('lastUserAvailability', status);
     await this.chatService.setUserStatus(status);
   }
 
@@ -270,6 +322,8 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   openChat(contact: Contact) {
+    localStorage.setItem(`orion_last_read_${contact.id}`, new Date().toISOString());
+    this.unreadContactIds.delete(contact.id);
     this.router.navigate(['/chat'], {
       queryParams: {
         id:    contact.id,
@@ -324,27 +378,18 @@ export class HomePage implements OnInit, OnDestroy {
             if (name) senderName = name;
           }
         }
-        let icon: string | undefined;
-        let text: string;
-        if (msg.is_photo_bomb) {
-          icon = isMine
-            ? (msg.image_url ? 'lock-closed-outline' : 'eye-outline')
-            : (msg.image_url ? 'eye-outline' : 'eye-off-outline');
-          text = isMine
-            ? (msg.image_url ? 'Private photo' : 'Image seen')
-            : (msg.image_url ? 'Open image' : 'Image deleted');
-        } else if (msg.image_url) {
-          icon = 'camera-outline';
-          text = 'Image';
-        } else {
-          text = msg.content || '';
+        this.lastGroupMessagePreviews.set(g.id, this.buildContactPreview(senderName, msg, isMine));
+        if (!isMine) {
+          const lastRead = localStorage.getItem(`orion_last_read_group_${g.id}`);
+          if (!lastRead || msg.created_at > lastRead) this.unreadGroupIds.add(g.id);
         }
-        this.lastGroupMessagePreviews.set(g.id, { prefix: senderName, icon, text });
       } catch {}
     }));
   }
 
   openGroup(group: Group) {
+    localStorage.setItem(`orion_last_read_group_${group.id}`, new Date().toISOString());
+    this.unreadGroupIds.delete(group.id);
     this.router.navigate(['/group-chat'], {
       queryParams: { id: group.id, name: group.name, color: group.avatarColor }
     });

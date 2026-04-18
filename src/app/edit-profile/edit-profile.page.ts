@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -28,6 +28,8 @@ export class EditProfilePage implements OnInit {
   statusEmoji = '';
   statusText = '';
   showEmojiGrid = false;
+  showAvailabilityMenu = false;
+  availability: 'online' | 'away' | 'busy' | 'offline' = 'online';
 
   readonly commonEmojis = [
     '😊','😂','❤️','🔥','✨','🎉','😎','🤔',
@@ -49,15 +51,16 @@ export class EditProfilePage implements OnInit {
 
     const { data: profile } = await this.supabase.getClient()
       .from('profiles')
-      .select('full_name, username, status, avatar_url')
+      .select('full_name, username, status, avatar_url, user_status')
       .eq('id', userId)
       .single();
 
     if (profile) {
-      this.fullName        = profile.full_name || '';
-      this.username        = profile.username  || '';
-      this.personalMessage = profile.status    || '';
+      this.fullName        = profile.full_name  || '';
+      this.username        = profile.username   || '';
+      this.personalMessage = profile.status     || '';
       this.photoUrl        = profile.avatar_url || '';
+      this.availability    = (profile.user_status as any) || 'online';
       this.parsePersonalMessage();
     }
   }
@@ -80,6 +83,21 @@ export class EditProfilePage implements OnInit {
       this.statusText  = this.personalMessage;
     }
   }
+
+  toggleAvailabilityMenu(event: Event) {
+    event.stopPropagation();
+    this.showAvailabilityMenu = !this.showAvailabilityMenu;
+  }
+
+  async changeAvailability(status: 'online' | 'away' | 'busy' | 'offline') {
+    this.availability = status;
+    this.showAvailabilityMenu = false;
+    localStorage.setItem('lastUserAvailability', status);
+    await this.chatService.setUserStatus(status);
+  }
+
+  @HostListener('document:click')
+  closeAvailabilityMenu() { this.showAvailabilityMenu = false; }
 
   pickEmoji(e: string) {
     this.statusEmoji = e;

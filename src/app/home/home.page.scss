@@ -311,6 +311,15 @@
     color: $on-surface-variant;
     flex-shrink: 0;
   }
+
+  &.unread {
+    .c-name { font-weight: 700; }
+    .c-bio {
+      font-weight: 700;
+      color: $on-surface;
+    }
+    .c-time { color: $primary; font-weight: 700; }
+  }
 }
 
 // ── Category header ────────────────────

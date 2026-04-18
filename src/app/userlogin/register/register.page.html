@@ -2,43 +2,43 @@
   <div class="register-wrapper">
 
     <div class="hero-text">
-      <h1>Join the<br/><span class="green">Playground.</span></h1>
-      <p>Experience the warmth of early-2000s connection reimagined for the modern era.</p>
+      <h1>{{ lang.t('auth_register_hero') }}<br/><span class="green">{{ lang.t('auth_register_hero_accent') }}</span></h1>
+      <p>{{ lang.t('auth_register_sub') }}</p>
     </div>
 
     <div class="form-card">
       <div class="form-header">
         <div>
-          <h2>Create Account</h2>
+          <h2>{{ lang.t('auth_create_account_title') }}</h2>
         </div>
       </div>
 
       <div class="field-group">
-        <label>Full Name</label>
+        <label>{{ lang.t('auth_full_name') }}</label>
         <input type="text" placeholder="Buddy Holly" [(ngModel)]="form.nombre" (ngModelChange)="clearError('nombre')"/>
         <span class="err" *ngIf="errors.nombre">{{ errors.nombre }}</span>
       </div>
 
       <div class="field-group">
-        <label>Username</label>
+        <label>{{ lang.t('auth_username') }}</label>
         <input type="text" placeholder="buddy_99" [(ngModel)]="form.username" (ngModelChange)="clearError('username')"/>
         <span class="err" *ngIf="errors.username">{{ errors.username }}</span>
       </div>
 
       <div class="field-group">
-        <label>Email Address</label>
+        <label>{{ lang.t('auth_email_label') }}</label>
         <input type="email" placeholder="hello@orion.com" [(ngModel)]="form.email" (ngModelChange)="clearError('email')"/>
         <span class="err" *ngIf="errors.email">{{ errors.email }}</span>
       </div>
 
       <div class="field-group">
-        <label>Date of Birth</label>
+        <label>{{ lang.t('auth_dob') }}</label>
         <input type="date" [(ngModel)]="form.fechaNacimiento" (ngModelChange)="clearError('fechaNacimiento')"/>
         <span class="err" *ngIf="errors.fechaNacimiento">{{ errors.fechaNacimiento }}</span>
       </div>
 
       <div class="field-group">
-        <label>Password</label>
+        <label>{{ lang.t('auth_password_label') }}</label>
         <div class="input-wrap">
           <input [type]="showPassword ? 'text' : 'password'" placeholder="••••••••" [(ngModel)]="form.password" (ngModelChange)="clearError('password')"/>
           <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" (click)="showPassword = !showPassword"></ion-icon>
@@ -47,7 +47,7 @@
       </div>
 
       <div class="field-group">
-        <label>Confirm Password</label>
+        <label>{{ lang.t('auth_confirm_password') }}</label>
         <div class="input-wrap">
           <input [type]="showConfirmPassword ? 'text' : 'password'" placeholder="••••••••" [(ngModel)]="form.confirmPassword" (ngModelChange)="clearError('confirmPassword')"/>
           <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'" (click)="showConfirmPassword = !showConfirmPassword"></ion-icon>
@@ -57,10 +57,10 @@
 
       <button class="btn-primary" (click)="register()" [disabled]="loading">
         <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
-        <span *ngIf="!loading">Register Account</span>
+        <span *ngIf="!loading">{{ lang.t('auth_register_btn') }}</span>
       </button>
 
-      <p class="signin-link">Already have an account? <a (click)="goToLogin()">Sign In</a></p>
+      <p class="signin-link">{{ lang.t('auth_already_account') }} <a (click)="goToLogin()">{{ lang.t('auth_back_signin') }}</a></p>
     </div>
 
   </div>

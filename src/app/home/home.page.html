@@ -78,7 +78,7 @@
               <ion-icon name="people-outline"></ion-icon>
             </div>
           </div>
-          <div class="contact-card" *ngFor="let c of group.contacts" (click)="openChat(c)">
+          <div class="contact-card" *ngFor="let c of group.contacts" (click)="openChat(c)" [class.unread]="unreadContactIds.has(c.id)">
             <div class="contact-avatar-wrap">
               <div class="contact-avatar" [style.background]="c.avatarColor">
                 <img *ngIf="c.photoUrl" [src]="c.photoUrl" class="ca-img"/>
@@ -113,7 +113,7 @@
             <span>{{ cat.name }} ({{ cat.groups.length }})</span>
           </div>
           <ng-container *ngIf="cat.expanded">
-            <div class="contact-card" *ngFor="let g of cat.groups" (click)="openGroup(g)">
+            <div class="contact-card" *ngFor="let g of cat.groups" (click)="openGroup(g)" [class.unread]="unreadGroupIds.has(g.id)">
               <div class="contact-avatar-wrap">
                 <div class="contact-avatar" [style.background]="g.avatarColor">
                   <ion-icon name="people-outline"></ion-icon>
