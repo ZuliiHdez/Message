@@ -4,7 +4,7 @@
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
 
-    <div class="contact-info">
+    <div class="contact-info" (click)="openDetail()">
       <div class="group-avatar" [style.background]="group.color">
         <ion-icon name="people"></ion-icon>
       </div>
@@ -170,6 +170,12 @@
       <button class="tool-btn" (click)="pickImage()">
         <ion-icon name="image-outline"></ion-icon>
         <input type="file" #fileInput accept="image/*" multiple (change)="onImageSelected($event)" style="display:none"/>
+      </button>
+      <button class="tool-btn">
+        <ion-icon name="color-wand-outline"></ion-icon>
+      </button>
+      <button class="tool-btn">
+        <ion-icon name="phone-portrait-outline"></ion-icon>
       </button>
       <button class="tool-btn" [class.active]="showEmojiPicker" (click)="toggleEmoji(); $event.stopPropagation()">
         <ion-icon name="happy-outline"></ion-icon>

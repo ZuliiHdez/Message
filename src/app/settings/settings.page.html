@@ -1,0 +1,107 @@
+<ion-content class="settings-content">
+
+  <div class="settings-header">
+    <button class="back-btn" (click)="goBack()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <h1>Settings</h1>
+  </div>
+
+  <div class="scroll-area">
+
+    <section class="profile-card" (click)="goToProfile()">
+      <div class="profile-bg-blob"></div>
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">
+          <img *ngIf="currentUser.photoUrl" [src]="currentUser.photoUrl" class="av-img"/>
+          <ion-icon *ngIf="!currentUser.photoUrl" name="person-outline"></ion-icon>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+      <h2 class="profile-name">{{ currentUser.name }}</h2>
+      <span class="profile-username">@{{ currentUser.username || 'usuario' }}</span>
+      <div class="profile-badge">
+        <span>Edit Profile</span>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon blue">
+          <ion-icon name="notifications-outline"></ion-icon>
+        </div>
+        <h3>Notifications</h3>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon name="volume-high-outline"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">Sound</span>
+            <span class="row-sub">Play sound for incoming messages</span>
+          </div>
+        </div>
+        <ion-toggle [(ngModel)]="soundEnabled" class="orion-toggle"></ion-toggle>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon name="phone-portrait-outline"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">Vibration</span>
+            <span class="row-sub">Haptic feedback on alerts</span>
+          </div>
+        </div>
+        <ion-toggle [(ngModel)]="vibrationEnabled" class="orion-toggle"></ion-toggle>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon green">
+          <ion-icon name="color-palette-outline"></ion-icon>
+        </div>
+        <h3>Appearance</h3>
+      </div>
+
+      <button class="nav-row">
+        <div class="row-icon">
+          <ion-icon name="moon-outline"></ion-icon>
+        </div>
+        <span class="row-title">Theme</span>
+        <span class="nav-row-value">Light</span>
+      </button>
+    </section>
+
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon amber">
+          <ion-icon name="language-outline"></ion-icon>
+        </div>
+        <h3>Language</h3>
+      </div>
+
+      <p class="card-desc">Choose your preferred language for the interface.</p>
+
+      <div class="select-wrap">
+        <select [(ngModel)]="selectedLanguage" class="lang-select">
+          <option value="en">English (US)</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="pt">Português</option>
+        </select>
+        <ion-icon name="chevron-down-outline" class="select-arrow"></ion-icon>
+      </div>
+    </section>
+
+    <div style="height: 40px"></div>
+  </div>
+
+</ion-content>

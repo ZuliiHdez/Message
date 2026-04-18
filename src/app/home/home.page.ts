@@ -359,6 +359,10 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   goToSettings() {
+    this.router.navigate(['/settings']);
+  }
+
+  goToProfile() {
     this.router.navigate(['/edit-profile']);
   }
 }

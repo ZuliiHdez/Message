@@ -369,4 +369,17 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   goBack() {
     this.router.navigate(['/home']);
   }
+
+  openDetail() {
+    this.router.navigate(['/contact-detail'], {
+      queryParams: {
+        id:     this.contact.id,
+        name:   this.contact.name,
+        bio:    this.contact.bio,
+        color:  this.contact.avatarColor,
+        photo:  this.contact.photoUrl,
+        status: this.contact.status,
+      },
+    });
+  }
 }

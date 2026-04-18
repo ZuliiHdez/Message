@@ -246,24 +246,4 @@
     }
   }
 
-  .active-fab {
-    color: $primary;
-    padding: 0 10px;
-
-    .fab-circle {
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, $primary, $primary-container);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: $on-primary;
-      font-size: 22px;
-      box-shadow: $shadow-btn;
-      margin-bottom: 2px;
-    }
-
-    span { color: $primary; font-weight: 600; }
-  }
 }

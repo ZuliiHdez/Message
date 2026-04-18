@@ -1,53 +1,153 @@
 <ion-content class="edit-content">
-  <div class="edit-wrapper">
 
-    <div class="edit-header">
-      <button class="back-btn" (click)="goBack()">
-        <ion-icon name="arrow-back-outline"></ion-icon>
+  <!-- ── MODO VISTA ── -->
+  <ng-container *ngIf="!isEditing">
+
+    <div class="view-wrapper">
+
+      <div class="view-header">
+        <span class="view-title">Profile</span>
+        <button class="edit-icon-btn" (click)="startEditing()">
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="view-avatar-section">
+        <div class="avatar-ring">
+          <div class="avatar-circle">
+            <img *ngIf="photoUrl" [src]="photoUrl" class="avatar-img"/>
+            <ion-icon *ngIf="!photoUrl" name="person-outline"></ion-icon>
+          </div>
+          <div class="status-badge online"></div>
+        </div>
+        <h2 class="view-name">{{ fullName || 'Your Name' }}</h2>
+        <span class="view-username">@{{ username }}</span>
+      </div>
+
+      <div class="discord-status" (click)="startEditing()">
+        <div class="ds-emoji">{{ statusEmoji || '💬' }}</div>
+        <div class="ds-body">
+          <span class="ds-label">CUSTOM STATUS</span>
+          <span class="ds-text" [class.ds-placeholder]="!statusText">
+            {{ statusText || 'Set a status…' }}
+          </span>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="ds-arrow"></ion-icon>
+      </div>
+
+      <div class="view-card view-info-list">
+        <div class="view-row">
+          <div class="view-row-icon blue">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+          <div class="view-row-text">
+            <span class="view-row-label">Full Name</span>
+            <span class="view-row-value">{{ fullName || '—' }}</span>
+          </div>
+        </div>
+        <div class="view-divider"></div>
+        <div class="view-row">
+          <div class="view-row-icon green">
+            <ion-icon name="at-outline"></ion-icon>
+          </div>
+          <div class="view-row-text">
+            <span class="view-row-label">Username</span>
+            <span class="view-row-value">@{{ username || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="logout-btn" (click)="logout()">
+        <ion-icon name="log-out-outline"></ion-icon>
+        <span>Log Out</span>
       </button>
-      <h1>Edit Profile</h1>
+
+      <div style="height: 100px"></div>
     </div>
 
-    <div class="avatar-section">
-      <div class="avatar-ring" (click)="pickAvatar()">
-        <div class="avatar-circle">
-          <img *ngIf="photoUrl" [src]="photoUrl" class="avatar-img"/>
-          <ion-icon *ngIf="!photoUrl" name="person-outline"></ion-icon>
+    <div class="bottom-nav">
+      <button class="bnav-btn" (click)="goToHome()">
+        <ion-icon name="home-outline"></ion-icon>
+        <span>Contacts</span>
+      </button>
+      <button class="bnav-btn" (click)="goToCreateGroup()">
+        <ion-icon name="people-outline"></ion-icon>
+        <span>New Group</span>
+      </button>
+      <button class="bnav-btn" (click)="goToRequests()">
+        <ion-icon name="mail-outline"></ion-icon>
+        <span>Requests</span>
+      </button>
+      <button class="bnav-btn active">
+        <ion-icon name="person-circle-outline"></ion-icon>
+        <span>Profile</span>
+      </button>
+    </div>
+
+  </ng-container>
+
+  <!-- ── MODO EDICIÓN ── -->
+  <ng-container *ngIf="isEditing">
+
+    <div class="edit-wrapper">
+
+      <div class="edit-header">
+        <button class="back-btn" (click)="cancelEditing()">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+        </button>
+        <h1>Edit Profile</h1>
+      </div>
+
+      <div class="avatar-section">
+        <div class="avatar-ring" (click)="pickAvatar()">
+          <div class="avatar-circle">
+            <img *ngIf="photoUrl" [src]="photoUrl" class="avatar-img"/>
+            <ion-icon *ngIf="!photoUrl" name="person-outline"></ion-icon>
+          </div>
+          <div class="status-badge online"></div>
+          <input type="file" #avatarInput accept="image/*" (change)="onAvatarSelected($event)" style="display:none"/>
         </div>
-        <div class="status-badge online"></div>
-        <input type="file" #avatarInput accept="image/*" (change)="onAvatarSelected($event)" style="display:none"/>
-      </div>
-      <a class="change-photo-link">Change profile picture</a>
-    </div>
-
-    <div class="form-card">
-      <div class="field-group">
-        <label>Full Name</label>
-        <input type="text" [(ngModel)]="fullName" placeholder="Your name"/>
+        <a class="change-photo-link" (click)="pickAvatar()">Change profile picture</a>
       </div>
 
-      <div class="field-group">
-        <label>Username</label>
-        <div class="input-wrap locked">
-          <ion-icon name="lock-closed-outline" class="lock-icon"></ion-icon>
-          <input type="text" [(ngModel)]="username" disabled/>
+      <div class="form-card">
+        <div class="field-group">
+          <label>Full Name</label>
+          <input type="text" [(ngModel)]="fullName" placeholder="Your name"/>
         </div>
-        <span class="hint">Usernames are verified and cannot be changed.</span>
+
+        <div class="field-group">
+          <label>Username</label>
+          <div class="input-wrap locked">
+            <ion-icon name="lock-closed-outline" class="lock-icon"></ion-icon>
+            <input type="text" [(ngModel)]="username" disabled/>
+          </div>
+          <span class="hint">Usernames are verified and cannot be changed.</span>
+        </div>
+
+        <div class="field-group">
+          <label>Status</label>
+          <div class="status-edit-wrap">
+            <button class="status-emoji-btn" type="button" (click)="showEmojiGrid = !showEmojiGrid">
+              {{ statusEmoji || '😊' }}
+            </button>
+            <input type="text" [(ngModel)]="statusText" placeholder="What's your status?" (focus)="showEmojiGrid = false"/>
+          </div>
+          <div class="emoji-grid" *ngIf="showEmojiGrid">
+            <button *ngFor="let e of commonEmojis" class="emoji-cell" type="button" (click)="pickEmoji(e)">{{ e }}</button>
+            <button class="emoji-cell emoji-clear" type="button" (click)="statusEmoji = ''; showEmojiGrid = false">✕</button>
+          </div>
+        </div>
       </div>
 
-      <div class="field-group">
-        <label>Personal Message</label>
-        <input type="text" [(ngModel)]="personalMessage" placeholder="What's on your mind?"/>
-      </div>
+      <button class="btn-primary" (click)="save()" [disabled]="loading">
+        <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+        <span *ngIf="!loading">Save Changes</span>
+      </button>
+
+      <div style="height: 40px"></div>
     </div>
 
-    <button class="btn-primary" (click)="save()" [disabled]="loading">
-      <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
-      <span *ngIf="!loading">Save Changes</span>
-    </button>
+  </ng-container>
 
-    <a class="deactivate-link" (click)="logout()">Log Out</a>
-
-    <div style="height: 40px"></div>
-  </div>
 </ion-content>

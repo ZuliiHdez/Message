@@ -1,0 +1,99 @@
+<ion-content class="detail-content">
+  <div class="page-wrapper">
+
+    <div class="page-header">
+      <button class="back-btn" (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+      <h1>Details</h1>
+      <div class="header-spacer"></div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="avatar-wrap">
+        <div class="avatar-glow"></div>
+        <div class="hero-avatar" [style.background]="contact.color">
+          <img *ngIf="contact.photo" [src]="contact.photo" class="av-img"/>
+          <ion-icon *ngIf="!contact.photo" name="person"></ion-icon>
+        </div>
+        <div class="status-badge" [ngClass]="contact.status"></div>
+      </div>
+      <h2 class="hero-name">{{ contact.name }}</h2>
+      <div class="hero-meta">
+        <span class="status-label" [ngClass]="contact.status">{{ getStatusLabel(contact.status) }}</span>
+        <span class="meta-dot"></span>
+        <span class="hero-username">@{{ contact.bio || contact.name }}</span>
+      </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="qa-btn">
+        <ion-icon name="call-outline"></ion-icon>
+        <span>Audio</span>
+      </button>
+      <button class="qa-btn">
+        <ion-icon name="videocam-outline"></ion-icon>
+        <span>Video</span>
+      </button>
+    </div>
+
+    <!-- Privacy & Preferences -->
+    <div class="section-label">Privacy &amp; Preferences</div>
+    <div class="action-card">
+      <button class="action-row">
+        <div class="action-icon">
+          <ion-icon name="notifications-off-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title">Mute Notifications</p>
+          <p class="action-sub">Silence messages from this contact</p>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="action-chevron"></ion-icon>
+      </button>
+      <div class="card-divider"></div>
+      <button class="action-row">
+        <div class="action-icon">
+          <ion-icon name="images-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title">Shared Media</p>
+          <p class="action-sub">Photos, videos and documents</p>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="action-chevron"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section-label danger-label">Danger Zone</div>
+    <div class="action-card danger-card">
+      <button class="action-row danger-row">
+        <div class="action-icon danger-icon">
+          <ion-icon name="ban-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title danger-title">Block Contact</p>
+          <p class="action-sub">Prevent messages and calls</p>
+        </div>
+      </button>
+      <div class="card-divider"></div>
+      <button class="action-row danger-row">
+        <div class="action-icon danger-icon">
+          <ion-icon name="person-remove-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title danger-title">Delete Friendship</p>
+          <p class="action-sub">Remove from your contact list</p>
+        </div>
+      </button>
+    </div>
+
+    <div class="page-footer">
+      <div class="footer-line"></div>
+      <ion-icon name="chatbubble" class="footer-icon"></ion-icon>
+      <div class="footer-line"></div>
+    </div>
+
+  </div>
+</ion-content>

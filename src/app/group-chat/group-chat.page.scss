@@ -33,6 +33,7 @@ ion-header { --background: transparent; box-shadow: none; }
     display: flex;
     align-items: center;
     gap: 10px;
+    cursor: pointer;
   }
 
   .group-avatar {

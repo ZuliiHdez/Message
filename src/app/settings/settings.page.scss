@@ -1,0 +1,299 @@
+@use 'src/theme/orion-theme' as *;
+
+.settings-content { --background: #{$background}; }
+
+// ── Header ─────────────────────────────
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 52px 20px 16px;
+
+  .back-btn {
+    background: none;
+    border: none;
+    color: $primary;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+  }
+
+  h1 {
+    font-family: $font-display;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $primary;
+    margin: 0;
+  }
+}
+
+// ── Scroll area ────────────────────────
+.scroll-area {
+  padding: 24px 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// ── Profile card ───────────────────────
+.profile-card {
+  background: linear-gradient(135deg, $primary, $primary-container);
+  border-radius: $radius-lg;
+  padding: 32px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: $shadow-ambient;
+  transition: transform 0.15s;
+  &:active { transform: scale(0.99); }
+
+  .profile-bg-blob {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+    filter: blur(30px);
+  }
+
+  .profile-avatar-wrap {
+    position: relative;
+    margin-bottom: 4px;
+
+    .profile-avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.9);
+      background: $surface-high;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      color: $on-surface-variant;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+
+      .av-img { width: 100%; height: 100%; object-fit: cover; }
+    }
+
+    .online-dot {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: $secondary-container;
+      border: 3px solid $primary;
+    }
+  }
+
+  .profile-name {
+    font-family: $font-display;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    text-align: center;
+  }
+
+  .profile-username {
+    font-family: $font-body;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(8px);
+    border-radius: $radius-full;
+    padding: 6px 16px;
+    margin-top: 4px;
+    font-family: $font-body;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+
+    .badge-icon { font-size: 16px; color: $secondary-container; }
+  }
+}
+
+// ── Settings card ──────────────────────
+.settings-card {
+  background: $surface-lowest;
+  border-radius: $radius-lg;
+  padding: 24px;
+  box-shadow: 0px 20px 40px rgba(0,61,124,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: $radius-sm;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+
+      &.blue  { background: rgba(0,61,124,0.08);  color: $primary; }
+      &.green { background: rgba(61,106,0,0.12);  color: $secondary; }
+      &.amber { background: rgba(255,193,7,0.15);  color: #b8860b; }
+    }
+
+    h3 {
+      font-family: $font-display;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: $primary;
+      margin: 0;
+    }
+  }
+
+  .card-desc {
+    font-family: $font-body;
+    font-size: 0.85rem;
+    color: $on-surface-variant;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// ── Toggle row ─────────────────────────
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 1;
+  }
+}
+
+.row-divider { height: 1px; background: $surface-high; }
+
+// ── Nav row (button) ───────────────────
+.nav-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: $surface-low;
+  border: none;
+  border-radius: $radius-md;
+  padding: 14px 16px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:active { background: $surface-high; }
+
+  .row-title { flex: 1; }
+
+  .nav-row-value {
+    font-family: $font-body;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: $primary;
+  }
+
+  .nav-chevron {
+    font-size: 18px;
+    color: $primary;
+  }
+}
+
+// ── Shared row parts ───────────────────
+.row-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: $surface-low;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: $primary;
+  flex-shrink: 0;
+}
+
+.row-title {
+  font-family: $font-body;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $on-surface;
+}
+
+.row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .row-sub {
+    font-family: $font-body;
+    font-size: 0.75rem;
+    color: $on-surface-variant;
+  }
+}
+
+// ── Toggle styling ─────────────────────
+.orion-toggle {
+  --track-background-checked: #{$primary};
+  --handle-background: #fff;
+  --track-background: #{$surface-high};
+}
+
+// ── Language select ────────────────────
+.select-wrap {
+  position: relative;
+
+  .lang-select {
+    width: 100%;
+    appearance: none;
+    background: $surface-low;
+    border: none;
+    border-radius: $radius-md;
+    padding: 14px 44px 14px 16px;
+    font-family: $font-body;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $on-surface;
+    outline: none;
+    cursor: pointer;
+
+    &:focus { box-shadow: 0 0 0 2px $outline-variant; }
+  }
+
+  .select-arrow {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 18px;
+    color: $primary;
+  }
+}

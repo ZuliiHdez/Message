@@ -4,7 +4,7 @@
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
 
-    <div class="contact-info">
+    <div class="contact-info" (click)="openDetail()">
       <div class="contact-avatar" [style.background]="contact.avatarColor">
         <img *ngIf="contact.photoUrl" [src]="contact.photoUrl" class="avatar-img"/>
         <ion-icon *ngIf="!contact.photoUrl" name="person"></ion-icon>

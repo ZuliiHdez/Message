@@ -22,6 +22,17 @@ export class EditProfilePage implements OnInit {
   personalMessage = '';
   photoUrl = '';
   loading = false;
+  isEditing = false;
+
+  statusEmoji = '';
+  statusText = '';
+  showEmojiGrid = false;
+
+  readonly commonEmojis = [
+    '😊','😂','❤️','🔥','✨','🎉','😎','🤔',
+    '💪','🙏','😍','🚀','💯','😅','🎵','⚡',
+    '🌙','☀️','🌊','🌸','🦋','🏆','💻','🎮',
+  ];
 
   constructor(
     private router: Router,
@@ -45,7 +56,32 @@ export class EditProfilePage implements OnInit {
       this.username        = profile.username  || '';
       this.personalMessage = profile.status    || '';
       this.photoUrl        = profile.avatar_url || '';
+      this.parsePersonalMessage();
     }
+  }
+
+  private parsePersonalMessage() {
+    if (!this.personalMessage) { this.statusEmoji = ''; this.statusText = ''; return; }
+    const firstChar = [...this.personalMessage][0];
+    const cp = firstChar.codePointAt(0) ?? 0;
+    if (cp > 0x00FF) {
+      const spaceIdx = this.personalMessage.indexOf(' ');
+      if (spaceIdx > 0 && spaceIdx <= 4) {
+        this.statusEmoji = this.personalMessage.slice(0, spaceIdx);
+        this.statusText  = this.personalMessage.slice(spaceIdx + 1);
+      } else {
+        this.statusEmoji = firstChar;
+        this.statusText  = this.personalMessage.slice(firstChar.length).replace(/^\s+/, '');
+      }
+    } else {
+      this.statusEmoji = '';
+      this.statusText  = this.personalMessage;
+    }
+  }
+
+  pickEmoji(e: string) {
+    this.statusEmoji = e;
+    this.showEmojiGrid = false;
   }
 
   pickAvatar() {
@@ -79,8 +115,23 @@ export class EditProfilePage implements OnInit {
     }
   }
 
+  startEditing() {
+    this.showEmojiGrid = false;
+    this.isEditing = true;
+  }
+
+  cancelEditing() {
+    this.isEditing = false;
+    this.showEmojiGrid = false;
+    this.parsePersonalMessage();
+  }
+
   async save() {
     this.loading = true;
+    this.personalMessage = this.statusEmoji
+      ? `${this.statusEmoji} ${this.statusText.trim()}`
+      : this.statusText.trim();
+
     const { data: session } = await this.supabase.getClient().auth.getSession();
     const userId = session.session?.user.id;
     if (!userId) { this.loading = false; return; }
@@ -103,7 +154,7 @@ export class EditProfilePage implements OnInit {
         user.photoUrl = this.photoUrl;
         localStorage.setItem('lastUser', JSON.stringify(user));
       }
-      this.router.navigate(['/home']);
+      this.isEditing = false;
     }
 
     this.loading = false;
@@ -116,7 +167,7 @@ export class EditProfilePage implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  goBack() {
-    this.router.navigate(['/home']);
-  }
+  goToHome() { this.router.navigate(['/home']); }
+  goToCreateGroup() { this.router.navigate(['/create-group']); }
+  goToRequests() { this.router.navigate(['/peticiones']); }
 }

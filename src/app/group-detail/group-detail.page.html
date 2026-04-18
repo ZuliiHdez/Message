@@ -1,0 +1,89 @@
+<ion-content class="detail-content">
+  <div class="page-wrapper">
+
+    <div class="page-header">
+      <button class="back-btn" (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+      <h1>Details</h1>
+      <div class="header-spacer"></div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="avatar-wrap">
+        <div class="avatar-glow"></div>
+        <div class="hero-avatar" [style.background]="group.color">
+          <ion-icon name="people"></ion-icon>
+        </div>
+        <div class="active-dot"></div>
+      </div>
+      <h2 class="hero-name">{{ group.name }}</h2>
+      <div class="hero-meta">
+        <span class="meta-count">{{ group.memberCount }} members</span>
+      </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="qa-btn">
+        <ion-icon name="person-add-outline"></ion-icon>
+        <span>Add</span>
+      </button>
+      <button class="qa-btn">
+        <ion-icon name="notifications-off-outline"></ion-icon>
+        <span>Mute</span>
+      </button>
+    </div>
+
+    <!-- Members -->
+    <div class="section-header">
+      <span class="section-label">Members</span>
+      <button class="see-all-btn">See All</button>
+    </div>
+
+    <div class="action-card" *ngIf="!loading">
+      <ng-container *ngFor="let m of members; let i = index">
+        <div class="card-divider" *ngIf="i > 0"></div>
+        <div class="member-row">
+          <div class="member-avatar" [style.background]="m.color">
+            <img *ngIf="m.photo" [src]="m.photo" class="av-img"/>
+            <ion-icon *ngIf="!m.photo" name="person"></ion-icon>
+          </div>
+          <div class="member-info">
+            <p class="member-name">{{ m.name }}</p>
+          </div>
+          <ion-icon name="chatbubble-outline" class="member-chat"></ion-icon>
+        </div>
+      </ng-container>
+      <div class="loading-members" *ngIf="members.length === 0">
+        <p>No members found</p>
+      </div>
+    </div>
+
+    <div class="loading-wrap" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section-label danger-label">Danger Zone</div>
+    <div class="action-card danger-card">
+      <button class="action-row danger-row">
+        <div class="action-icon danger-icon">
+          <ion-icon name="log-out-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title danger-title">Leave Group</p>
+          <p class="action-sub">Exit this community conversation</p>
+        </div>
+      </button>
+    </div>
+
+    <div class="page-footer">
+      <div class="footer-line"></div>
+      <ion-icon name="chatbubble" class="footer-icon"></ion-icon>
+      <div class="footer-line"></div>
+    </div>
+
+  </div>
+</ion-content>

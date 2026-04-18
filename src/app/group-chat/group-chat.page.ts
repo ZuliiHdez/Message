@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { ChatService } from '../services/chat.service';
 import { FriendshipService } from '../services/friendship.service';
 import 'emoji-picker-element';
@@ -83,35 +84,54 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  openDetail() {
+    this.router.navigate(['/group-detail'], {
+      queryParams: { id: this.group.id, name: this.group.name, color: this.group.color },
+    });
+  }
+
   loadingMessages = false;
 
   async ionViewWillEnter() {
-    // Limpiar mensajes del chat anterior inmediatamente
+    // Re-read params to ensure group.id is set (page may be cached)
+    const params = await firstValueFrom(this.route.queryParams);
+    this.group.id    = params['id']    || '';
+    this.group.name  = params['name']  || 'Group';
+    this.group.color = params['color'] || '#4a9fd4';
+
     this.messageGroups = [];
     this.loadingMessages = true;
     this.explodedPhotoBombs.clear();
     this.openPhotoBombs.clear();
 
-    // Siempre refrescar myId por si cambió la sesión
     this.myId = await this.chatService.getCurrentUserId();
 
-    const profiles = await this.friendshipService.getGroupMembers(this.group.id);
-    this.group.memberCount = profiles.length;
+    const { count, profiles } = await this.friendshipService.getGroupMembers(this.group.id);
+    this.group.memberCount = count;
     this.members.clear();
     for (const p of profiles) {
       this.members.set(p.id, {
-        name: p.full_name || p.username || 'User',
+        name: p.full_name || p.username || (p as any).name || 'Member',
         color: this.colorFromId(p.id),
         photo: p.avatar_url || '',
       });
     }
 
     await this.loadMessages();
+    await this.resolveMissingSenders();
 
     this.chatService.subscribeToGroupMessages(
       this.group.id,
-      (msg) => {
+      async (msg) => {
         if (msg.sender_id === this.myId) return;
+        if (!this.members.has(msg.sender_id)) {
+          const name = await this.friendshipService.getProfileName(msg.sender_id);
+          this.members.set(msg.sender_id, {
+            name: name || 'Member',
+            color: this.colorFromId(msg.sender_id),
+            photo: '',
+          });
+        }
         const formatted = this.formatMessage(msg);
         this.addToGroups(formatted);
         this.shouldScroll = true;
@@ -133,6 +153,28 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   ngOnDestroy() {
     this.chatService.unsubscribe();
+  }
+
+  private async resolveMissingSenders() {
+    const unknownIds = new Set<string>();
+    for (const g of this.messageGroups) {
+      for (const msg of g.messages) {
+        if (!msg.isMine && msg.senderName === 'Member') unknownIds.add(msg.sender_id);
+      }
+    }
+    for (const id of unknownIds) {
+      const name = await this.friendshipService.getProfileName(id);
+      if (name) {
+        const entry = this.members.get(id) ?? { name, color: this.colorFromId(id), photo: '' };
+        entry.name = name;
+        this.members.set(id, entry);
+        for (const g of this.messageGroups) {
+          for (const msg of g.messages) {
+            if (msg.sender_id === id) msg.senderName = name;
+          }
+        }
+      }
+    }
   }
 
   async loadMessages() {

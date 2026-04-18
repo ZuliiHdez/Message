@@ -127,23 +127,24 @@ export class FriendshipService {
     }
   }
 
-  async getGroupMembers(groupId: string) {
+  async getGroupMembers(groupId: string): Promise<{ count: number; profiles: Array<{ id: string; full_name: string; username: string; avatar_url: string }> }> {
     const { data: members, error } = await this.db
       .from('group_members')
       .select('user_id')
       .eq('group_id', groupId);
 
-    if (error || !members?.length) return [];
+    if (error || !members?.length) return { count: 0, profiles: [] };
 
     const userIds = members.map((m: any) => m.user_id);
     const { data: profiles } = await this.db
       .from('profiles')
-      .select('id, full_name, username, avatar_url')
+      .select('id, full_name, username, avatar_url, name')
       .in('id', userIds);
 
-    return (profiles || []) as Array<{
-      id: string; full_name: string; username: string; avatar_url: string;
-    }>;
+    return {
+      count: userIds.length,
+      profiles: (profiles || []) as Array<{ id: string; full_name: string; username: string; avatar_url: string; name?: string }>,
+    };
   }
 
   async createGroup(name: string, avatarColor: string, memberIds: string[]) {
