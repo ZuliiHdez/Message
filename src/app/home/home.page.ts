@@ -235,8 +235,8 @@ export class HomePage implements OnInit, OnDestroy {
     });
   }
 
-  addContact() {
-    this.router.navigate(['/add-contact']);
+  goToCrearGrupo() {
+    this.router.navigate(['/create-group']);
   }
 
   createGroup() {
