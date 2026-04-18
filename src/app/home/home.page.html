@@ -91,7 +91,13 @@
             </div>
             <div class="contact-info">
               <span class="c-name">{{ c.name }}</span>
-              <span class="c-bio">{{ c.bio || getStatusLabel(c.status) }}</span>
+              <span class="c-bio">
+                <ng-container *ngIf="getLastMsg(c.id) as p">
+                  <span class="lm-prefix">{{ p.prefix }}:</span>
+                  <ion-icon *ngIf="p.icon" [name]="p.icon" class="lm-icon"></ion-icon>{{ ' ' + p.text }}
+                </ng-container>
+                <ng-container *ngIf="!getLastMsg(c.id)">{{ c.bio || getStatusLabel(c.status) }}</ng-container>
+              </span>
             </div>
             <span class="c-time">NOW</span>
           </div>
@@ -118,6 +124,12 @@
               </div>
               <div class="contact-info">
                 <span class="c-name">{{ g.name }}</span>
+                <span class="c-bio">
+                  <ng-container *ngIf="getLastGroupMsg(g.id) as p">
+                    <span class="lm-prefix">{{ p.prefix }}:</span>
+                    <ion-icon *ngIf="p.icon" [name]="p.icon" class="lm-icon"></ion-icon>{{ ' ' + p.text }}
+                  </ng-container>
+                </span>
               </div>
             </div>
           </ng-container>

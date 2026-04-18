@@ -58,14 +58,14 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   messageGroups: MessageGroup[] = [];
   myId = '';
   isTyping = false;
-  selectedImage: File | null = null;
-  selectedImageUrl = '';
+  selectedImages: { file: File; url: string }[] = [];
+  showImagePreview = false;
+  captionText = '';
+  currentPreviewIndex = 0;
   sending = false;
 
   showEmojiPicker = false;
   isPhotoBomb = false;
-  pendingFile: File | null = null;
-  showImageTypeDialog = false;
   openPhotoBombs = new Set<string>();
   explodedPhotoBombs = new Set<string>();
 
@@ -160,7 +160,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     return {
       ...msg,
       isMine: msg.sender_id === this.myId,
-      time: date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     };
   }
 
@@ -179,9 +179,9 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
-    if (date.toDateString() === today.toDateString()) return 'Hoy';
-    if (date.toDateString() === yesterday.toDateString()) return 'Ayer';
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
   updateMessageInGroups(raw: any) {
@@ -213,39 +213,27 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   async sendMessage() {
     if (this.sending) return;
-    if (!this.messageText.trim() && !this.selectedImage) return;
+    if (!this.messageText.trim()) return;
 
     this.sending = true;
     try {
-      let imageUrl: string | undefined;
-      if (this.selectedImage) {
-        imageUrl = await this.chatService.uploadImage(this.selectedImage);
-      }
-
-      await this.chatService.sendMessage(
-        this.contact.id,
-        this.messageText.trim(),
-        imageUrl,
-        this.isPhotoBomb
-      );
-
+      await this.chatService.sendMessage(this.contact.id, this.messageText.trim(), undefined, false);
       const newMsg: Message = {
         id: Date.now().toString(),
         sender_id: this.myId,
         receiver_id: this.contact.id,
         content: this.messageText.trim(),
-        image_url: imageUrl || '',
-        is_photo_bomb: this.isPhotoBomb,
+        image_url: '',
+        is_photo_bomb: false,
         created_at: new Date().toISOString(),
         isMine: true,
-        time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       };
       this.addMessageToGroups(newMsg);
       this.messageText = '';
-      this.removeImage();
       this.shouldScroll = true;
     } catch (e) {
-      console.error('Error enviando mensaje:', e);
+      console.error('Error sending message:', e);
     } finally {
       this.sending = false;
     }
@@ -257,34 +245,73 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   onImageSelected(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
-    this.pendingFile = file;
-    this.showImageTypeDialog = true;
+    const files = Array.from(event.target.files) as File[];
+    if (!files.length) return;
     if (this.fileInput) this.fileInput.nativeElement.value = '';
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => { this.selectedImages.push({ file, url: e.target.result }); };
+      reader.readAsDataURL(file);
+    }
+    this.showImagePreview = true;
   }
 
-  selectImageType(bomb: boolean) {
-    this.showImageTypeDialog = false;
-    if (!this.pendingFile) return;
-    this.isPhotoBomb = bomb;
-    this.selectedImage = this.pendingFile;
-    this.pendingFile = null;
-    const reader = new FileReader();
-    reader.onload = (e: any) => { this.selectedImageUrl = e.target.result; };
-    reader.readAsDataURL(this.selectedImage);
+  addMoreImages() {
+    this.fileInput.nativeElement.click();
   }
 
-  cancelImageSelection() {
-    this.showImageTypeDialog = false;
-    this.pendingFile = null;
+  removeSelectedImage(index: number) {
+    this.selectedImages.splice(index, 1);
+    if (this.selectedImages.length === 0) { this.cancelImagePreview(); return; }
+    if (this.currentPreviewIndex >= this.selectedImages.length) {
+      this.currentPreviewIndex = this.selectedImages.length - 1;
+    }
+    if (this.selectedImages.length > 1) this.isPhotoBomb = false;
   }
 
-  removeImage() {
-    this.selectedImage = null;
-    this.selectedImageUrl = '';
+  cancelImagePreview() {
+    this.selectedImages = [];
+    this.showImagePreview = false;
     this.isPhotoBomb = false;
-    if (this.fileInput) this.fileInput.nativeElement.value = '';
+    this.captionText = '';
+    this.currentPreviewIndex = 0;
+  }
+
+  get canPhotoBomb(): boolean {
+    return this.selectedImages.length === 1;
+  }
+
+  async sendFromPreview() {
+    if (!this.selectedImages.length || this.sending) return;
+    this.sending = true;
+    const images = [...this.selectedImages];
+    const caption = this.captionText;
+    const isPhotoBomb = this.canPhotoBomb && this.isPhotoBomb;
+    this.cancelImagePreview();
+    try {
+      for (let i = 0; i < images.length; i++) {
+        const imageUrl = await this.chatService.uploadImage(images[i].file);
+        const text = i === 0 ? caption : '';
+        await this.chatService.sendMessage(this.contact.id, text, imageUrl, isPhotoBomb);
+        const newMsg: Message = {
+          id: Date.now().toString() + i,
+          sender_id: this.myId,
+          receiver_id: this.contact.id,
+          content: text,
+          image_url: imageUrl,
+          is_photo_bomb: isPhotoBomb,
+          created_at: new Date().toISOString(),
+          isMine: true,
+          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        };
+        this.addMessageToGroups(newMsg);
+      }
+      this.shouldScroll = true;
+    } catch (e) {
+      console.error('Error sending message:', e);
+    } finally {
+      this.sending = false;
+    }
   }
 
 
@@ -326,8 +353,8 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   getStatusLabel(status: string): string {
-    const map: any = { online: 'En línea', away: 'Ausente', busy: 'Ocupado', offline: 'Desconectado' };
-    return map[status] || 'Desconectado';
+    const map: any = { online: 'Online', away: 'Away', busy: 'Busy', offline: 'Offline' };
+    return map[status] || 'Offline';
   }
 
   scrollToBottom() {

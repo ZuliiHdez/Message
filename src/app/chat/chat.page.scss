@@ -238,112 +238,198 @@ ion-header { --background: transparent; box-shadow: none; }
   30% { transform: translateY(-5px); opacity: 1; }
 }
 
-// ── Photo type dialog ──────────────────
-.photo-type-overlay {
+// ── Image preview overlay ──────────────
+.img-preview-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 20, 60, 0.5);
+  background: rgba(0, 0, 0, 0.92);
   z-index: 9999;
   display: flex;
-  align-items: flex-end;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
+  flex-direction: column;
 
-.photo-type-sheet {
-  width: 100%;
-  background: $surface-lowest;
-  border-radius: $radius-lg $radius-lg 0 0;
-  padding: 10px 20px 40px;
-  box-shadow: 0 -8px 40px rgba(0,61,124,0.12);
-
-  .sheet-handle {
-    width: 36px;
-    height: 4px;
-    border-radius: 2px;
-    background: $surface-high;
-    margin: 0 auto 20px;
-  }
-
-  .sheet-title {
-    font-family: $font-display;
-    font-size: 1rem;
-    font-weight: 700;
-    color: $on-surface;
-    text-align: center;
-    margin: 0 0 20px;
-    letter-spacing: -0.01em;
-  }
-
-  .sheet-options {
+  .img-preview-header {
     display: flex;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
-
-  .type-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 20px 12px 16px;
-    border-radius: $radius-md;
-    border: 1.5px solid $outline-variant;
-    background: $surface-lowest;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    justify-content: space-between;
+    padding: 48px 16px 12px;
 
-    .type-icon-wrap {
-      width: 52px;
-      height: 52px;
-      border-radius: $radius-sm;
+    .img-preview-close {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      font-size: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 26px;
-
-      &.normal {
-        background: $surface-low;
-        color: $primary;
-      }
-      &.bomb {
-        background: rgba(186, 26, 26, 0.08);
-        color: $error;
-      }
+      cursor: pointer;
+      &:active { background: rgba(255,255,255,0.3); }
     }
 
-    .type-label {
-      font-family: $font-display;
-      font-size: 0.88rem;
-      font-weight: 700;
-      color: $on-surface;
-    }
-    .type-desc {
+    .img-preview-count {
       font-family: $font-body;
-      font-size: 0.72rem;
-      color: $on-surface-variant;
-      text-align: center;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.6);
     }
 
-    &:active { transform: scale(0.97); background: $surface-low; }
-    &.normal:active { border-color: $primary; }
-    &.bomb:active   { border-color: $error; }
+    .img-preview-spacer { width: 40px; }
   }
 
-  .sheet-cancel {
-    width: 100%;
-    padding: 15px;
-    border-radius: $radius-full;
-    border: none;
-    background: $surface-low;
-    font-family: $font-display;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: $on-surface-variant;
-    cursor: pointer;
-    letter-spacing: -0.01em;
-    &:active { background: $surface-high; }
+  .img-preview-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    overflow: hidden;
+    min-height: 0;
+
+    .img-preview-img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: $radius-md;
+      object-fit: contain;
+    }
+  }
+
+  .img-preview-thumbs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    overflow-x: auto;
+
+    .thumb-item {
+      position: relative;
+      flex-shrink: 0;
+      width: 60px;
+      height: 60px;
+      border-radius: $radius-sm;
+      opacity: 0.55;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: opacity 0.15s, border-color 0.15s;
+
+      &.thumb-active { opacity: 1; border-color: $primary; }
+
+      .thumb-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: calc(#{$radius-sm} - 2px);
+        display: block;
+      }
+
+      .thumb-remove {
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 18px;
+        padding: 0;
+        cursor: pointer;
+        line-height: 1;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.7));
+      }
+    }
+  }
+
+  .img-preview-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px 36px;
+    background: rgba(0,0,0,0.35);
+
+    .preview-add-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      &:active { background: rgba(255,255,255,0.25); }
+    }
+
+    .preview-input-row {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.12);
+      border-radius: $radius-full;
+      padding: 0 14px;
+      height: 44px;
+      gap: 8px;
+
+      .preview-caption {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #fff;
+        font-family: $font-body;
+        font-size: 0.95rem;
+        &::placeholder { color: rgba(255,255,255,0.4); }
+      }
+
+      .preview-bomb-btn {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.4);
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        padding: 0;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: color 0.15s;
+        &:active { opacity: 0.7; }
+
+        .eye-one-icon {
+          width: 1em;
+          height: 1em;
+          display: block;
+          overflow: visible;
+          .pupil-one { display: none; }
+        }
+
+        &.active {
+          color: $primary-container;
+          .eye-one-icon {
+            .pupil-circle { display: none; }
+            .pupil-one    { display: block; }
+          }
+        }
+      }
+    }
+
+    .preview-send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, $primary, $primary-container);
+      border: none;
+      color: $on-primary;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: $shadow-btn;
+      transition: transform 0.15s;
+      &:active { transform: scale(0.92); }
+      &:disabled { opacity: 0.5; }
+    }
   }
 }
 
@@ -361,15 +447,14 @@ ion-header { --background: transparent; box-shadow: none; }
 
   .bomb-private {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 5px;
-    padding: 14px 20px;
+    gap: 6px;
+    padding: 10px 16px;
     transition: opacity 0.2s;
 
-    .bomb-icon { color: rgba(255,255,255,0.9); }
+    .bomb-icon { color: rgba(255,255,255,0.9); font-size: 1.2rem; }
     .bomb-label { font-family: $font-display; font-size: 0.88rem; font-weight: 700; color: $on-primary; }
-    .bomb-hint  { font-family: $font-body; font-size: 0.7rem; color: rgba(255,255,255,0.6); }
 
     &.bomb-seen {
       opacity: 0.7;
@@ -398,12 +483,12 @@ ion-header { --background: transparent; box-shadow: none; }
 
   .bomb-exploded {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 5px;
-    padding: 14px 20px;
+    gap: 6px;
+    padding: 10px 16px;
 
-    .bomb-icon { color: $on-surface-variant; }
+    .bomb-icon { color: $on-surface-variant; font-size: 1.2rem; }
     span:last-child { font-family: $font-body; font-size: 0.8rem; color: $on-surface-variant; }
   }
 }

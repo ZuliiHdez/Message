@@ -28,12 +28,12 @@ export class ForgotPasswordPage {
     this.errorMsg = '';
 
     if (!this.email.trim()) {
-      this.errorMsg = 'Introduce tu email';
+      this.errorMsg = 'Enter your email';
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
-      this.errorMsg = 'Email no válido';
+      this.errorMsg = 'Invalid email';
       return;
     }
 
@@ -50,7 +50,7 @@ export class ForgotPasswordPage {
     this.loading = false;
 
     if (error) {
-      this.errorMsg = 'Ha ocurrido un error. Inténtalo de nuevo.';
+      this.errorMsg = 'An error occurred. Please try again.';
       console.error('Error reset password:', error.message);
       return;
     }

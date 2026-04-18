@@ -99,7 +99,7 @@ export class ChatService {
 
   async getGroupMessages(groupId: string) {
     const { data, error } = await this.db
-      .from('messages')
+      .from('group_messages')
       .select('*')
       .eq('group_id', groupId)
       .order('created_at', { ascending: true });
@@ -110,7 +110,7 @@ export class ChatService {
   async sendGroupMessage(groupId: string, content: string, imageUrl?: string, isPhotoBomb = false) {
     const myId = await this.getCurrentUserId();
     const { error } = await this.db
-      .from('messages')
+      .from('group_messages')
       .insert({
         sender_id: myId,
         group_id: groupId,
@@ -131,12 +131,12 @@ export class ChatService {
       .channel(`group-${groupId}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `group_id=eq.${groupId}` },
+        { event: 'INSERT', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload: any) => onInsert(payload.new)
       )
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `group_id=eq.${groupId}` },
+        { event: 'UPDATE', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload: any) => onUpdate(payload.new)
       )
       .subscribe();
@@ -210,6 +210,32 @@ export class ChatService {
 
   unsubscribeContactsStatus(channel: any) {
     if (channel) this.db.removeChannel(channel);
+  }
+
+  async getLastMessage(otherUserId: string) {
+    const myId = await this.getCurrentUserId();
+    const { data } = await this.db
+      .from('messages')
+      .select('*')
+      .or(
+        `and(sender_id.eq.${myId},receiver_id.eq.${otherUserId}),` +
+        `and(sender_id.eq.${otherUserId},receiver_id.eq.${myId})`
+      )
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data;
+  }
+
+  async getLastGroupMessage(groupId: string) {
+    const { data } = await this.db
+      .from('group_messages')
+      .select('*')
+      .eq('group_id', groupId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data;
   }
 
   async clearPhotoBombImage(messageId: string) {
