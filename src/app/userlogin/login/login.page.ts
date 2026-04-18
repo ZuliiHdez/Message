@@ -24,7 +24,7 @@ export class LoginComponent {
 
   async login() {
     if (!this.email || !this.password) {
-      this.errorMsg = 'Por favor completa todos los campos';
+      this.errorMsg = 'Please fill in all fields';
       return;
     }
 
@@ -35,9 +35,9 @@ export class LoginComponent {
 
     if (error) {
       if (error.message.includes('Email not confirmed')) {
-        this.errorMsg = 'Confirma tu email antes de iniciar sesión';
+        this.errorMsg = 'Please confirm your email before signing in';
       } else if (error.message.includes('Invalid login')) {
-        this.errorMsg = 'Email o contraseña incorrectos';
+        this.errorMsg = 'Invalid email or password';
       } else {
         this.errorMsg = error.message;
       }
@@ -55,7 +55,7 @@ export class LoginComponent {
       name:     profile?.full_name || data.user?.email,
       email:    data.user?.email,
       photoUrl: profile?.avatar_url || '',
-      status:   profile?.status || 'Hey, estoy usando Orion'
+      status:   profile?.status || 'Hey, I\'m using Orion'
     }));
 
     this.loading = false;

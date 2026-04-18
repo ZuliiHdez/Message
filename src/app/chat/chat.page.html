@@ -24,9 +24,66 @@
   </div>
 </ion-header>
 
-<ion-content class="chat-content" #scrollContent>
+<!-- Image preview overlay -->
+<div class="img-preview-overlay" *ngIf="showImagePreview">
+  <div class="img-preview-header">
+    <button class="img-preview-close" (click)="cancelImagePreview()">
+      <ion-icon name="close"></ion-icon>
+    </button>
+    <span class="img-preview-count">{{ selectedImages.length }} {{ selectedImages.length === 1 ? 'image' : 'images' }}</span>
+    <div class="img-preview-spacer"></div>
+  </div>
 
-  <div class="messages-container" #messagesContainer>
+  <div class="img-preview-main">
+    <img [src]="selectedImages[currentPreviewIndex]?.url" class="img-preview-img"/>
+  </div>
+
+  <div class="img-preview-thumbs" *ngIf="selectedImages.length > 1">
+    <div class="thumb-item"
+         *ngFor="let img of selectedImages; let i = index"
+         [class.thumb-active]="i === currentPreviewIndex"
+         (click)="currentPreviewIndex = i">
+      <img [src]="img.url" class="thumb-img"/>
+      <button class="thumb-remove" (click)="removeSelectedImage(i); $event.stopPropagation()">
+        <ion-icon name="close-circle"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <div class="img-preview-footer">
+    <button class="preview-add-btn" (click)="addMoreImages()">
+      <ion-icon name="add-outline"></ion-icon>
+    </button>
+    <div class="preview-input-row">
+      <input type="text"
+             class="preview-caption"
+             placeholder="Add a caption..."
+             [(ngModel)]="captionText"
+             (keyup.enter)="sendFromPreview()"/>
+      <button class="preview-bomb-btn"
+              *ngIf="canPhotoBomb"
+              [class.active]="isPhotoBomb"
+              (click)="isPhotoBomb = !isPhotoBomb">
+        <svg class="eye-one-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="pupil-circle" cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+          <text class="pupil-one" x="12" y="12" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">1</text>
+        </svg>
+      </button>
+    </div>
+    <button class="preview-send-btn" (click)="sendFromPreview()" [disabled]="sending">
+      <ion-icon name="send"></ion-icon>
+    </button>
+  </div>
+</div>
+
+<ion-content class="chat-content" #scrollContent (click)="closeEmoji()">
+
+  <div class="chat-loading" *ngIf="loadingMessages">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div class="messages-container" #messagesContainer *ngIf="!loadingMessages">
     <ng-container *ngFor="let group of messageGroups">
 
       <div class="date-separator">
@@ -35,11 +92,45 @@
 
       <ng-container *ngFor="let msg of group.messages">
         <div class="message-row" [ngClass]="msg.isMine ? 'mine' : 'theirs'">
-          <div class="bubble" [class.image-bubble]="msg.image_url">
-            <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url)"/>
-            <p *ngIf="msg.content">{{ msg.content }}</p>
-            <span class="msg-time">{{ msg.time }}</span>
-          </div>
+
+          <!-- Normal message -->
+          <ng-container *ngIf="!msg.is_photo_bomb">
+            <div class="bubble" [class.image-bubble]="msg.image_url">
+              <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url); $event.stopPropagation()"/>
+              <p *ngIf="msg.content">{{ msg.content }}</p>
+              <span class="msg-time">{{ msg.time }}</span>
+            </div>
+          </ng-container>
+
+          <!-- Photo bomb message -->
+          <ng-container *ngIf="msg.is_photo_bomb">
+            <div class="bubble photo-bomb-bubble" [class.mine-bomb]="msg.isMine">
+
+              <!-- Mine: private photo label -->
+              <ng-container *ngIf="msg.isMine">
+                <div class="bomb-private" [class.bomb-seen]="!msg.image_url">
+                  <ion-icon [name]="msg.image_url ? 'lock-closed-outline' : 'eye-outline'" class="bomb-icon"></ion-icon>
+                  <span class="bomb-label">{{ msg.image_url ? 'Private photo' : 'Image seen' }}</span>
+                </div>
+              </ng-container>
+
+              <!-- Theirs: tap-to-view -->
+              <ng-container *ngIf="!msg.isMine">
+                <div *ngIf="!openPhotoBombs.has(msg.id) && !explodedPhotoBombs.has(msg.id)"
+                     class="bomb-preview" (click)="viewPhotoBomb(msg.id, msg.image_url)">
+                  <ion-icon name="eye-outline" class="bomb-icon"></ion-icon>
+                  <span class="bomb-tap">Open image</span>
+                </div>
+                <div *ngIf="explodedPhotoBombs.has(msg.id)" class="bomb-exploded">
+                  <ion-icon name="eye-off-outline" class="bomb-icon faded"></ion-icon>
+                  <span>Image deleted</span>
+                </div>
+              </ng-container>
+
+              <span class="msg-time">{{ msg.time }}</span>
+            </div>
+          </ng-container>
+
         </div>
       </ng-container>
 
@@ -55,22 +146,33 @@
     </div>
   </div>
 
+  <!-- Full-screen image viewer -->
+  <div class="bomb-viewer-overlay" *ngIf="viewerUrl" (click)="closeViewer()">
+    <div class="viewer-actions" (click)="$event.stopPropagation()">
+      <button class="bomb-viewer-close" (click)="closeViewer()">
+        <ion-icon name="close"></ion-icon>
+      </button>
+      <button class="viewer-download" *ngIf="!viewerIsBomb" (click)="downloadImage(viewerUrl)">
+        <ion-icon name="download-outline"></ion-icon>
+      </button>
+    </div>
+    <img [src]="viewerUrl" class="bomb-viewer-img" (click)="$event.stopPropagation()"/>
+  </div>
+
 </ion-content>
 
 <ion-footer class="ion-no-border chat-footer">
 
-  <div class="image-preview" *ngIf="selectedImage">
-    <img [src]="selectedImageUrl"/>
-    <button class="remove-image" (click)="removeImage()">
-      <ion-icon name="close-circle"></ion-icon>
-    </button>
+  <!-- Emoji picker -->
+  <div class="emoji-picker-container" *ngIf="showEmojiPicker" (click)="$event.stopPropagation()">
+    <emoji-picker #emojiPicker></emoji-picker>
   </div>
 
   <div class="input-area">
     <div class="toolbar">
       <button class="tool-btn" (click)="pickImage()">
         <ion-icon name="image-outline"></ion-icon>
-        <input type="file" #fileInput accept="image/*" (change)="onImageSelected($event)" style="display:none"/>
+        <input type="file" #fileInput accept="image/*" multiple (change)="onImageSelected($event)" style="display:none"/>
       </button>
       <button class="tool-btn">
         <ion-icon name="color-wand-outline"></ion-icon>
@@ -78,7 +180,7 @@
       <button class="tool-btn">
         <ion-icon name="phone-portrait-outline"></ion-icon>
       </button>
-      <button class="tool-btn" (click)="toggleEmoji()">
+      <button class="tool-btn" [class.active]="showEmojiPicker" (click)="toggleEmoji(); $event.stopPropagation()">
         <ion-icon name="happy-outline"></ion-icon>
       </button>
     </div>
@@ -90,6 +192,7 @@
           placeholder="Type a message..."
           [(ngModel)]="messageText"
           (keyup.enter)="sendMessage()"
+          (focus)="closeEmoji()"
         />
       </div>
       <button class="send-btn" (click)="sendMessage()">

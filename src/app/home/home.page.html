@@ -66,54 +66,73 @@
     </div>
 
     <ng-container *ngIf="activeTab === 'chats'">
-      <ng-container *ngFor="let group of groupedContacts; let gi = index">
-
-        <div class="promo-card" *ngIf="gi === 2">
-          <div class="promo-text">
-            <h3>Start something new</h3>
-            <p>Coordinate your weekend plans in a new group chat.</p>
-            <button class="promo-btn" (click)="createGroup()">Create Group</button>
-          </div>
-          <div class="promo-icon">
-            <ion-icon name="people-outline"></ion-icon>
-          </div>
-        </div>
-
-        <div class="contact-card" *ngFor="let c of group.contacts" (click)="openChat(c)">
-          <div class="contact-avatar-wrap">
-            <div class="contact-avatar" [style.background]="c.avatarColor">
-              <img *ngIf="c.photoUrl" [src]="c.photoUrl" class="ca-img"/>
-              <ion-icon *ngIf="!c.photoUrl" name="person"></ion-icon>
+      <div class="home-loading" *ngIf="loadingContacts">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <ng-container *ngIf="!loadingContacts">
+        <ng-container *ngFor="let group of groupedContacts; let gi = index">
+          <div class="promo-card" *ngIf="gi === 2">
+            <div class="promo-text">
+              <h3>Start something new</h3>
+              <p>Coordinate your weekend plans in a new group chat.</p>
+              <button class="promo-btn" (click)="createGroup()">Create Group</button>
             </div>
-            <div class="status-dot" [ngClass]="c.status"></div>
+            <div class="promo-icon">
+              <ion-icon name="people-outline"></ion-icon>
+            </div>
           </div>
-          <div class="contact-info">
-            <span class="c-name">{{ c.name }}</span>
-            <span class="c-bio">{{ c.bio || getStatusLabel(c.status) }}</span>
+          <div class="contact-card" *ngFor="let c of group.contacts" (click)="openChat(c)">
+            <div class="contact-avatar-wrap">
+              <div class="contact-avatar" [style.background]="c.avatarColor">
+                <img *ngIf="c.photoUrl" [src]="c.photoUrl" class="ca-img"/>
+                <ion-icon *ngIf="!c.photoUrl" name="person"></ion-icon>
+              </div>
+              <div class="status-dot" [ngClass]="c.status"></div>
+            </div>
+            <div class="contact-info">
+              <span class="c-name">{{ c.name }}</span>
+              <span class="c-bio">
+                <ng-container *ngIf="getLastMsg(c.id) as p">
+                  <span class="lm-prefix">{{ p.prefix }}:</span>
+                  <ion-icon *ngIf="p.icon" [name]="p.icon" class="lm-icon"></ion-icon>{{ ' ' + p.text }}
+                </ng-container>
+                <ng-container *ngIf="!getLastMsg(c.id)">{{ c.bio || getStatusLabel(c.status) }}</ng-container>
+              </span>
+            </div>
+            <span class="c-time">NOW</span>
           </div>
-          <span class="c-time">NOW</span>
-        </div>
-
+        </ng-container>
       </ng-container>
     </ng-container>
 
     <ng-container *ngIf="activeTab === 'grupos'">
-      <ng-container *ngFor="let cat of filteredGroupCategories">
-        <div class="category-header" (click)="toggleCategory(cat)">
-          <ion-icon [name]="cat.expanded ? 'chevron-down' : 'chevron-forward'"></ion-icon>
-          <span>{{ cat.name }} ({{ cat.groups.length }})</span>
-        </div>
-        <ng-container *ngIf="cat.expanded">
-          <div class="contact-card" *ngFor="let g of cat.groups" (click)="openGroup(g)">
-            <div class="contact-avatar-wrap">
-              <div class="contact-avatar" [style.background]="g.avatarColor">
-                <ion-icon name="people-outline"></ion-icon>
+      <div class="home-loading" *ngIf="loadingGroups">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+      <ng-container *ngIf="!loadingGroups">
+        <ng-container *ngFor="let cat of filteredGroupCategories">
+          <div class="category-header" (click)="toggleCategory(cat)">
+            <ion-icon [name]="cat.expanded ? 'chevron-down' : 'chevron-forward'"></ion-icon>
+            <span>{{ cat.name }} ({{ cat.groups.length }})</span>
+          </div>
+          <ng-container *ngIf="cat.expanded">
+            <div class="contact-card" *ngFor="let g of cat.groups" (click)="openGroup(g)">
+              <div class="contact-avatar-wrap">
+                <div class="contact-avatar" [style.background]="g.avatarColor">
+                  <ion-icon name="people-outline"></ion-icon>
+                </div>
+              </div>
+              <div class="contact-info">
+                <span class="c-name">{{ g.name }}</span>
+                <span class="c-bio">
+                  <ng-container *ngIf="getLastGroupMsg(g.id) as p">
+                    <span class="lm-prefix">{{ p.prefix }}:</span>
+                    <ion-icon *ngIf="p.icon" [name]="p.icon" class="lm-icon"></ion-icon>{{ ' ' + p.text }}
+                  </ng-container>
+                </span>
               </div>
             </div>
-            <div class="contact-info">
-              <span class="c-name">{{ g.name }}</span>
-            </div>
-          </div>
+          </ng-container>
         </ng-container>
       </ng-container>
     </ng-container>

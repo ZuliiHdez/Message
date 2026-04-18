@@ -49,7 +49,7 @@ export class HomePage implements OnInit, OnDestroy {
 
   currentUser = {
     name: 'Usuario',
-    bio: 'Hey, estoy usando Orion',
+    bio: 'Hey, I\'m using Orion',
     status: 'online' as 'online' | 'away' | 'busy' | 'offline',
     photoUrl: '',
   };
@@ -58,15 +58,20 @@ export class HomePage implements OnInit, OnDestroy {
   filteredContacts: Contact[] = [];
   groupedContacts: ContactGroup[] = [];
   filteredGroupCategories: GroupCategory[] = [];
+  lastMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string }>();
+  lastGroupMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string }>();
 
   statusGroups = [
-    { status: 'online'  as const, label: 'En línea' },
-    { status: 'away'    as const, label: 'Ausente' },
-    { status: 'busy'    as const, label: 'Ocupado' },
-    { status: 'offline' as const, label: 'Desconectado' },
+    { status: 'online'  as const, label: 'Online' },
+    { status: 'away'    as const, label: 'Away' },
+    { status: 'busy'    as const, label: 'Busy' },
+    { status: 'offline' as const, label: 'Offline' },
   ];
 
   groupCategories: GroupCategory[] = [];
+
+  private myId = '';
+  private profileChannel: any = null;
 
   constructor(
     private router: Router,
@@ -76,13 +81,23 @@ export class HomePage implements OnInit, OnDestroy {
 
   async ngOnInit() {
     await this.chatService.setUserStatus('online');
+    this.myId = await this.chatService.getCurrentUserId();
     this.loadCurrentUser();
     await this.loadContacts();
     await this.loadGroups();
+
+    // Suscripción en tiempo real: cuando cambia contacts del perfil propio, recargar lista
+    this.profileChannel = this.chatService.subscribeToProfileContacts(this.myId, () => {
+      this.loadContacts();
+    });
   }
 
-  ionViewWillEnter() {
+  async ionViewWillEnter() {
+    this.myId = await this.chatService.getCurrentUserId();
+    this.lastMessagePreviews.clear();
+    this.lastGroupMessagePreviews.clear();
     this.loadCurrentUser();
+    this.loadContacts();
     this.loadGroups();
   }
 
@@ -90,17 +105,28 @@ export class HomePage implements OnInit, OnDestroy {
     const stored = localStorage.getItem('lastUser');
     if (stored) {
       const user = JSON.parse(stored);
-      this.currentUser.name     = user.name     || 'Usuario';
+      this.currentUser.name     = user.name     || 'User';
       this.currentUser.photoUrl = user.photoUrl || '';
-      this.currentUser.bio      = user.status   || 'Hey, estoy usando Orion';
+      this.currentUser.bio      = user.status   || 'Hey, I\'m using Orion';
     }
   }
 
   async ngOnDestroy() {
     await this.chatService.setUserStatus('offline');
+    this.chatService.unsubscribeStatusChannels();
+    if (this.profileChannel) {
+      this.chatService.unsubscribeContactsStatus(this.profileChannel);
+      this.profileChannel = null;
+    }
   }
 
+  loadingContacts = false;
+  loadingGroups   = false;
+
   async loadContacts() {
+    this.loadingContacts = true;
+    this.chatService.unsubscribeStatusChannels();
+
     try {
       const friends = await this.friendshipService.getFriends();
       this.allContacts = friends.map(f => ({
@@ -115,7 +141,9 @@ export class HomePage implements OnInit, OnDestroy {
       console.error('Error cargando contactos:', e);
     }
 
+    this.loadingContacts = false;
     this.filterContacts();
+    this.loadLastMessages();
 
     for (const contact of this.allContacts) {
       this.chatService.subscribeToUserStatus(contact.id, (status) => {
@@ -123,6 +151,43 @@ export class HomePage implements OnInit, OnDestroy {
         if (c) { c.status = status as any; this.filterContacts(); }
       });
     }
+  }
+
+  private async loadLastMessages() {
+    const myId = this.myId;
+    await Promise.all(this.allContacts.map(async c => {
+      try {
+        const msg = await this.chatService.getLastMessage(c.id);
+        if (!msg) return;
+        const isMine = msg.sender_id === myId;
+        const prefix = isMine ? 'Me' : c.name;
+        let icon: string | undefined;
+        let text: string;
+        if (msg.is_photo_bomb) {
+          if (isMine) {
+            icon = msg.image_url ? 'lock-closed-outline' : 'eye-outline';
+            text = msg.image_url ? 'Private photo' : 'Image seen';
+          } else {
+            icon = msg.image_url ? 'eye-outline' : 'eye-off-outline';
+            text = msg.image_url ? 'Open image' : 'Image deleted';
+          }
+        } else if (msg.image_url) {
+          icon = 'camera-outline';
+          text = 'Image';
+        } else {
+          text = msg.content || '';
+        }
+        this.lastMessagePreviews.set(c.id, { prefix, icon, text });
+      } catch {}
+    }));
+  }
+
+  getLastMsg(contactId: string): { prefix: string; icon?: string; text: string } | null {
+    return this.lastMessagePreviews.get(contactId) ?? null;
+  }
+
+  getLastGroupMsg(groupId: string): { prefix: string; icon?: string; text: string } | null {
+    return this.lastGroupMessagePreviews.get(groupId) ?? null;
   }
 
   onSearch() {
@@ -189,8 +254,8 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   getStatusLabel(status: string): string {
-    const map: any = { online: 'En línea', away: 'Ausente', busy: 'Ocupado', offline: 'Desconectado' };
-    return map[status] || 'Desconectado';
+    const map: any = { online: 'Online', away: 'Away', busy: 'Busy', offline: 'Offline' };
+    return map[status] || 'Offline';
   }
 
   toggleCategory(cat: GroupCategory) {
@@ -210,10 +275,11 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   async loadGroups() {
+    this.loadingGroups = true;
     try {
       const groups = await this.friendshipService.getGroups();
       this.groupCategories = groups.length > 0 ? [{
-        name: 'Mis grupos',
+        name: 'My groups',
         expanded: true,
         groups: groups.map(g => ({
           id: g.id,
@@ -227,6 +293,48 @@ export class HomePage implements OnInit, OnDestroy {
       this.groupCategories = [];
     }
     this.filteredGroupCategories = [...this.groupCategories];
+    this.loadingGroups = false;
+    this.loadLastGroupMessages();
+  }
+
+  private async loadLastGroupMessages() {
+    const myId = this.myId;
+    const allGroups: Group[] = ([] as Group[]).concat(...this.groupCategories.map((cat: GroupCategory) => cat.groups));
+    await Promise.all(allGroups.map(async g => {
+      try {
+        const msg = await this.chatService.getLastGroupMessage(g.id);
+        if (!msg) return;
+        const isMine = msg.sender_id === myId;
+        let senderName = 'Member';
+        if (isMine) {
+          senderName = 'Me';
+        } else {
+          const contact = this.allContacts.find(c => c.id === msg.sender_id);
+          if (contact) {
+            senderName = contact.name;
+          } else {
+            const name = await this.friendshipService.getProfileName(msg.sender_id);
+            if (name) senderName = name;
+          }
+        }
+        let icon: string | undefined;
+        let text: string;
+        if (msg.is_photo_bomb) {
+          icon = isMine
+            ? (msg.image_url ? 'lock-closed-outline' : 'eye-outline')
+            : (msg.image_url ? 'eye-outline' : 'eye-off-outline');
+          text = isMine
+            ? (msg.image_url ? 'Private photo' : 'Image seen')
+            : (msg.image_url ? 'Open image' : 'Image deleted');
+        } else if (msg.image_url) {
+          icon = 'camera-outline';
+          text = 'Image';
+        } else {
+          text = msg.content || '';
+        }
+        this.lastGroupMessagePreviews.set(g.id, { prefix: senderName, icon, text });
+      } catch {}
+    }));
   }
 
   openGroup(group: Group) {
@@ -235,8 +343,8 @@ export class HomePage implements OnInit, OnDestroy {
     });
   }
 
-  goToCrearGrupo() {
-    this.router.navigate(['/create-group']);
+  addContact() {
+    this.router.navigate(['/add-contact']);
   }
 
   createGroup() {

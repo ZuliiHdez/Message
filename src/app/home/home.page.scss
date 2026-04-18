@@ -143,6 +143,14 @@
   }
 }
 
+// ── Loading ────────────────────────────
+.home-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+  ion-spinner { --color: #{$primary}; width: 32px; height: 32px; }
+}
+
 // ── Scroll area ────────────────────────
 .scroll-area {
   padding: 0 20px;
@@ -279,6 +287,20 @@
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 160px;
+
+      .lm-prefix {
+        font-weight: 600;
+        color: $on-surface;
+        margin-right: 2px;
+      }
+
+      .lm-icon {
+        font-size: 0.85em;
+        vertical-align: middle;
+        margin: 0 2px;
+        position: relative;
+        top: -0.5px;
+      }
     }
   }
 

@@ -17,7 +17,6 @@ export class RegisterComponent {
 
   form = {
     nombre: '',
-    apellido: '',
     fechaNacimiento: '',
     username: '',
     email: '',
@@ -48,33 +47,30 @@ export class RegisterComponent {
     this.errors = {};
 
     if (!this.form.nombre.trim())
-      this.errors.nombre = 'El nombre es obligatorio';
-
-    if (!this.form.apellido.trim())
-      this.errors.apellido = 'El apellido es obligatorio';
+      this.errors.nombre = 'Name is required';
 
     if (!this.form.fechaNacimiento)
-      this.errors.fechaNacimiento = 'La fecha de nacimiento es obligatoria';
+      this.errors.fechaNacimiento = 'Date of birth is required';
 
     if (!this.form.username.trim())
-      this.errors.username = 'El nombre de usuario es obligatorio';
+      this.errors.username = 'Username is required';
     else if (this.form.username.length < 3)
-      this.errors.username = 'Mínimo 3 caracteres';
+      this.errors.username = 'Minimum 3 characters';
 
     if (!this.form.email.trim())
-      this.errors.email = 'El email es obligatorio';
+      this.errors.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email))
-      this.errors.email = 'Email no válido';
+      this.errors.email = 'Invalid email';
 
     if (!this.form.password)
-      this.errors.password = 'La contraseña es obligatoria';
+      this.errors.password = 'Password is required';
     else if (this.form.password.length < 6)
-      this.errors.password = 'Mínimo 6 caracteres';
+      this.errors.password = 'Minimum 6 characters';
 
     if (!this.form.confirmPassword)
-      this.errors.confirmPassword = 'Confirma tu contraseña';
+      this.errors.confirmPassword = 'Confirm your password';
     else if (this.form.password !== this.form.confirmPassword)
-      this.errors.confirmPassword = 'Las contraseñas no coinciden';
+      this.errors.confirmPassword = 'Passwords do not match';
 
     return Object.keys(this.errors).length === 0;
   }
@@ -88,13 +84,13 @@ async register() {
     this.form.password,
     {
       username: this.form.username,
-      full_name: `${this.form.nombre} ${this.form.apellido}`
+      full_name: this.form.nombre.trim()
     }
   );
 
   if (error) {
     if (error.message.includes('already registered')) {
-      this.errors.email = 'Este email ya está registrado';
+      this.errors.email = 'This email is already registered';
     } else {
       this.errors.email = error.message;
     }

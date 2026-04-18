@@ -53,7 +53,7 @@ const routes: Routes = [
 },
   {
     path: 'create-group',
-    loadComponent: () => import('./create-group/create-group.page').then(m => m.CrearGrupoPage)
+    loadComponent: () => import('./create-group/create-group.page').then(m => m.CreateGroupPage)
   },
   {
     path: '',

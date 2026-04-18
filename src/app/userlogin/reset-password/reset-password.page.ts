@@ -47,7 +47,7 @@ export class ResetPasswordPage implements OnInit {
   }
 
   get strengthLabel(): string {
-    const map: any = { weak: 'Débil', medium: 'Media', strong: 'Fuerte' };
+    const map: any = { weak: 'Weak', medium: 'Medium', strong: 'Strong' };
     return map[this.strengthClass];
   }
 
@@ -60,14 +60,14 @@ export class ResetPasswordPage implements OnInit {
     this.errors = {};
 
     if (!this.password)
-      this.errors.password = 'Introduce una contraseña';
+      this.errors.password = 'Enter a password';
     else if (this.password.length < 6)
-      this.errors.password = 'Mínimo 6 caracteres';
+      this.errors.password = 'Minimum 6 characters';
 
     if (!this.confirmPassword)
-      this.errors.confirmPassword = 'Confirma tu contraseña';
+      this.errors.confirmPassword = 'Confirm your password';
     else if (this.password !== this.confirmPassword)
-      this.errors.confirmPassword = 'Las contraseñas no coinciden';
+      this.errors.confirmPassword = 'Passwords do not match';
 
     return Object.keys(this.errors).length === 0;
   }
@@ -83,7 +83,7 @@ export class ResetPasswordPage implements OnInit {
     this.loading = false;
 
     if (error) {
-      this.errors.password = 'Error al actualizar la contraseña. El enlace puede haber expirado.';
+      this.errors.password = 'Error updating password. The link may have expired.';
       console.error('Error reset:', error.message);
       return;
     }

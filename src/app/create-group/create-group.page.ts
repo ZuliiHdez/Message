@@ -15,7 +15,7 @@ interface Contact {
 }
 
 @Component({
-  selector: 'app-create-group',
+  selector: 'app-crear-grupo',
   templateUrl: './create-group.page.html',
   styleUrls: ['./create-group.page.scss'],
   standalone: true,
@@ -81,7 +81,7 @@ export class CreateGroupPage implements OnInit {
       await this.friendshipService.createGroup(this.groupName.trim(), this.selectedColor, memberIds);
       this.router.navigate(['/home']);
     } catch (e: any) {
-      this.errorMsg = 'No se pudo crear el grupo. Inténtalo de nuevo.';
+      this.errorMsg = 'Could not create group. Please try again.';
       console.error(e);
     } finally {
       this.creating = false;
