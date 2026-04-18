@@ -192,4 +192,13 @@ export class FriendshipService {
     if (!data) return 'none';
     return data.sender_id === myId ? 'pending_sent' : 'pending_received';
   }
+
+  async getProfileName(userId: string): Promise<string | null> {
+    const { data } = await this.db
+      .from('profiles')
+      .select('full_name, username')
+      .eq('id', userId)
+      .maybeSingle();
+    return data ? (data.full_name || data.username || null) : null;
+  }
 }

@@ -92,7 +92,10 @@ export class HomePage implements OnInit, OnDestroy {
     });
   }
 
-  ionViewWillEnter() {
+  async ionViewWillEnter() {
+    this.myId = await this.chatService.getCurrentUserId();
+    this.lastMessagePreviews.clear();
+    this.lastGroupMessagePreviews.clear();
     this.loadCurrentUser();
     this.loadContacts();
     this.loadGroups();
@@ -302,8 +305,18 @@ export class HomePage implements OnInit, OnDestroy {
         const msg = await this.chatService.getLastGroupMessage(g.id);
         if (!msg) return;
         const isMine = msg.sender_id === myId;
-        const contact = this.allContacts.find(c => c.id === msg.sender_id);
-        const senderName = isMine ? 'Me' : (contact?.name || 'Member');
+        let senderName = 'Member';
+        if (isMine) {
+          senderName = 'Me';
+        } else {
+          const contact = this.allContacts.find(c => c.id === msg.sender_id);
+          if (contact) {
+            senderName = contact.name;
+          } else {
+            const name = await this.friendshipService.getProfileName(msg.sender_id);
+            if (name) senderName = name;
+          }
+        }
         let icon: string | undefined;
         let text: string;
         if (msg.is_photo_bomb) {
