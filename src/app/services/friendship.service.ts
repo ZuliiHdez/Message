@@ -138,12 +138,12 @@ export class FriendshipService {
     const userIds = members.map((m: any) => m.user_id);
     const { data: profiles } = await this.db
       .from('profiles')
-      .select('id, full_name, username, avatar_url, name')
+      .select('id, full_name, username, avatar_url')
       .in('id', userIds);
 
     return {
       count: userIds.length,
-      profiles: (profiles || []) as Array<{ id: string; full_name: string; username: string; avatar_url: string; name?: string }>,
+      profiles: (profiles || []) as Array<{ id: string; full_name: string; username: string; avatar_url: string }>,
     };
   }
 

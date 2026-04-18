@@ -52,6 +52,15 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   group = { id: '', name: '', color: '#4a9fd4', memberCount: 0 };
+  memberNames: string[] = [];
+
+  get memberListText(): string {
+    if (!this.memberNames.length) return '';
+    const max = 3;
+    const shown = this.memberNames.slice(0, max);
+    const rest  = this.memberNames.length - max;
+    return rest > 0 ? `${shown.join(', ')} +${rest}` : shown.join(', ');
+  }
 
   messageText = '';
   messageGroups: MessageGroup[] = [];
@@ -113,11 +122,14 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     this.members.clear();
     for (const p of profiles) {
       this.members.set(p.id, {
-        name: p.full_name || p.username || (p as any).name || 'Member',
+        name: p.full_name || p.username || 'Member',
         color: this.colorFromId(p.id),
         photo: p.avatar_url || '',
       });
     }
+    this.memberNames = profiles
+      .filter(p => p.id !== this.myId)
+      .map(p => p.full_name || p.username || 'Member');
 
     await this.loadMessages();
     await this.resolveMissingSenders();
@@ -221,8 +233,8 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    if (date.toDateString() === today.toDateString()) return this.lang.t('chat_date_today');
+    if (date.toDateString() === yesterday.toDateString()) return this.lang.t('chat_date_yesterday');
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 

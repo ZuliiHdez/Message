@@ -5,7 +5,7 @@
       <button class="back-btn" (click)="goBack()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </button>
-      <h1>Details</h1>
+      <h1>{{ lang.t('detail_title') }}</h1>
       <div class="header-spacer"></div>
     </div>
 
@@ -31,24 +31,24 @@
     <div class="quick-actions">
       <button class="qa-btn">
         <ion-icon name="call-outline"></ion-icon>
-        <span>Audio</span>
+        <span>{{ lang.t('detail_audio') }}</span>
       </button>
       <button class="qa-btn">
         <ion-icon name="videocam-outline"></ion-icon>
-        <span>Video</span>
+        <span>{{ lang.t('detail_video') }}</span>
       </button>
     </div>
 
     <!-- Privacy & Preferences -->
-    <div class="section-label">Privacy &amp; Preferences</div>
+    <div class="section-label">{{ lang.t('detail_privacy') }}</div>
     <div class="action-card">
       <button class="action-row">
         <div class="action-icon">
           <ion-icon name="notifications-off-outline"></ion-icon>
         </div>
         <div class="action-text">
-          <p class="action-title">Mute Notifications</p>
-          <p class="action-sub">Silence messages from this contact</p>
+          <p class="action-title">{{ lang.t('detail_mute_notifications') }}</p>
+          <p class="action-sub">{{ lang.t('detail_mute_sub') }}</p>
         </div>
         <ion-icon name="chevron-forward-outline" class="action-chevron"></ion-icon>
       </button>
@@ -58,23 +58,23 @@
           <ion-icon name="images-outline"></ion-icon>
         </div>
         <div class="action-text">
-          <p class="action-title">Shared Media</p>
-          <p class="action-sub">Photos, videos and documents</p>
+          <p class="action-title">{{ lang.t('detail_shared_media') }}</p>
+          <p class="action-sub">{{ lang.t('detail_shared_media_sub') }}</p>
         </div>
         <ion-icon name="chevron-forward-outline" class="action-chevron"></ion-icon>
       </button>
     </div>
 
     <!-- Danger Zone -->
-    <div class="section-label danger-label">Danger Zone</div>
+    <div class="section-label danger-label">{{ lang.t('detail_danger_zone') }}</div>
     <div class="action-card danger-card">
       <button class="action-row danger-row">
         <div class="action-icon danger-icon">
           <ion-icon name="ban-outline"></ion-icon>
         </div>
         <div class="action-text">
-          <p class="action-title danger-title">Block Contact</p>
-          <p class="action-sub">Prevent messages and calls</p>
+          <p class="action-title danger-title">{{ lang.t('detail_block') }}</p>
+          <p class="action-sub">{{ lang.t('detail_block_sub') }}</p>
         </div>
       </button>
       <div class="card-divider"></div>
@@ -83,8 +83,8 @@
           <ion-icon name="person-remove-outline"></ion-icon>
         </div>
         <div class="action-text">
-          <p class="action-title danger-title">Delete Friendship</p>
-          <p class="action-sub">Remove from your contact list</p>
+          <p class="action-title danger-title">{{ lang.t('detail_delete_friendship') }}</p>
+          <p class="action-sub">{{ lang.t('detail_delete_sub') }}</p>
         </div>
       </button>
     </div>

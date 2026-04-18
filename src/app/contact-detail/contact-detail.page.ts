@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
+import { LanguageService } from '../services/language.service';
 
 @Component({
   selector: 'app-contact-detail',
@@ -25,6 +26,7 @@ export class ContactDetailPage implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private location: Location,
+    public lang: LanguageService,
   ) {}
 
   ngOnInit() {
@@ -39,8 +41,13 @@ export class ContactDetailPage implements OnInit {
   }
 
   getStatusLabel(s: string): string {
-    const map: Record<string, string> = { online: 'Online', away: 'Away', busy: 'Busy', offline: 'Offline' };
-    return map[s] || 'Offline';
+    const map: Record<string, string> = {
+      online:  this.lang.t('status_online'),
+      away:    this.lang.t('status_away'),
+      busy:    this.lang.t('status_busy'),
+      offline: this.lang.t('status_offline'),
+    };
+    return map[s] || this.lang.t('status_offline');
   }
 
   goBack() {

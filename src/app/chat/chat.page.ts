@@ -181,8 +181,8 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     const today = new Date();
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
-    if (date.toDateString() === today.toDateString()) return 'Today';
-    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    if (date.toDateString() === today.toDateString()) return this.lang.t('chat_date_today');
+    if (date.toDateString() === yesterday.toDateString()) return this.lang.t('chat_date_yesterday');
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 

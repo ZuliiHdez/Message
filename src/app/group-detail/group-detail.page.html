@@ -5,7 +5,7 @@
       <button class="back-btn" (click)="goBack()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </button>
-      <h1>Details</h1>
+      <h1>{{ lang.t('detail_title') }}</h1>
       <div class="header-spacer"></div>
     </div>
 
@@ -20,7 +20,7 @@
       </div>
       <h2 class="hero-name">{{ group.name }}</h2>
       <div class="hero-meta">
-        <span class="meta-count">{{ group.memberCount }} members</span>
+        <span class="meta-count">{{ group.memberCount }} {{ lang.t('detail_members') }}</span>
       </div>
     </section>
 
@@ -28,18 +28,18 @@
     <div class="quick-actions">
       <button class="qa-btn">
         <ion-icon name="person-add-outline"></ion-icon>
-        <span>Add</span>
+        <span>{{ lang.t('detail_add') }}</span>
       </button>
       <button class="qa-btn">
         <ion-icon name="notifications-off-outline"></ion-icon>
-        <span>Mute</span>
+        <span>{{ lang.t('detail_mute') }}</span>
       </button>
     </div>
 
     <!-- Members -->
     <div class="section-header">
-      <span class="section-label">Members</span>
-      <button class="see-all-btn">See All</button>
+      <span class="section-label">{{ lang.t('detail_members') }}</span>
+      <button class="see-all-btn">{{ lang.t('detail_see_all') }}</button>
     </div>
 
     <div class="action-card" *ngIf="!loading">
@@ -53,11 +53,11 @@
           <div class="member-info">
             <p class="member-name">{{ m.name }}</p>
           </div>
-          <ion-icon name="chatbubble-outline" class="member-chat"></ion-icon>
+          <ion-icon *ngIf="!m.isMe" name="chatbubble-outline" class="member-chat"></ion-icon>
         </div>
       </ng-container>
       <div class="loading-members" *ngIf="members.length === 0">
-        <p>No members found</p>
+        <p>{{ lang.t('detail_no_members') }}</p>
       </div>
     </div>
 
@@ -66,15 +66,15 @@
     </div>
 
     <!-- Danger Zone -->
-    <div class="section-label danger-label">Danger Zone</div>
+    <div class="section-label danger-label">{{ lang.t('detail_danger_zone') }}</div>
     <div class="action-card danger-card">
       <button class="action-row danger-row">
         <div class="action-icon danger-icon">
           <ion-icon name="log-out-outline"></ion-icon>
         </div>
         <div class="action-text">
-          <p class="action-title danger-title">Leave Group</p>
-          <p class="action-sub">Exit this community conversation</p>
+          <p class="action-title danger-title">{{ lang.t('detail_leave_group') }}</p>
+          <p class="action-sub">{{ lang.t('detail_leave_group_sub') }}</p>
         </div>
       </button>
     </div>
