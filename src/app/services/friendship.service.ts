@@ -184,15 +184,17 @@ export class FriendshipService {
     }
   }
 
-  async getGroupMembers(groupId: string): Promise<{ count: number; profiles: Array<{ id: string; full_name: string; username: string; avatar_url: string }> }> {
+  async getGroupMembers(groupId: string): Promise<{ count: number; profiles: Array<{ id: string; full_name: string; username: string; avatar_url: string; role: string }> }> {
     const { data: members, error } = await this.db
       .from('group_members')
-      .select('user_id')
+      .select('user_id, role')
       .eq('group_id', groupId);
 
     if (error || !members?.length) return { count: 0, profiles: [] };
 
     const userIds = members.map((m: any) => m.user_id);
+    const roleMap = new Map<string, string>(members.map((m: any) => [m.user_id, m.role]));
+
     const { data: profiles } = await this.db
       .from('profiles')
       .select('id, full_name, username, avatar_url')
@@ -200,7 +202,10 @@ export class FriendshipService {
 
     return {
       count: userIds.length,
-      profiles: (profiles || []) as Array<{ id: string; full_name: string; username: string; avatar_url: string }>,
+      profiles: (profiles || []).map((p: any) => ({
+        ...p,
+        role: roleMap.get(p.id) || 'member',
+      })),
     };
   }
 
@@ -216,7 +221,11 @@ export class FriendshipService {
     if (groupError) throw groupError;
 
     const allMembers = [...new Set([myId, ...memberIds])];
-    const memberRows = allMembers.map(userId => ({ group_id: group.id, user_id: userId }));
+    const memberRows = allMembers.map(userId => ({
+      group_id: group.id,
+      user_id: userId,
+      role: userId === myId ? 'owner' : 'member',
+    }));
 
     const { error: membersError } = await this.db
       .from('group_members')
@@ -258,6 +267,74 @@ export class FriendshipService {
       .eq('id', userId)
       .maybeSingle();
     return data ? (data.full_name || data.username || null) : null;
+  }
+
+  async removeMemberFromGroup(groupId: string, userId: string): Promise<void> {
+    const { error } = await this.db.rpc('remove_group_member', { p_group_id: groupId, p_target_id: userId });
+    if (error) throw error;
+  }
+
+  async setGroupMemberRole(groupId: string, userId: string, role: 'member' | 'admin'): Promise<void> {
+    const { error } = await this.db.rpc('set_group_member_role', { p_group_id: groupId, p_target_id: userId, p_role: role });
+    if (error) throw error;
+  }
+
+  async transferGroupOwnership(groupId: string, newOwnerId: string): Promise<void> {
+    const { error } = await this.db.rpc('transfer_group_ownership', { p_group_id: groupId, p_new_owner_id: newOwnerId });
+    if (error) throw error;
+  }
+
+  async deleteGroup(groupId: string): Promise<void> {
+    const { error } = await this.db.rpc('delete_group', { p_group_id: groupId });
+    if (error) throw error;
+  }
+
+  async leaveGroup(groupId: string): Promise<void> {
+    const { error } = await this.db.rpc('leave_group', { p_group_id: groupId });
+    if (error) throw error;
+  }
+
+  async updateGroupInfo(groupId: string, name: string, avatarColor: string): Promise<void> {
+    const { error } = await this.db.rpc('update_group_info', { p_group_id: groupId, p_name: name, p_avatar_color: avatarColor });
+    if (error) throw error;
+  }
+
+  async getGroupInfo(groupId: string): Promise<{ name: string; avatar_color: string; avatar_url: string } | null> {
+    const { data, error } = await this.db
+      .from('groups')
+      .select('name, avatar_color, avatar_url')
+      .eq('id', groupId)
+      .single();
+    if (error) return null;
+    return data;
+  }
+
+  async updateGroupAvatarUrl(groupId: string, avatarUrl: string): Promise<void> {
+    const { error } = await this.db
+      .from('groups')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', groupId);
+    if (error) throw error;
+  }
+
+  async addMemberToGroup(groupId: string, userId: string): Promise<void> {
+    const { error } = await this.db.rpc('add_group_member', { p_group_id: groupId, p_user_id: userId });
+    if (error) throw error;
+  }
+
+  subscribeToGroupChanges(
+    groupId: string,
+    callback: (data: { name: string; avatar_color: string; avatar_url: string }) => void
+  ): any {
+    return this.db
+      .channel(`group-meta-${groupId}-${Date.now()}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'groups',
+        filter: `id=eq.${groupId}`,
+      }, (payload: any) => callback(payload.new))
+      .subscribe();
   }
 
   async subscribeToIncomingRequests(callback: () => void): Promise<any> {

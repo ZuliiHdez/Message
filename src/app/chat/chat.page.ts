@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { ChatService } from '../services/chat.service';
 import { BuzzService } from '../services/buzz.service';
 import { LanguageService } from '../services/language.service';
+import { WhiteboardComponent } from '../components/whiteboard/whiteboard.component';
 import 'emoji-picker-element';
 
 interface Message {
@@ -35,7 +36,7 @@ const EDIT_WINDOW_MS = 15 * 60 * 1000;
   templateUrl: './chat.page.html',
   styleUrls: ['./chat.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, WhiteboardComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
@@ -73,6 +74,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   sending = false;
 
   showEmojiPicker = false;
+  showWhiteboard  = false;
   isPhotoBomb = false;
   openPhotoBombs = new Set<string>();
   explodedPhotoBombs = new Set<string>();
@@ -350,6 +352,38 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   get canPhotoBomb(): boolean {
     return this.selectedImages.length === 1;
+  }
+
+  get whiteboardChatId(): string {
+    return [this.myId, this.contact.id].sort().join('_');
+  }
+
+  openWhiteboard() {
+    this.showEmojiPicker = false;
+    this.showWhiteboard  = true;
+  }
+
+  async onWbScreenshot(file: File) {
+    this.showWhiteboard = false;
+    try {
+      const imageUrl = await this.chatService.uploadImage(file);
+      await this.chatService.sendMessage(this.contact.id, '', imageUrl, false);
+      const newMsg: Message = {
+        id:           Date.now().toString(),
+        sender_id:    this.myId,
+        receiver_id:  this.contact.id,
+        content:      '',
+        image_url:    imageUrl,
+        is_photo_bomb: false,
+        created_at:   new Date().toISOString(),
+        isMine:       true,
+        time:         new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      };
+      this.addMessageToGroups(newMsg);
+      this.shouldScroll = true;
+    } catch (e) {
+      console.error('Error sending whiteboard screenshot:', e);
+    }
   }
 
   async sendFromPreview() {

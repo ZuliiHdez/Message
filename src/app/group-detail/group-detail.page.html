@@ -1,8 +1,320 @@
 <ion-content class="detail-content">
+
+  <!-- ── Media Viewer ── -->
+  <div class="media-overlay" *ngIf="showMediaViewer">
+
+    <div class="media-header">
+      <button type="button" class="media-back-btn" title="Back" (click)="handleMediaBack()">
+        <ion-icon [name]="viewerIndex >= 0 ? 'arrow-back-outline' : 'close-outline'"></ion-icon>
+      </button>
+      <span class="media-title">
+        {{ viewerIndex >= 0 ? (viewerIndex + 1) + ' / ' + mediaItems.length : lang.t('detail_shared_media') }}
+      </span>
+      <div class="media-header-spacer"></div>
+    </div>
+
+    <div class="media-loading" *ngIf="loadingMedia">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <div class="media-empty" *ngIf="!loadingMedia && mediaItems.length === 0">
+      <ion-icon name="images-outline"></ion-icon>
+      <p>{{ lang.t('detail_no_media') }}</p>
+    </div>
+
+    <div class="media-groups-wrap" *ngIf="!loadingMedia && mediaItems.length > 0 && viewerIndex < 0">
+      <div class="media-group" *ngFor="let group of mediaGroups">
+        <div class="media-group-header" (click)="group.expanded = !group.expanded">
+          <ion-icon [name]="group.expanded ? 'chevron-down' : 'chevron-forward'"></ion-icon>
+          <span class="group-label">{{ group.label }}</span>
+          <span class="group-count">{{ group.items.length }}</span>
+        </div>
+        <div class="media-grid" *ngIf="group.expanded">
+          <div class="media-thumb" *ngFor="let item of group.items; let i = index" (click)="openGroupItem(group, i)">
+            <img *ngIf="item.type === 'image'" [src]="item.url" class="thumb-img" [alt]="item.filename" title="media"/>
+            <div *ngIf="item.type !== 'image'" class="thumb-doc">
+              <ion-icon [name]="item.type === 'pdf' ? 'document-text-outline' : 'document-outline'"></ion-icon>
+              <span>{{ item.filename }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="media-fullscreen" *ngIf="!loadingMedia && viewerIndex >= 0">
+      <ng-container *ngIf="mediaItems[viewerIndex] as item">
+        <img *ngIf="item.type === 'image'" [src]="item.url" class="fullscreen-img" [alt]="item.filename" title="media"/>
+        <div *ngIf="item.type !== 'image'" class="fullscreen-doc">
+          <ion-icon [name]="item.type === 'pdf' ? 'document-text-outline' : 'document-outline'" class="doc-icon"></ion-icon>
+          <span class="doc-filename">{{ item.filename }}</span>
+          <a [href]="item.url" target="_blank" class="doc-download">
+            <ion-icon name="download-outline"></ion-icon>
+            {{ lang.t('detail_download') }}
+          </a>
+        </div>
+      </ng-container>
+      <button type="button" class="nav-btn nav-prev" title="Previous" *ngIf="viewerIndex > 0" (click)="viewerIndex = viewerIndex - 1">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      <button type="button" class="nav-btn nav-next" title="Next" *ngIf="viewerIndex < mediaItems.length - 1" (click)="viewerIndex = viewerIndex + 1">
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ── Edit Group Sheet ── -->
+  <ng-container *ngIf="showEditSheet">
+    <div class="eg-backdrop" (click)="closeEditSheet()"></div>
+    <div class="eg-sheet">
+      <div class="eg-handle"></div>
+
+      <!-- Avatar preview -->
+      <div class="eg-avatar-preview">
+        <div class="eg-avatar" [style.background]="editTab === 'image' && editPhoto ? 'transparent' : editColor">
+          <img *ngIf="editTab === 'image' && editPhoto" [src]="editPhoto" alt="group avatar" title="group avatar" class="eg-av-img"/>
+          <ion-icon *ngIf="!(editTab === 'image' && editPhoto)" name="people"></ion-icon>
+        </div>
+      </div>
+
+      <!-- Name input -->
+      <div class="eg-section">
+        <p class="eg-label">{{ lang.t('detail_edit_name_placeholder') | uppercase }}</p>
+        <div class="eg-input-wrap">
+          <ion-icon name="people-outline" class="eg-input-icon"></ion-icon>
+          <input type="text"
+                 class="eg-input"
+                 title="Group name"
+                 [(ngModel)]="editName"
+                 maxlength="40"
+                 [placeholder]="lang.t('detail_edit_name_placeholder')"/>
+          <span class="eg-char-count">{{ editName.length }}/40</span>
+        </div>
+      </div>
+
+      <!-- Avatar section -->
+      <div class="eg-section">
+        <p class="eg-label">{{ lang.t('detail_group_image_label') }}</p>
+        <div class="eg-tabs">
+          <button type="button" class="eg-tab" [class.eg-tab-active]="editTab === 'color'" (click)="editTab = 'color'">
+            Color
+          </button>
+          <button type="button" class="eg-tab" [class.eg-tab-active]="editTab === 'image'" (click)="editTab = 'image'">
+            {{ lang.t('detail_upload_image') }}
+          </button>
+        </div>
+
+        <div class="eg-color-picker" *ngIf="editTab === 'color'">
+          <button type="button"
+                  class="eg-color-swatch"
+                  *ngFor="let c of colorPalette"
+                  [style.background]="c"
+                  [class.eg-swatch-selected]="c === editColor"
+                  title="Select color"
+                  (click)="selectEditColor(c)">
+            <ion-icon *ngIf="c === editColor" name="checkmark" class="eg-swatch-check"></ion-icon>
+          </button>
+        </div>
+
+        <div class="eg-image-tab" *ngIf="editTab === 'image'">
+          <button type="button" class="eg-upload-btn" title="Upload image" (click)="pickGroupImage()">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            <span>{{ lang.t('detail_upload_image') }}</span>
+          </button>
+          <input #groupImageInput
+                 type="file"
+                 accept="image/*"
+                 class="eg-file-input"
+                 title="Select image"
+                 (change)="onGroupImageSelected($event)"/>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="eg-footer">
+        <button type="button"
+                class="eg-save-btn"
+                title="Save changes"
+                [disabled]="!editName.trim() || savingEdit"
+                (click)="saveGroupEdit()">
+          <ion-spinner *ngIf="savingEdit" name="crescent" class="eg-spinner"></ion-spinner>
+          <span *ngIf="!savingEdit">{{ lang.t('detail_save_changes') }}</span>
+        </button>
+        <button type="button" class="eg-cancel-btn" title="Cancel" (click)="closeEditSheet()">
+          {{ lang.t('chat_cancel') }}
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── Add Member Sheet ── -->
+  <ng-container *ngIf="showAddMember">
+    <div class="am-backdrop" (click)="closeAddMember()"></div>
+    <div class="am-sheet">
+      <div class="am-handle"></div>
+
+      <div class="am-header">
+        <span class="am-title">{{ lang.t('detail_add_member') }}</span>
+        <button type="button" class="am-close" title="Close" (click)="closeAddMember()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="am-search-wrap">
+        <ion-icon name="search-outline" class="am-search-icon"></ion-icon>
+        <input type="text"
+               class="am-search-input"
+               title="Search contacts"
+               [(ngModel)]="addMemberSearch"
+               [placeholder]="lang.t('home_search_contacts')"/>
+      </div>
+
+      <div class="am-list">
+        <div class="am-empty" *ngIf="availableContacts.length === 0">
+          <ion-icon name="people-outline"></ion-icon>
+          <span>{{ lang.t('detail_no_friends_add') }}</span>
+        </div>
+        <div class="am-empty" *ngIf="availableContacts.length > 0 && filteredAvailable.length === 0">
+          <ion-icon name="search-outline"></ion-icon>
+          <span>{{ lang.t('add_no_results') }} "{{ addMemberSearch }}"</span>
+        </div>
+        <div class="am-contact"
+             *ngFor="let c of filteredAvailable"
+             [class.am-selected]="c.selected"
+             (click)="toggleAddContact(c)">
+          <div class="am-avatar" [style.background]="c.color">
+            <img *ngIf="c.photo" [src]="c.photo" [alt]="c.name" title="avatar" class="am-av-img"/>
+            <ion-icon *ngIf="!c.photo" name="person"></ion-icon>
+          </div>
+          <div class="am-info">
+            <span class="am-name">{{ c.name }}</span>
+            <span class="am-username" *ngIf="c.username">@{{ c.username }}</span>
+          </div>
+          <div class="am-check" [class.am-checked]="c.selected">
+            <ion-icon name="checkmark"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="am-footer" [class.am-ready]="selectedToAdd.length > 0">
+        <button type="button"
+                class="am-add-btn"
+                [title]="lang.t('detail_add')"
+                (click)="confirmAddMembers()"
+                [disabled]="selectedToAdd.length === 0 || addingMembers">
+          <ion-spinner *ngIf="addingMembers" name="crescent" class="am-spinner"></ion-spinner>
+          <ng-container *ngIf="!addingMembers">
+            <ion-icon name="person-add-outline"></ion-icon>
+            <span>{{ lang.t('detail_add') }}<ng-container *ngIf="selectedToAdd.length > 0"> ({{ selectedToAdd.length }})</ng-container></span>
+          </ng-container>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── Member Actions Sheet ── -->
+  <ng-container *ngIf="showMemberActions && memberActionsTarget">
+    <div class="ma-backdrop" (click)="closeMemberActions()"></div>
+    <div class="ma-sheet">
+      <div class="ma-handle"></div>
+
+      <div class="ma-member-header">
+        <div class="ma-avatar" [style.background]="memberActionsTarget.color">
+          <img *ngIf="memberActionsTarget.photo" [src]="memberActionsTarget.photo" [alt]="memberActionsTarget.name" title="avatar" class="ma-av-img"/>
+          <ion-icon *ngIf="!memberActionsTarget.photo" name="person"></ion-icon>
+        </div>
+        <div class="ma-member-info">
+          <span class="ma-member-name">{{ memberActionsTarget.name }}</span>
+          <span class="ma-member-role" *ngIf="memberActionsTarget.role !== 'member'">
+            {{ lang.t('detail_role_' + memberActionsTarget.role) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="ma-actions">
+        <button type="button"
+                class="ma-action"
+                [class.ma-destructive]="action.destructive"
+                *ngFor="let action of memberActionsList; let last = last"
+                [title]="action.label"
+                (click)="runMemberAction(action)">
+          <div class="ma-action-icon" [class.ma-action-icon-danger]="action.destructive">
+            <ion-icon [name]="action.icon"></ion-icon>
+          </div>
+          <span class="ma-action-label">{{ action.label }}</span>
+          <ion-icon name="chevron-forward-outline" class="ma-action-chevron" [class.ma-chevron-danger]="action.destructive"></ion-icon>
+        </button>
+      </div>
+
+      <div class="ma-cancel-wrap">
+        <button type="button" class="ma-cancel" (click)="closeMemberActions()">
+          {{ lang.t('chat_cancel') }}
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── Transfer Ownership Sheet ── -->
+  <ng-container *ngIf="showTransferSheet">
+    <div class="tr-backdrop" (click)="closeTransferSheet()"></div>
+    <div class="tr-sheet">
+      <div class="tr-handle"></div>
+
+      <div class="tr-header">
+        <div class="tr-header-icon">
+          <ion-icon name="swap-horizontal-outline"></ion-icon>
+        </div>
+        <div class="tr-header-text">
+          <span class="tr-title">{{ lang.t('detail_owner_leave_title') }}</span>
+          <span class="tr-subtitle">{{ lang.t('detail_owner_leave_msg') }}</span>
+        </div>
+      </div>
+
+      <div class="tr-list">
+        <div class="tr-member"
+             *ngFor="let m of transferCandidates"
+             [class.tr-selected]="transferTarget?.id === m.id"
+             (click)="selectTransferTarget(m)">
+          <div class="tr-avatar" [style.background]="m.color">
+            <img *ngIf="m.photo" [src]="m.photo" [alt]="m.name" title="avatar" class="tr-av-img"/>
+            <ion-icon *ngIf="!m.photo" name="person"></ion-icon>
+          </div>
+          <div class="tr-member-info">
+            <span class="tr-member-name">{{ m.name }}</span>
+            <span class="tr-member-role" *ngIf="m.role !== 'member'">
+              {{ lang.t('detail_role_' + m.role) }}
+            </span>
+          </div>
+          <div class="tr-radio" [class.tr-radio-checked]="transferTarget?.id === m.id">
+            <ion-icon *ngIf="transferTarget?.id === m.id" name="checkmark"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="tr-footer" [class.tr-ready]="transferTarget !== null">
+        <button type="button"
+                class="tr-confirm-btn"
+                title="Transfer ownership"
+                [disabled]="!transferTarget || transferring"
+                (click)="confirmTransfer()">
+          <ion-spinner *ngIf="transferring" name="crescent" class="tr-spinner"></ion-spinner>
+          <ng-container *ngIf="!transferring">
+            <ion-icon name="swap-horizontal-outline"></ion-icon>
+            <span>{{ lang.t('detail_transfer_btn') }}</span>
+          </ng-container>
+        </button>
+        <button type="button" class="tr-cancel" title="Cancel" (click)="closeTransferSheet()">
+          {{ lang.t('chat_cancel') }}
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
   <div class="page-wrapper">
 
+    <!-- Header -->
     <div class="page-header">
-      <button class="back-btn" (click)="goBack()">
+      <button type="button" class="back-btn" title="Back" (click)="goBack()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </button>
       <h1>{{ lang.t('detail_title') }}</h1>
@@ -13,12 +325,18 @@
     <section class="hero">
       <div class="avatar-wrap">
         <div class="avatar-glow"></div>
-        <div class="hero-avatar" [style.background]="group.color">
-          <ion-icon name="people"></ion-icon>
+        <div class="hero-avatar" [style.background]="group.photo ? 'transparent' : group.color">
+          <img *ngIf="group.photo" [src]="group.photo" alt="group avatar" title="group avatar" class="av-img"/>
+          <ion-icon *ngIf="!group.photo" name="people"></ion-icon>
         </div>
-        <div class="active-dot"></div>
+        <button type="button" class="edit-icon-btn" title="Edit group" (click)="openEditSheet()">
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
       </div>
-      <h2 class="hero-name">{{ group.name }}</h2>
+
+      <div class="hero-name-row">
+        <h2 class="hero-name">{{ group.name }}</h2>
+      </div>
       <div class="hero-meta">
         <span class="meta-count">{{ group.memberCount }} {{ lang.t('detail_members') }}</span>
       </div>
@@ -26,34 +344,57 @@
 
     <!-- Quick Actions -->
     <div class="quick-actions">
-      <button class="qa-btn">
+      <button type="button" class="qa-btn" *ngIf="isAdmin" (click)="openAddMember()">
         <ion-icon name="person-add-outline"></ion-icon>
         <span>{{ lang.t('detail_add') }}</span>
       </button>
-      <button class="qa-btn">
+      <button type="button" class="qa-btn">
         <ion-icon name="notifications-off-outline"></ion-icon>
         <span>{{ lang.t('detail_mute') }}</span>
+      </button>
+    </div>
+
+    <!-- Shared Media -->
+    <div class="action-card media-card">
+      <button type="button" class="action-row" title="Shared media" (click)="openSharedMedia()">
+        <div class="action-icon">
+          <ion-icon name="images-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title">{{ lang.t('detail_shared_media') }}</p>
+          <p class="action-sub">{{ lang.t('detail_shared_media_sub') }}</p>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="member-chevron"></ion-icon>
       </button>
     </div>
 
     <!-- Members -->
     <div class="section-header">
       <span class="section-label">{{ lang.t('detail_members') }}</span>
-      <button class="see-all-btn">{{ lang.t('detail_see_all') }}</button>
     </div>
 
     <div class="action-card" *ngIf="!loading">
       <ng-container *ngFor="let m of members; let i = index">
         <div class="card-divider" *ngIf="i > 0"></div>
-        <div class="member-row">
+        <div class="member-row"
+             [class.member-tappable]="!m.isMe && canActOn(m)"
+             (click)="onMemberTap(m)">
           <div class="member-avatar" [style.background]="m.color">
-            <img *ngIf="m.photo" [src]="m.photo" class="av-img"/>
+            <img *ngIf="m.photo" [src]="m.photo" [alt]="m.name" title="avatar" class="av-img"/>
             <ion-icon *ngIf="!m.photo" name="person"></ion-icon>
           </div>
           <div class="member-info">
             <p class="member-name">{{ m.name }}</p>
           </div>
-          <ion-icon *ngIf="!m.isMe" name="chatbubble-outline" class="member-chat"></ion-icon>
+          <span class="role-badge owner" *ngIf="m.role === 'owner'">
+            {{ lang.t('detail_role_owner') }}
+          </span>
+          <span class="role-badge admin" *ngIf="m.role === 'admin'">
+            {{ lang.t('detail_role_admin') }}
+          </span>
+          <ion-icon *ngIf="!m.isMe && canActOn(m)"
+                    name="chevron-forward-outline"
+                    class="member-chevron"></ion-icon>
         </div>
       </ng-container>
       <div class="loading-members" *ngIf="members.length === 0">
@@ -68,7 +409,7 @@
     <!-- Danger Zone -->
     <div class="section-label danger-label">{{ lang.t('detail_danger_zone') }}</div>
     <div class="action-card danger-card">
-      <button class="action-row danger-row">
+      <button type="button" class="action-row danger-row" (click)="leaveGroup()">
         <div class="action-icon danger-icon">
           <ion-icon name="log-out-outline"></ion-icon>
         </div>
@@ -77,6 +418,18 @@
           <p class="action-sub">{{ lang.t('detail_leave_group_sub') }}</p>
         </div>
       </button>
+      <ng-container *ngIf="isOwner">
+        <div class="card-divider"></div>
+        <button type="button" class="action-row danger-row" (click)="deleteGroup()">
+          <div class="action-icon danger-icon">
+            <ion-icon name="trash-outline"></ion-icon>
+          </div>
+          <div class="action-text">
+            <p class="action-title danger-title">{{ lang.t('detail_delete_group') }}</p>
+            <p class="action-sub">{{ lang.t('detail_delete_group_sub') }}</p>
+          </div>
+        </button>
+      </ng-container>
     </div>
 
     <div class="page-footer">

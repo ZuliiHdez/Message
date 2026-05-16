@@ -8,6 +8,7 @@ import { ChatService } from '../services/chat.service';
 import { BuzzService } from '../services/buzz.service';
 import { FriendshipService } from '../services/friendship.service';
 import { LanguageService } from '../services/language.service';
+import { WhiteboardComponent } from '../components/whiteboard/whiteboard.component';
 import 'emoji-picker-element';
 
 interface GroupMessage {
@@ -39,7 +40,7 @@ const EDIT_WINDOW_MS = 15 * 60 * 1000;
   templateUrl: './group-chat.page.html',
   styleUrls: ['./group-chat.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonicModule, WhiteboardComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
@@ -57,7 +58,8 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
-  group = { id: '', name: '', color: '#4a9fd4', memberCount: 0 };
+  group = { id: '', name: '', color: '#4a9fd4', memberCount: 0, photo: '' };
+  private groupMetaChannel: any = null;
   memberNames: string[] = [];
 
   get memberListText(): string {
@@ -79,6 +81,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
   sending = false;
 
   showEmojiPicker = false;
+  showWhiteboard  = false;
   isPhotoBomb = false;
   openPhotoBombs = new Set<string>();
   explodedPhotoBombs = new Set<string>();
@@ -104,6 +107,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
       this.group.id    = params['id']    || '';
       this.group.name  = params['name']  || 'Group';
       this.group.color = params['color'] || '#4a9fd4';
+      this.group.photo = params['photo'] || '';
     });
   }
 
@@ -122,6 +126,17 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     this.group.id    = params['id']    || '';
     this.group.name  = params['name']  || 'Group';
     this.group.color = params['color'] || '#4a9fd4';
+    this.group.photo = params['photo'] || '';
+
+    // Fetch fresh group info — photo/name may have changed since navigation
+    if (this.group.id) {
+      const info = await this.friendshipService.getGroupInfo(this.group.id);
+      if (info) {
+        this.group.name  = info.name         || this.group.name;
+        this.group.color = info.avatar_color || this.group.color;
+        this.group.photo = info.avatar_url   || '';
+      }
+    }
 
     this.messageGroups = [];
     this.loadingMessages = true;
@@ -148,6 +163,13 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
     await this.loadMessages();
     await this.resolveMissingSenders();
+
+    this.friendshipService.removeChannel(this.groupMetaChannel);
+    this.groupMetaChannel = this.friendshipService.subscribeToGroupChanges(this.group.id, (data) => {
+      if (data.name)        this.group.name  = data.name;
+      if (data.avatar_color) this.group.color = data.avatar_color;
+      this.group.photo = data.avatar_url || '';
+    });
 
     this.chatService.subscribeToGroupMessages(
       this.group.id,
@@ -180,10 +202,13 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
   ionViewWillLeave() {
     this.buzzService.activeGroupId = '';
     this.chatService.unsubscribe();
+    this.friendshipService.removeChannel(this.groupMetaChannel);
+    this.groupMetaChannel = null;
   }
 
   ngOnDestroy() {
     this.chatService.unsubscribe();
+    this.friendshipService.removeChannel(this.groupMetaChannel);
   }
 
   private async resolveMissingSenders() {
@@ -416,6 +441,37 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     }
   }
 
+
+  openWhiteboard() {
+    this.showEmojiPicker = false;
+    this.showWhiteboard  = true;
+  }
+
+  async onWbScreenshot(file: File) {
+    this.showWhiteboard = false;
+    try {
+      const imageUrl = await this.chatService.uploadImage(file);
+      await this.chatService.sendGroupMessage(this.group.id, '', imageUrl, false);
+      const newMsg: GroupMessage = {
+        id:           Date.now().toString(),
+        sender_id:    this.myId,
+        group_id:     this.group.id,
+        content:      '',
+        image_url:    imageUrl,
+        is_photo_bomb: false,
+        created_at:   new Date().toISOString(),
+        isMine:       true,
+        time:         new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        senderName:   '',
+        senderColor:  '',
+        senderPhoto:  '',
+      };
+      this.addToGroups(newMsg);
+      this.shouldScroll = true;
+    } catch (e) {
+      console.error('Error sending whiteboard screenshot:', e);
+    }
+  }
 
   toggleEmoji() {
     this.showEmojiPicker = !this.showEmojiPicker;

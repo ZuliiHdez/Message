@@ -5,8 +5,9 @@
     </button>
 
     <div class="contact-info" (click)="openDetail()">
-      <div class="group-avatar" [style.background]="group.color">
-        <ion-icon name="people"></ion-icon>
+      <div class="group-avatar" [style.background]="group.photo ? 'transparent' : group.color">
+        <img *ngIf="group.photo" [src]="group.photo" alt="group" title="group avatar" class="group-av-img"/>
+        <ion-icon *ngIf="!group.photo" name="people"></ion-icon>
       </div>
       <div class="contact-text">
         <span class="contact-name">{{ group.name }}</span>
@@ -212,14 +213,14 @@
   <!-- Full-screen image viewer -->
   <div class="bomb-viewer-overlay" *ngIf="viewerUrl" (click)="closeViewer()">
     <div class="viewer-actions" (click)="$event.stopPropagation()">
-      <button class="bomb-viewer-close" (click)="closeViewer()">
+      <button type="button" class="bomb-viewer-close" title="Cerrar" (click)="closeViewer()">
         <ion-icon name="close"></ion-icon>
       </button>
-      <button class="viewer-download" *ngIf="!viewerIsBomb" (click)="downloadImage(viewerUrl)">
+      <button type="button" class="viewer-download" title="Descargar" *ngIf="!viewerIsBomb" (click)="downloadImage(viewerUrl)">
         <ion-icon name="download-outline"></ion-icon>
       </button>
     </div>
-    <img [src]="viewerUrl" class="bomb-viewer-img" (click)="$event.stopPropagation()"/>
+    <img [src]="viewerUrl" class="bomb-viewer-img" alt="imagen" title="imagen" (click)="$event.stopPropagation()"/>
   </div>
 
 </ion-content>
@@ -232,17 +233,17 @@
 
   <div class="input-area">
     <div class="toolbar">
-      <button class="tool-btn" (click)="pickImage()">
+      <button type="button" class="tool-btn" title="Imagen" (click)="pickImage()">
         <ion-icon name="image-outline"></ion-icon>
         <input type="file" #fileInput accept="image/*" multiple (change)="onImageSelected($event)" style="display:none"/>
       </button>
-      <button class="tool-btn">
+      <button type="button" class="tool-btn" [class.active]="showWhiteboard" title="Pizarra" (click)="openWhiteboard()">
         <ion-icon name="color-wand-outline"></ion-icon>
       </button>
-      <button class="tool-btn">
+      <button type="button" class="tool-btn" title="Stickers">
         <ion-icon name="phone-portrait-outline"></ion-icon>
       </button>
-      <button class="tool-btn" [class.active]="showEmojiPicker" (click)="toggleEmoji(); $event.stopPropagation()">
+      <button type="button" class="tool-btn" [class.active]="showEmojiPicker" title="Emojis" (click)="toggleEmoji(); $event.stopPropagation()">
         <ion-icon name="happy-outline"></ion-icon>
       </button>
     </div>
@@ -250,15 +251,24 @@
     <div class="input-row">
       <div class="input-box">
         <input type="text"
+               title="Mensaje"
                [placeholder]="lang.t('chat_type')"
                [(ngModel)]="messageText"
                (keyup.enter)="sendMessage()"
                (focus)="closeEmoji()"/>
       </div>
-      <button class="send-btn" (click)="sendMessage()" [disabled]="sending">
+      <button type="button" class="send-btn" title="Enviar" (click)="sendMessage()" [disabled]="sending">
         <ion-icon name="send"></ion-icon>
       </button>
     </div>
   </div>
 
 </ion-footer>
+
+<!-- Whiteboard — fuera de ion-content para que position:fixed cubra toda la pantalla -->
+<app-whiteboard *ngIf="showWhiteboard"
+  [chatId]="group.id"
+  [myId]="myId"
+  (screenshotReady)="onWbScreenshot($event)"
+  (closed)="showWhiteboard = false">
+</app-whiteboard>

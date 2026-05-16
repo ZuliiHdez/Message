@@ -212,6 +212,79 @@ html.light {
   .add-contact-input-wrap  { border-color: rgba(0,61,124,0.15) !important; }
 }
 
+// ── Whiteboard clear alert ─────────────────────────────────────────────────
+.wb-clear-alert {
+  --backdrop-opacity: 0.72;
+
+  .alert-wrapper {
+    background: #13131f !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7) !important;
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+
+  .alert-head {
+    padding: 24px 24px 10px !important;
+
+    .alert-title {
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-size: 1.1rem !important;
+      font-weight: 700 !important;
+      color: #ffffff !important;
+      letter-spacing: 0.1px !important;
+    }
+  }
+
+  .alert-message {
+    font-family: 'Manrope', sans-serif !important;
+    font-size: 0.88rem !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+    padding: 0 24px 20px !important;
+    line-height: 1.5 !important;
+  }
+
+  .alert-button-group {
+    padding: 0 16px 16px !important;
+    gap: 10px !important;
+    flex-direction: row !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+    padding-top: 14px !important;
+  }
+
+  .alert-button {
+    flex: 1 !important;
+    border-radius: 12px !important;
+    font-family: 'Manrope', sans-serif !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    min-height: 46px !important;
+    margin: 0 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    border: none !important;
+
+    &:not(.alert-danger-btn) {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: rgba(255, 255, 255, 0.7) !important;
+
+      &:active { background: rgba(255, 255, 255, 0.14) !important; }
+    }
+  }
+
+  .alert-danger-btn {
+    background: rgba(186, 26, 26, 0.22) !important;
+    color: #ff6b6b !important;
+    border: 1px solid rgba(255, 107, 107, 0.25) !important;
+
+    &:active { background: rgba(186, 26, 26, 0.36) !important; }
+
+    .alert-button-inner { justify-content: center !important; }
+  }
+}
+
 .buzz-global-toast {
   --background: #1a1a2e;
   --color: #ffffff;

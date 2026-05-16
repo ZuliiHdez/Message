@@ -122,8 +122,9 @@
           <ng-container *ngIf="cat.expanded">
             <div class="contact-card" *ngFor="let g of cat.groups" (click)="openGroup(g)" [class.unread]="unreadGroupIds.has(g.id)">
               <div class="contact-avatar-wrap">
-                <div class="contact-avatar" [style.background]="g.avatarColor">
-                  <ion-icon name="people-outline"></ion-icon>
+                <div class="contact-avatar" [style.background]="g.photoUrl ? 'transparent' : g.avatarColor">
+                  <img *ngIf="g.photoUrl" [src]="g.photoUrl" class="ca-img" alt="group" title="group avatar"/>
+                  <ion-icon *ngIf="!g.photoUrl" name="people-outline"></ion-icon>
                 </div>
               </div>
               <div class="contact-info">

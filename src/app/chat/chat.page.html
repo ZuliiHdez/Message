@@ -239,7 +239,7 @@
         <ion-icon name="image-outline"></ion-icon>
         <input type="file" #fileInput accept="image/*" multiple (change)="onImageSelected($event)" style="display:none"/>
       </button>
-      <button class="tool-btn">
+      <button class="tool-btn" [class.active]="showWhiteboard" (click)="openWhiteboard()">
         <ion-icon name="color-wand-outline"></ion-icon>
       </button>
       <button class="tool-btn">
@@ -269,3 +269,11 @@
   </div>
 
 </ion-footer>
+
+<!-- Whiteboard — fuera de ion-content para que position:fixed cubra toda la pantalla -->
+<app-whiteboard *ngIf="showWhiteboard"
+  [chatId]="whiteboardChatId"
+  [myId]="myId"
+  (screenshotReady)="onWbScreenshot($event)"
+  (closed)="showWhiteboard = false">
+</app-whiteboard>

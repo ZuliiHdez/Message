@@ -180,6 +180,19 @@ export class HomePage implements OnInit, OnDestroy {
         this.sortGroupsByLastMessage();
       });
       this.homeChannels.push(ch);
+
+      const metaCh = this.friendshipService.subscribeToGroupChanges(g.id, (data) => {
+        for (const cat of this.groupCategories) {
+          const found = cat.groups.find(gr => gr.id === g.id);
+          if (found) {
+            if (data.name)        found.name       = data.name;
+            if (data.avatar_color) found.avatarColor = data.avatar_color;
+            found.photoUrl = data.avatar_url || '';
+          }
+        }
+        this.filteredGroupCategories = [...this.groupCategories];
+      });
+      this.homeChannels.push(metaCh);
     }
   }
 
@@ -468,7 +481,7 @@ export class HomePage implements OnInit, OnDestroy {
     this.unreadGroupIds.delete(group.id);
     this.unreadGroupCounts.delete(group.id);
     this.router.navigate(['/group-chat'], {
-      queryParams: { id: group.id, name: group.name, color: group.avatarColor }
+      queryParams: { id: group.id, name: group.name, color: group.avatarColor, photo: group.photoUrl || '' }
     });
   }
 
