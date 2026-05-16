@@ -108,6 +108,51 @@
       </div>
     </section>
 
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon purple">
+          <ion-icon name="flash-outline"></ion-icon>
+        </div>
+        <h3>{{ lang.t('settings_buzz') }}</h3>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon name="flash-outline"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">{{ lang.t('settings_buzz') }}</span>
+            <span class="row-sub">{{ lang.t('settings_buzz_sub') }}</span>
+          </div>
+        </div>
+        <ion-toggle [(ngModel)]="buzzEnabled" (ngModelChange)="onBuzzToggle($event)" class="orion-toggle"></ion-toggle>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="buzz-sound-row">
+        <div class="row-icon">
+          <ion-icon name="musical-notes-outline"></ion-icon>
+        </div>
+        <div class="row-text buzz-sound-text">
+          <span class="row-title">{{ lang.t('settings_buzz_custom') }}</span>
+          <span class="row-sub buzz-filename">
+            {{ buzzService.customSoundName || lang.t('settings_buzz_default') }}
+          </span>
+        </div>
+        <div class="buzz-file-actions">
+          <label class="buzz-file-btn">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            <input type="file" accept="audio/*" (change)="onCustomBuzzSelected($event)" style="display:none"/>
+          </label>
+          <button class="buzz-reset-btn" *ngIf="buzzService.hasCustomSound" (click)="resetBuzzSound()">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <div style="height: 40px"></div>
   </div>
 

@@ -434,6 +434,153 @@ ion-header { --background: transparent; box-shadow: none; }
   }
 }
 
+// ── Deleted message tombstone ──────────
+.deleted-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-style: italic;
+  font-size: 0.875rem;
+  ion-icon { font-size: 15px; opacity: 0.7; }
+}
+.message-row.mine  .deleted-msg { color: rgba(255,255,255,0.6); }
+.message-row.theirs .deleted-msg { color: $on-surface-variant; }
+
+// ── Buzz shake ─────────────────────────
+@keyframes buzz-shake {
+  0%   { transform: translateX(0) rotate(0deg); }
+  8%   { transform: translateX(-11px) rotate(-0.6deg); }
+  18%  { transform: translateX(11px)  rotate(0.6deg); }
+  28%  { transform: translateX(-8px)  rotate(-0.4deg); }
+  38%  { transform: translateX(8px)   rotate(0.4deg); }
+  48%  { transform: translateX(-5px); }
+  58%  { transform: translateX(5px); }
+  68%  { transform: translateX(-3px); }
+  78%  { transform: translateX(3px); }
+  88%  { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+.buzz-shaking {
+  animation: buzz-shake 0.62s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  will-change: transform;
+}
+
+// ── Buzz button ─────────────────────────
+.buzz-btn {
+  position: relative;
+  color: #f5a623 !important;
+
+  &.cooling {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .buzz-cd {
+    position: absolute;
+    top: -3px;
+    right: -5px;
+    background: $error;
+    color: #fff;
+    font-size: 0.5rem;
+    font-weight: 800;
+    font-family: $font-body;
+    border-radius: $radius-full;
+    padding: 2px 4px;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.3;
+  }
+}
+
+// ── Message action menu ────────────────
+.msg-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: $surface-lowest;
+  border-radius: $radius-md;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 130px;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    background: none;
+    border: none;
+    font-family: $font-body;
+    font-size: 0.9rem;
+    color: $on-surface;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s;
+    &:active { background: $surface-low; }
+    ion-icon { font-size: 1.1rem; }
+    &.danger { color: $error; }
+  }
+}
+
+// ── Inline edit ────────────────────────
+.edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .edit-input {
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    border-radius: $radius-sm;
+    color: $on-primary;
+    font-family: $font-body;
+    font-size: 1rem;
+    padding: 6px 10px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    &::placeholder { color: rgba(255,255,255,0.5); }
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+
+    .edit-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      &.cancel { background: rgba(255,255,255,0.15); color: $on-primary; }
+      &.save   { background: rgba(255,255,255,0.9);  color: $primary; }
+    }
+  }
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+
+  .edited-label {
+    font-family: $font-body;
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.55);
+    font-style: italic;
+  }
+}
+
 // ── Photo bomb bubbles ─────────────────
 .photo-bomb-bubble {
   padding: 6px 8px 8px;

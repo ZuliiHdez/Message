@@ -156,9 +156,10 @@
       font-size: 22px;
       flex-shrink: 0;
 
-      &.blue  { background: rgba(0,61,124,0.08);  color: $primary; }
-      &.green { background: rgba(61,106,0,0.12);  color: $secondary; }
-      &.amber { background: rgba(255,193,7,0.15);  color: #b8860b; }
+      &.blue   { background: rgba(0,61,124,0.08);    color: $primary; }
+      &.green  { background: rgba(61,106,0,0.12);   color: $secondary; }
+      &.amber  { background: rgba(255,193,7,0.15);   color: #b8860b; }
+      &.purple { background: rgba(103,58,183,0.10);  color: #673ab7; }
     }
 
     h3 {
@@ -264,6 +265,61 @@
   --track-background-checked: #{$primary};
   --handle-background: #fff;
   --track-background: #{$surface-high};
+}
+
+// ── Buzz sound row ─────────────────────
+.buzz-sound-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.buzz-sound-text { flex: 1; min-width: 0; }
+
+.buzz-filename {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.buzz-file-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.buzz-file-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: $surface-low;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  color: $primary;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:active { background: $surface-high; }
+}
+
+.buzz-reset-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(186,26,26,0.08);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: $error;
+  cursor: pointer;
+  transition: background 0.15s;
+  &:active { background: rgba(186,26,26,0.16); }
 }
 
 // ── Language dropdown ──────────────────

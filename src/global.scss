@@ -1,37 +1,123 @@
-/*
- * App Global CSS
- * ----------------------------------------------------------------------------
- * Put style rules here that you want to apply globally. These styles are for
- * the entire app and not just one component. Additionally, this file can be
- * used as an entry point to import other CSS/Sass files to be included in the
- * output CSS.
- * For more information on global stylesheets, visit the documentation:
- * https://ionicframework.com/docs/layout/global-stylesheets
- */
-
-/* Core CSS required for Ionic components to work properly */
 @import "@ionic/angular/css/core.css";
-
-/* Basic CSS for apps built with Ionic */
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
 @import "@ionic/angular/css/typography.css";
 @import "@ionic/angular/css/display.css";
-
-/* Optional CSS utils that can be commented out */
 @import "@ionic/angular/css/padding.css";
 @import "@ionic/angular/css/float-elements.css";
 @import "@ionic/angular/css/text-alignment.css";
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
-
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+:root {
+  --c-primary:             #003d7c;
+  --c-primary-container:   #0054a6;
+  --c-on-primary:          #ffffff;
+  --c-secondary:           #3d6a00;
+  --c-secondary-container: #aaf457;
+  --c-error:               #ba1a1a;
+  --c-warning:             #e67e22;
+  --c-bg:                  #f8f9fc;
+  --c-surface-0:           #ffffff;
+  --c-surface-1:           #eef0f5;
+  --c-surface-2:           #e7e8eb;
+  --c-text:                #1a1c21;
+  --c-text-muted:          #44474f;
+  --c-outline:             rgba(0, 61, 124, 0.15);
+  --c-shadow-ambient:      0px 20px 40px rgba(0, 61, 124, 0.08);
+  --c-shadow-card:         0px 8px 24px rgba(0, 61, 124, 0.06);
+  --c-shadow-btn:          0px 12px 28px rgba(0, 61, 124, 0.28);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-primary:             #90bfff;
+    --c-primary-container:   #5494db;
+    --c-on-primary:          #002b62;
+    --c-secondary:           #94d944;
+    --c-secondary-container: #b8f064;
+    --c-error:               #ffb4ab;
+    --c-warning:             #ffb74d;
+    --c-bg:                  #0f1018;
+    --c-surface-0:           #1a1c26;
+    --c-surface-1:           #20222e;
+    --c-surface-2:           #272938;
+    --c-text:                #dde1ee;
+    --c-text-muted:          #9498a8;
+    --c-outline:             rgba(144, 191, 255, 0.2);
+    --c-shadow-ambient:      0px 20px 40px rgba(0, 0, 0, 0.5);
+    --c-shadow-card:         0px 8px 24px rgba(0, 0, 0, 0.35);
+    --c-shadow-btn:          0px 12px 28px rgba(0, 0, 0, 0.6);
+
+    --ion-background-color:      #0f1018;
+    --ion-background-color-rgb:  15, 16, 24;
+    --ion-text-color:            #dde1ee;
+    --ion-text-color-rgb:        221, 225, 238;
+    --ion-color-step-50:         #1a1c26;
+    --ion-color-step-100:        #20222e;
+    --ion-color-step-150:        #272938;
+    --ion-color-step-200:        #2e3044;
+    --ion-color-step-650:        #9498a8;
+    --ion-color-step-850:        #c8ccd8;
+    --ion-toolbar-background:    #0f1018;
+    --ion-item-background:       #1a1c26;
+    --ion-card-background:       #1a1c26;
+  }
+
+  .top-nav,
+  .chat-header,
+  .group-header,
+  .glass-header {
+    background: rgba(15, 16, 24, 0.92) !important;
+  }
+
+  .bottom-nav,
+  .create-bar {
+    background: rgba(15, 16, 24, 0.96) !important;
+    box-shadow: 0px -8px 24px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .card-icon.blue   { background: rgba(144, 191, 255, 0.1) !important; }
+  .card-icon.green  { background: rgba(148, 217, 68,  0.1) !important; }
+  .card-icon.amber  { background: rgba(255, 183, 77,  0.1) !important; }
+  .card-icon.purple { background: rgba(186, 154, 255, 0.1) !important; }
+
+  .lang-opt.selected       { background: rgba(144, 191, 255, 0.07) !important; }
+  .btn-accepted            { background: rgba(148, 217, 68, 0.1) !important; }
+  .lang-options            { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important; }
+
+  .status-dot.online { box-shadow: 0 0 0 2px rgba(148, 217, 68, 0.25) !important; }
+
+  .add-contact-input-wrap { border-color: rgba(144, 191, 255, 0.15) !important; }
+}
+
+.buzz-global-toast {
+  --background: #1a1a2e;
+  --color: #ffffff;
+  --border-radius: 999px;
+  --box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  font-weight: 700;
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
+  ion-icon { color: #f5a623; }
+}
+
+@keyframes buzz-shake {
+  0%   { transform: translateX(0) rotate(0deg); }
+  8%   { transform: translateX(-11px) rotate(-0.6deg); }
+  18%  { transform: translateX(11px)  rotate(0.6deg); }
+  28%  { transform: translateX(-8px)  rotate(-0.4deg); }
+  38%  { transform: translateX(8px)   rotate(0.4deg); }
+  48%  { transform: translateX(-6px); }
+  58%  { transform: translateX(6px); }
+  68%  { transform: translateX(-4px); }
+  78%  { transform: translateX(3px); }
+  88%  { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+ion-app.buzz-shaking {
+  animation: buzz-shake 0.62s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  will-change: transform;
+}

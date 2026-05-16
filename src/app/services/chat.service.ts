@@ -65,15 +65,21 @@ export class ChatService {
     return data.publicUrl;
   }
 
+  private dmChannelId(a: string, b: string): string {
+    return `dm-${[a, b].sort().join('-')}`;
+  }
+
   subscribeToMessages(
     myId: string,
     otherUserId: string,
     onInsert: (msg: any) => void,
-    onUpdate: (msg: any) => void = () => {}
+    onUpdate: (msg: any) => void = () => {},
+    onDelete: (id: string) => void = () => {},
+    onBuzz: () => void = () => {}
   ) {
     this.unsubscribe();
     this.channel = this.db
-      .channel(`chat-${myId}-${otherUserId}`)
+      .channel(this.dmChannelId(myId, otherUserId))
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${myId}` },
@@ -87,7 +93,31 @@ export class ChatService {
         { event: 'UPDATE', schema: 'public', table: 'messages', filter: `sender_id=eq.${myId}` },
         (payload: any) => onUpdate(payload.new)
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'messages', filter: `receiver_id=eq.${myId}` },
+        (payload: any) => {
+          if (payload.new.sender_id === otherUserId) onUpdate(payload.new);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'messages' },
+        (payload: any) => { if (payload.old?.id) onDelete(payload.old.id); }
+      )
+      .on('broadcast', { event: 'buzz' },
+        (payload: any) => { if (payload.payload?.from === otherUserId) onBuzz(); }
+      )
       .subscribe();
+  }
+
+  async sendBuzz(myId: string): Promise<void> {
+    if (!this.channel) return;
+    await this.channel.send({
+      type: 'broadcast',
+      event: 'buzz',
+      payload: { from: myId },
+    });
   }
 
   unsubscribe() {
@@ -124,7 +154,8 @@ export class ChatService {
   subscribeToGroupMessages(
     groupId: string,
     onInsert: (msg: any) => void,
-    onUpdate: (msg: any) => void = () => {}
+    onUpdate: (msg: any) => void = () => {},
+    onDelete: (id: string) => void = () => {}
   ) {
     this.unsubscribe();
     this.channel = this.db
@@ -138,6 +169,11 @@ export class ChatService {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'group_messages', filter: `group_id=eq.${groupId}` },
         (payload: any) => onUpdate(payload.new)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'group_messages' },
+        (payload: any) => { if (payload.old?.id) onDelete(payload.old.id); }
       )
       .subscribe();
   }
@@ -238,6 +274,38 @@ export class ChatService {
     return data;
   }
 
+  async updateMessage(messageId: string, content: string) {
+    const { error } = await this.db
+      .from('messages')
+      .update({ content })
+      .eq('id', messageId);
+    if (error) throw error;
+  }
+
+  async deleteMessage(messageId: string) {
+    const { error } = await this.db
+      .from('messages')
+      .update({ is_deleted: true, content: null, image_url: null })
+      .eq('id', messageId);
+    if (error) throw error;
+  }
+
+  async updateGroupMessage(messageId: string, content: string) {
+    const { error } = await this.db
+      .from('group_messages')
+      .update({ content })
+      .eq('id', messageId);
+    if (error) throw error;
+  }
+
+  async deleteGroupMessage(messageId: string) {
+    const { error } = await this.db
+      .from('group_messages')
+      .update({ is_deleted: true, content: null, image_url: null })
+      .eq('id', messageId);
+    if (error) throw error;
+  }
+
   async clearPhotoBombImage(messageId: string) {
     const { error } = await this.db.rpc('clear_photo_bomb_image', { p_message_id: messageId });
     if (error) throw error;
@@ -290,5 +358,66 @@ export class ChatService {
 
   removeChannel(ch: any) {
     if (ch) this.db.removeChannel(ch);
+  }
+
+  // ── Global buzz (cross-page) ──────────────────────────
+
+  subscribeToGlobalBuzz(
+    myId: string,
+    onBuzz: (from: string, name: string) => void
+  ): any {
+    return this.db
+      .channel(`user-buzz-${myId}`)
+      .on('broadcast', { event: 'buzz' }, (payload: any) => {
+        onBuzz(payload.payload?.from ?? '', payload.payload?.name ?? '');
+      })
+      .subscribe();
+  }
+
+  async sendGlobalBuzz(toUserId: string, fromUserId: string, fromName: string): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const ch = this.db.channel(`user-buzz-${toUserId}`);
+      const timer = setTimeout(() => {
+        this.db.removeChannel(ch);
+        resolve();
+      }, 5000);
+
+      ch.subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          clearTimeout(timer);
+          ch.send({
+            type: 'broadcast',
+            event: 'buzz',
+            payload: { from: fromUserId, name: fromName },
+          }).then(() => {
+            this.db.removeChannel(ch);
+            resolve();
+          }).catch(() => {
+            this.db.removeChannel(ch);
+            resolve();
+          });
+        }
+      });
+    });
+  }
+
+  subscribeToAuthChanges(callback: (userId: string | null) => void): void {
+    this.db.auth.onAuthStateChange((_event: any, session: any) => {
+      callback(session?.user?.id ?? null);
+    });
+  }
+
+  private profileCache = new Map<string, string>();
+
+  async getProfileDisplayName(userId: string): Promise<string> {
+    if (this.profileCache.has(userId)) return this.profileCache.get(userId)!;
+    const { data } = await this.db
+      .from('profiles')
+      .select('full_name, username')
+      .eq('id', userId)
+      .single();
+    const name = data?.full_name || data?.username || '';
+    if (name) this.profileCache.set(userId, name);
+    return name;
   }
 }

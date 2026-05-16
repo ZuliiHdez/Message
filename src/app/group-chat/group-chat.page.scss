@@ -414,6 +414,106 @@ ion-header { --background: transparent; box-shadow: none; }
   }
 }
 
+// ── Message action menu ────────────────
+.msg-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: $surface-lowest;
+  border-radius: $radius-md;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+  min-width: 130px;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 16px;
+    background: none;
+    border: none;
+    font-family: $font-body;
+    font-size: 0.9rem;
+    color: $on-surface;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s;
+    &:active { background: $surface-low; }
+    ion-icon { font-size: 1.1rem; }
+    &.danger { color: $error; }
+  }
+}
+
+// ── Inline edit ────────────────────────
+.edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .edit-input {
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    border-radius: $radius-sm;
+    color: $on-primary;
+    font-family: $font-body;
+    font-size: 1rem;
+    padding: 6px 10px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    &::placeholder { color: rgba(255,255,255,0.5); }
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+
+    .edit-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      &.cancel { background: rgba(255,255,255,0.15); color: $on-primary; }
+      &.save   { background: rgba(255,255,255,0.9);  color: $primary; }
+    }
+  }
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+
+  .edited-label {
+    font-family: $font-body;
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.55);
+    font-style: italic;
+  }
+}
+
+// ── Deleted message tombstone ──────────
+.deleted-msg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-style: italic;
+  font-size: 0.875rem;
+  ion-icon { font-size: 15px; opacity: 0.7; }
+}
+.message-row.mine  .deleted-msg { color: rgba(255,255,255,0.6); }
+.message-row.theirs .deleted-msg { color: $on-surface-variant; }
+
 // ── Photo bomb bubbles ─────────────────
 .photo-bomb-bubble {
   padding: 6px 8px 8px;

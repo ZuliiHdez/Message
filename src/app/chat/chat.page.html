@@ -79,13 +79,13 @@
   </div>
 </div>
 
-<ion-content class="chat-content" #scrollContent (click)="closeEmoji()">
+<ion-content class="chat-content" #scrollContent (click)="closeEmoji(); hideMenu()">
 
   <div class="chat-loading" *ngIf="loadingMessages">
     <ion-spinner name="crescent"></ion-spinner>
   </div>
 
-  <div class="messages-container" #messagesContainer *ngIf="!loadingMessages">
+  <div class="messages-container" #messagesContainer *ngIf="!loadingMessages" [class.buzz-shaking]="isBuzzShaking">
     <ng-container *ngFor="let group of messageGroups">
 
       <div class="date-separator">
@@ -97,33 +97,99 @@
 
           <!-- Normal message -->
           <ng-container *ngIf="!msg.is_photo_bomb">
-            <div class="bubble" [class.image-bubble]="msg.image_url">
-              <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url); $event.stopPropagation()"/>
-              <p *ngIf="msg.content">{{ msg.content }}</p>
-              <span class="msg-time">{{ msg.time }}</span>
+            <div class="bubble" [class.image-bubble]="msg.image_url && !msg.is_deleted"
+                 (touchstart)="onPressStart(msg)" (touchend)="onPressEnd()" (touchcancel)="onPressEnd()"
+                 (mousedown)="onPressStart(msg)" (mouseup)="onPressEnd()" (mouseleave)="onPressEnd()">
+
+              <!-- Deleted tombstone -->
+              <ng-container *ngIf="msg.is_deleted">
+                <div class="deleted-msg">
+                  <ion-icon name="ban-outline"></ion-icon>
+                  <span>{{ lang.t('chat_msg_deleted') }}</span>
+                </div>
+                <span class="msg-time">{{ msg.time }}</span>
+              </ng-container>
+
+              <!-- Live content -->
+              <ng-container *ngIf="!msg.is_deleted">
+                <!-- Inline edit mode -->
+                <ng-container *ngIf="editingMsgId === msg.id">
+                  <div class="edit-row">
+                    <input class="edit-input"
+                           [(ngModel)]="editText"
+                           (keyup.enter)="saveEdit(msg)"
+                           (keyup.escape)="cancelEdit()"
+                           autofocus/>
+                    <div class="edit-actions">
+                      <button class="edit-btn cancel" (click)="cancelEdit()">
+                        <ion-icon name="close-outline"></ion-icon>
+                      </button>
+                      <button class="edit-btn save" (click)="saveEdit(msg)">
+                        <ion-icon name="checkmark-outline"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                </ng-container>
+                <!-- Normal display -->
+                <ng-container *ngIf="editingMsgId !== msg.id">
+                  <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url); $event.stopPropagation()"/>
+                  <p *ngIf="msg.content">{{ msg.content }}</p>
+                  <div class="time-row">
+                    <span class="edited-label" *ngIf="msg.isEdited">{{ lang.t('chat_edited') }}</span>
+                    <span class="msg-time">{{ msg.time }}</span>
+                  </div>
+                </ng-container>
+                <!-- Action menu -->
+                <div class="msg-menu" *ngIf="activeMenuMsgId === msg.id && msg.isMine" (click)="$event.stopPropagation()">
+                  <button *ngIf="canEdit(msg)" (click)="startEdit(msg)">
+                    <ion-icon name="create-outline"></ion-icon> {{ lang.t('chat_edit') }}
+                  </button>
+                  <button class="danger" (click)="deleteMsg(msg)">
+                    <ion-icon name="trash-outline"></ion-icon> {{ lang.t('chat_delete') }}
+                  </button>
+                </div>
+              </ng-container>
+
             </div>
           </ng-container>
 
           <!-- Photo bomb message -->
           <ng-container *ngIf="msg.is_photo_bomb">
-            <div class="bubble photo-bomb-bubble" [class.mine-bomb]="msg.isMine">
+            <div class="bubble photo-bomb-bubble" [class.mine-bomb]="msg.isMine"
+                 (touchstart)="onPressStart(msg)" (touchend)="onPressEnd()" (touchcancel)="onPressEnd()"
+                 (mousedown)="onPressStart(msg)" (mouseup)="onPressEnd()" (mouseleave)="onPressEnd()">
 
-              <ng-container *ngIf="msg.isMine">
-                <div class="bomb-private" [class.bomb-seen]="!msg.image_url">
-                  <ion-icon [name]="msg.image_url ? 'lock-closed-outline' : 'eye-outline'" class="bomb-icon"></ion-icon>
-                  <span class="bomb-label">{{ msg.image_url ? lang.t('chat_private_photo') : lang.t('chat_image_seen') }}</span>
+              <!-- Deleted tombstone -->
+              <ng-container *ngIf="msg.is_deleted">
+                <div class="deleted-msg">
+                  <ion-icon name="ban-outline"></ion-icon>
+                  <span>{{ lang.t('chat_msg_deleted') }}</span>
                 </div>
               </ng-container>
 
-              <ng-container *ngIf="!msg.isMine">
-                <div *ngIf="!openPhotoBombs.has(msg.id) && !explodedPhotoBombs.has(msg.id)"
-                     class="bomb-preview" (click)="viewPhotoBomb(msg.id, msg.image_url)">
-                  <ion-icon name="eye-outline" class="bomb-icon"></ion-icon>
-                  <span class="bomb-tap">{{ lang.t('chat_open_image') }}</span>
-                </div>
-                <div *ngIf="explodedPhotoBombs.has(msg.id)" class="bomb-exploded">
-                  <ion-icon name="eye-off-outline" class="bomb-icon faded"></ion-icon>
-                  <span>{{ lang.t('chat_image_deleted') }}</span>
+              <ng-container *ngIf="!msg.is_deleted">
+                <ng-container *ngIf="msg.isMine">
+                  <div class="bomb-private" [class.bomb-seen]="!msg.image_url">
+                    <ion-icon [name]="msg.image_url ? 'lock-closed-outline' : 'eye-outline'" class="bomb-icon"></ion-icon>
+                    <span class="bomb-label">{{ msg.image_url ? lang.t('chat_private_photo') : lang.t('chat_image_seen') }}</span>
+                  </div>
+                </ng-container>
+                <ng-container *ngIf="!msg.isMine">
+                  <div *ngIf="!openPhotoBombs.has(msg.id) && !explodedPhotoBombs.has(msg.id)"
+                       class="bomb-preview" (click)="viewPhotoBomb(msg.id, msg.image_url)">
+                    <ion-icon name="eye-outline" class="bomb-icon"></ion-icon>
+                    <span class="bomb-tap">{{ lang.t('chat_open_image') }}</span>
+                  </div>
+                  <div *ngIf="explodedPhotoBombs.has(msg.id)" class="bomb-exploded">
+                    <ion-icon name="eye-off-outline" class="bomb-icon faded"></ion-icon>
+                    <span>{{ lang.t('chat_image_deleted') }}</span>
+                  </div>
+                </ng-container>
+                <!-- Action menu for own photo bombs -->
+                <div class="msg-menu" *ngIf="activeMenuMsgId === msg.id && msg.isMine" (click)="$event.stopPropagation()">
+                  <button class="danger" (click)="deleteMsg(msg)">
+                    <ion-icon name="trash-outline"></ion-icon> {{ lang.t('chat_delete') }}
+                  </button>
                 </div>
               </ng-container>
 
@@ -181,6 +247,10 @@
       </button>
       <button class="tool-btn" [class.active]="showEmojiPicker" (click)="toggleEmoji(); $event.stopPropagation()">
         <ion-icon name="happy-outline"></ion-icon>
+      </button>
+      <button class="tool-btn buzz-btn" [class.cooling]="buzzCooldown > 0" (click)="sendBuzz()">
+        <ion-icon name="flash-outline"></ion-icon>
+        <span class="buzz-cd" *ngIf="buzzCooldown > 0">{{ buzzCooldown }}</span>
       </button>
     </div>
 

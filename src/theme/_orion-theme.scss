@@ -1,37 +1,30 @@
-// ── Colors ─────────────────────────────
-$primary:              #003d7c;
-$primary-container:    #0054a6;
-$on-primary:           #ffffff;
-
-$secondary:            #3d6a00;
-$secondary-container:  #aaf457;
-
-$error:                #ba1a1a;
-$warning:              #e67e22;
-
-$background:           #f8f9fc;
-$surface-lowest:       #ffffff;
-$surface-low:          #eef0f5;
-$surface-high:         #e7e8eb;
-
-$on-surface:           #1a1c21;
-$on-surface-variant:   #44474f;
-$outline-variant:      rgba(0,61,124,0.15);
+$primary:              var(--c-primary);
+$primary-container:    var(--c-primary-container);
+$on-primary:           var(--c-on-primary);
+$secondary:            var(--c-secondary);
+$secondary-container:  var(--c-secondary-container);
+$error:                var(--c-error);
+$warning:              var(--c-warning);
+$background:           var(--c-bg);
+$surface-lowest:       var(--c-surface-0);
+$surface-low:          var(--c-surface-1);
+$surface-high:         var(--c-surface-2);
+$on-surface:           var(--c-text);
+$on-surface-variant:   var(--c-text-muted);
+$outline-variant:      var(--c-outline);
+$shadow-ambient:       var(--c-shadow-ambient);
+$shadow-card:          var(--c-shadow-card);
+$shadow-btn:           var(--c-shadow-btn);
 
 // ── Typography ─────────────────────────
 $font-display:   'Plus Jakarta Sans', sans-serif;
 $font-body:      'Manrope', sans-serif;
 
 // ── Radius ─────────────────────────────
-$radius-full:    9999px;
-$radius-lg:      2rem;     
-$radius-md:      1.5rem;   
-$radius-sm:      1rem;      
-
-// ── Shadows ────────────────────────────
-$shadow-ambient: 0px 20px 40px rgba(0, 61, 124, 0.08);
-$shadow-card:    0px 8px 24px rgba(0, 61, 124, 0.06);
-$shadow-btn:     0px 12px 28px rgba(0, 61, 124, 0.28);
+$radius-full: 9999px;
+$radius-lg:   2rem;
+$radius-md:   1.5rem;
+$radius-sm:   1rem;
 
 // ── Mixins ─────────────────────────────
 @mixin pill-input {

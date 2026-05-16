@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ChatService } from '../services/chat.service';
+import { BuzzService } from '../services/buzz.service';
 import { FriendshipService } from '../services/friendship.service';
 import { LanguageService } from '../services/language.service';
 import 'emoji-picker-element';
@@ -16,18 +17,22 @@ interface GroupMessage {
   content: string;
   image_url: string;
   is_photo_bomb?: boolean;
+  is_deleted?: boolean;
   created_at: string;
   isMine: boolean;
   time: string;
   senderName: string;
   senderColor: string;
   senderPhoto: string;
+  isEdited?: boolean;
 }
 
 interface MessageGroup {
   date: string;
   messages: GroupMessage[];
 }
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 @Component({
   selector: 'app-group-chat',
@@ -77,12 +82,18 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
   openPhotoBombs = new Set<string>();
   explodedPhotoBombs = new Set<string>();
 
+  activeMenuMsgId: string | null = null;
+  editingMsgId: string | null = null;
+  editText = '';
+  private pressTimer: any = null;
+
   private shouldScroll = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private chatService: ChatService,
+    private buzzService: BuzzService,
     private friendshipService: FriendshipService,
     public lang: LanguageService
   ) {}
@@ -116,6 +127,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     this.openPhotoBombs.clear();
 
     this.myId = await this.chatService.getCurrentUserId();
+    this.buzzService.activeGroupId = this.group.id;
 
     const { count, profiles } = await this.friendshipService.getGroupMembers(this.group.id);
     this.group.memberCount = count;
@@ -150,7 +162,8 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
         this.addToGroups(formatted);
         this.shouldScroll = true;
       },
-      (msg) => this.updateMessageInGroups(msg)
+      (msg) => this.updateMessageInGroups(msg),
+      (id)  => this.deleteMessageFromGroups(id)
     );
   }
 
@@ -162,6 +175,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ionViewWillLeave() {
+    this.buzzService.activeGroupId = '';
     this.chatService.unsubscribe();
   }
 
@@ -241,7 +255,29 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
   updateMessageInGroups(raw: any) {
     for (const group of this.messageGroups) {
       const msg = group.messages.find(m => m.id === raw.id);
-      if (msg) { msg.image_url = raw.image_url ?? ''; break; }
+      if (msg) {
+        if (raw.is_deleted) {
+          msg.is_deleted = true;
+          msg.content = '';
+          msg.image_url = '';
+        } else {
+          msg.image_url = raw.image_url ?? '';
+          if (raw.content !== undefined) msg.content = raw.content;
+        }
+        break;
+      }
+    }
+  }
+
+  deleteMessageFromGroups(id: string) {
+    for (const group of this.messageGroups) {
+      const msg = group.messages.find(m => m.id === id);
+      if (msg) {
+        msg.is_deleted = true;
+        msg.content = '';
+        msg.image_url = '';
+        break;
+      }
     }
   }
 
@@ -417,6 +453,67 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
       const el = this.messagesContainer.nativeElement;
       el.scrollTop = el.scrollHeight;
     } catch {}
+  }
+
+  canEdit(msg: GroupMessage): boolean {
+    if (!msg.isMine || msg.is_photo_bomb || msg.is_deleted) return false;
+    if (!msg.content || !!msg.image_url) return false; // text-only messages only
+
+    // Time window: 15 minutes from creation
+    if (Date.now() - new Date(msg.created_at).getTime() > EDIT_WINDOW_MS) return false;
+
+    const all: GroupMessage[] = this.messageGroups.reduce((acc: GroupMessage[], g) => acc.concat(g.messages), []);
+
+    // Only the most recent message sent by me
+    const lastOwn = [...all].reverse().find((m: GroupMessage) => m.isMine && !m.is_photo_bomb);
+    if (lastOwn?.id !== msg.id) return false;
+
+    // Not if any other member has sent a message after this one (considered read)
+    const msgTime = new Date(msg.created_at).getTime();
+    if (all.some((m: GroupMessage) => !m.isMine && new Date(m.created_at).getTime() > msgTime)) return false;
+
+    return true;
+  }
+
+  onPressStart(msg: GroupMessage) {
+    if (!msg.isMine || msg.is_deleted) return;
+    this.pressTimer = setTimeout(() => { this.activeMenuMsgId = msg.id; }, 500);
+  }
+
+  onPressEnd() {
+    if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = null; }
+  }
+
+  hideMenu() { this.activeMenuMsgId = null; }
+
+  startEdit(msg: GroupMessage) {
+    if (!this.canEdit(msg)) return;
+    this.activeMenuMsgId = null;
+    this.editingMsgId = msg.id;
+    this.editText = msg.content;
+  }
+
+  cancelEdit() {
+    this.editingMsgId = null;
+    this.editText = '';
+  }
+
+  async saveEdit(msg: GroupMessage) {
+    const newContent = this.editText.trim();
+    if (!newContent || newContent === msg.content) { this.cancelEdit(); return; }
+    msg.content = newContent;
+    msg.isEdited = true;
+    this.editingMsgId = null;
+    this.editText = '';
+    try { await this.chatService.updateGroupMessage(msg.id, newContent); } catch (e) { console.error(e); }
+  }
+
+  async deleteMsg(msg: GroupMessage) {
+    this.activeMenuMsgId = null;
+    msg.is_deleted = true;
+    msg.content = '';
+    msg.image_url = '';
+    try { await this.chatService.deleteGroupMessage(msg.id); } catch (e) { console.error(e); }
   }
 
   goBack() {

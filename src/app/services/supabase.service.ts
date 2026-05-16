@@ -11,7 +11,7 @@ export class SupabaseService {
     this.supabase = createClient(
       environment.supabaseURL,
       environment.supabaseKey,
-      { auth: { persistSession: true, detectSessionInUrl: false } }
+      { auth: { persistSession: true, detectSessionInUrl: true } }
     );
 
     this.supabaseAdmin = createClient(

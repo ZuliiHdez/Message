@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ChatService } from '../services/chat.service';
+import { BuzzService } from '../services/buzz.service';
 import { LanguageService } from '../services/language.service';
 import 'emoji-picker-element';
 
@@ -14,15 +16,19 @@ interface Message {
   content: string;
   image_url: string;
   is_photo_bomb?: boolean;
+  is_deleted?: boolean;
   created_at: string;
   isMine: boolean;
   time: string;
+  isEdited?: boolean;
 }
 
 interface MessageGroup {
   date: string;
   messages: Message[];
 }
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 @Component({
   selector: 'app-chat',
@@ -70,6 +76,16 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   openPhotoBombs = new Set<string>();
   explodedPhotoBombs = new Set<string>();
 
+  activeMenuMsgId: string | null = null;
+  editingMsgId: string | null = null;
+  editText = '';
+  private pressTimer: any = null;
+
+  buzzCooldown = 0;
+  isBuzzShaking = false;
+  private buzzCountTimer: any = null;
+  private buzzSub: Subscription | null = null;
+
   private shouldScroll = false;
   private statusChannel: any = null;
 
@@ -77,6 +93,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     private route: ActivatedRoute,
     private router: Router,
     private chatService: ChatService,
+    public buzzService: BuzzService,
     public lang: LanguageService
   ) {}
 
@@ -101,6 +118,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
     // Siempre refrescar myId por si cambió la sesión
     this.myId = await this.chatService.getCurrentUserId();
+    this.buzzService.activeChatContactId = this.contact.id;
     const savedStatus = localStorage.getItem('lastUserAvailability') as any;
     await this.chatService.setUserStatus(savedStatus || 'online');
     this.contact.status = await this.chatService.getUserStatus(this.contact.id) as any;
@@ -122,8 +140,14 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
         this.addMessageToGroups(formatted);
         this.shouldScroll = true;
       },
-      (msg) => this.updateMessageInGroups(msg)
+      (msg) => this.updateMessageInGroups(msg),
+      (id)  => this.deleteMessageFromGroups(id)
     );
+
+    // Shake when AppComponent delivers a buzz from this contact
+    this.buzzSub = this.buzzService.buzz$.subscribe(({ from }) => {
+      if (from === this.contact.id) this.triggerShake();
+    });
   }
 
   ngAfterViewChecked() {
@@ -134,7 +158,10 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ionViewWillLeave() {
+    this.buzzService.activeChatContactId = '';
     this.chatService.unsubscribe();
+    if (this.buzzCountTimer) { clearInterval(this.buzzCountTimer); this.buzzCountTimer = null; }
+    if (this.buzzSub) { this.buzzSub.unsubscribe(); this.buzzSub = null; }
   }
 
   ngOnDestroy() {
@@ -142,6 +169,8 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     if (this.statusChannel) {
       this.chatService['db']?.removeChannel(this.statusChannel);
     }
+    if (this.buzzCountTimer) { clearInterval(this.buzzCountTimer); this.buzzCountTimer = null; }
+    if (this.buzzSub) { this.buzzSub.unsubscribe(); this.buzzSub = null; }
   }
 
   async loadMessages() {
@@ -190,7 +219,29 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   updateMessageInGroups(raw: any) {
     for (const group of this.messageGroups) {
       const msg = group.messages.find(m => m.id === raw.id);
-      if (msg) { msg.image_url = raw.image_url ?? ''; break; }
+      if (msg) {
+        if (raw.is_deleted) {
+          msg.is_deleted = true;
+          msg.content = '';
+          msg.image_url = '';
+        } else {
+          msg.image_url = raw.image_url ?? '';
+          if (raw.content !== undefined) msg.content = raw.content;
+        }
+        break;
+      }
+    }
+  }
+
+  deleteMessageFromGroups(id: string) {
+    for (const group of this.messageGroups) {
+      const msg = group.messages.find(m => m.id === id);
+      if (msg) {
+        msg.is_deleted = true;
+        msg.content = '';
+        msg.image_url = '';
+        break;
+      }
     }
   }
 
@@ -370,6 +421,99 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
       const el = this.messagesContainer.nativeElement;
       el.scrollTop = el.scrollHeight;
     } catch {}
+  }
+
+  canEdit(msg: Message): boolean {
+    if (!msg.isMine || msg.is_photo_bomb || msg.is_deleted) return false;
+    if (!msg.content || !!msg.image_url) return false; // text-only messages only
+
+    // Time window: 15 minutes from creation
+    if (Date.now() - new Date(msg.created_at).getTime() > EDIT_WINDOW_MS) return false;
+
+    const all: Message[] = this.messageGroups.reduce((acc: Message[], g) => acc.concat(g.messages), []);
+
+    // Only the most recent message sent by me
+    const lastOwn = [...all].reverse().find((m: Message) => m.isMine && !m.is_photo_bomb);
+    if (lastOwn?.id !== msg.id) return false;
+
+    // Not if the contact has replied after this message (considered read)
+    const msgTime = new Date(msg.created_at).getTime();
+    if (all.some((m: Message) => !m.isMine && new Date(m.created_at).getTime() > msgTime)) return false;
+
+    return true;
+  }
+
+  onPressStart(msg: Message) {
+    if (!msg.isMine || msg.is_deleted) return;
+    this.pressTimer = setTimeout(() => { this.activeMenuMsgId = msg.id; }, 500);
+  }
+
+  onPressEnd() {
+    if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = null; }
+  }
+
+  hideMenu() { this.activeMenuMsgId = null; }
+
+  startEdit(msg: Message) {
+    if (!this.canEdit(msg)) return;
+    this.activeMenuMsgId = null;
+    this.editingMsgId = msg.id;
+    this.editText = msg.content;
+  }
+
+  cancelEdit() {
+    this.editingMsgId = null;
+    this.editText = '';
+  }
+
+  async saveEdit(msg: Message) {
+    const newContent = this.editText.trim();
+    if (!newContent || newContent === msg.content) { this.cancelEdit(); return; }
+    msg.content = newContent;
+    msg.isEdited = true;
+    this.editingMsgId = null;
+    this.editText = '';
+    try { await this.chatService.updateMessage(msg.id, newContent); } catch (e) { console.error(e); }
+  }
+
+  async deleteMsg(msg: Message) {
+    this.activeMenuMsgId = null;
+    msg.is_deleted = true;
+    msg.content = '';
+    msg.image_url = '';
+    try { await this.chatService.deleteMessage(msg.id); } catch (e) { console.error(e); }
+  }
+
+  async sendBuzz() {
+    if (!this.buzzService.canBuzz(this.contact.id)) return;
+    this.buzzService.recordBuzz(this.contact.id);
+    this.startBuzzCooldown();
+    const myName = (JSON.parse(localStorage.getItem('lastUser') || '{}') as any)?.name || '';
+    await Promise.all([
+      this.chatService.sendGlobalBuzz(this.contact.id, this.myId, myName),
+      this.buzzService.play(),
+    ]);
+    this.triggerShake();
+  }
+
+  triggerShake() {
+    this.isBuzzShaking = false;
+    setTimeout(() => {
+      this.isBuzzShaking = true;
+      setTimeout(() => { this.isBuzzShaking = false; }, 640);
+    }, 20);
+  }
+
+  startBuzzCooldown() {
+    this.buzzCooldown = Math.ceil(this.buzzService.cooldownRemaining(this.contact.id) / 1000);
+    if (this.buzzCountTimer) clearInterval(this.buzzCountTimer);
+    this.buzzCountTimer = setInterval(() => {
+      this.buzzCooldown = Math.ceil(this.buzzService.cooldownRemaining(this.contact.id) / 1000);
+      if (this.buzzCooldown <= 0) {
+        clearInterval(this.buzzCountTimer);
+        this.buzzCountTimer = null;
+      }
+    }, 500);
   }
 
   openOptions() {}
