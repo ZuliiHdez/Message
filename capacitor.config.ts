@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.message.app',
-  appName: 'message',
+  appName: 'Orion',
   webDir: 'www'
 };
 
