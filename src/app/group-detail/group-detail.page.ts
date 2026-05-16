@@ -390,8 +390,9 @@ export class GroupDetailPage implements OnInit, OnDestroy {
 
   private async confirmRemoveMember(member: Member) {
     const alert = await this.alertCtrl.create({
-      header: this.lang.t('detail_remove_confirm_title'),
-      message: this.lang.t('detail_remove_confirm_msg'),
+      header:   this.lang.t('detail_remove_confirm_title'),
+      message:  this.lang.t('detail_remove_confirm_msg'),
+      cssClass: 'orion-alert',
       buttons: [
         { text: this.lang.t('chat_cancel'), role: 'cancel' },
         {
@@ -421,8 +422,9 @@ export class GroupDetailPage implements OnInit, OnDestroy {
       return;
     }
     const alert = await this.alertCtrl.create({
-      header: this.lang.t('detail_leave_confirm_title'),
-      message: this.lang.t('detail_leave_confirm_msg'),
+      header:   this.lang.t('detail_leave_confirm_title'),
+      message:  this.lang.t('detail_leave_confirm_msg'),
+      cssClass: 'orion-alert',
       buttons: [
         { text: this.lang.t('chat_cancel'), role: 'cancel' },
         {
@@ -485,8 +487,9 @@ export class GroupDetailPage implements OnInit, OnDestroy {
 
   private async confirmDeleteGroup() {
     const alert = await this.alertCtrl.create({
-      header: this.lang.t('detail_delete_group_title'),
-      message: this.lang.t('detail_delete_group_msg'),
+      header:   this.lang.t('detail_delete_group_title'),
+      message:  this.lang.t('detail_delete_group_msg'),
+      cssClass: 'orion-alert',
       buttons: [
         { text: this.lang.t('chat_cancel'), role: 'cancel' },
         {

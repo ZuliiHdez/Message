@@ -69,12 +69,14 @@
   .top-nav,
   .chat-header,
   .group-header,
-  .glass-header {
+  .glass-header,
+  .wb-header {
     background: rgba(15, 16, 24, 0.92) !important;
   }
 
   .bottom-nav,
-  .create-bar {
+  .create-bar,
+  .wb-toolbar {
     background: rgba(15, 16, 24, 0.96) !important;
     box-shadow: 0px -8px 24px rgba(0, 0, 0, 0.45) !important;
   }
@@ -131,12 +133,14 @@ html.dark {
   .top-nav,
   .chat-header,
   .group-header,
-  .glass-header {
+  .glass-header,
+  .wb-header {
     background: rgba(15, 16, 24, 0.92) !important;
   }
 
   .bottom-nav,
-  .create-bar {
+  .create-bar,
+  .wb-toolbar {
     background: rgba(15, 16, 24, 0.96) !important;
     box-shadow: 0px -8px 24px rgba(0, 0, 0, 0.45) !important;
   }
@@ -212,46 +216,41 @@ html.light {
   .add-contact-input-wrap  { border-color: rgba(0,61,124,0.15) !important; }
 }
 
-// ── Whiteboard clear alert ─────────────────────────────────────────────────
-.wb-clear-alert {
-  --backdrop-opacity: 0.72;
-
+// ── Orion alert (estilo unificado para todos los diálogos) ─────────────────
+.orion-alert {
   .alert-wrapper {
-    background: #13131f !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: var(--c-surface-0) !important;
     border-radius: 20px !important;
     overflow: hidden !important;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7) !important;
-    -webkit-backdrop-filter: blur(24px);
-    backdrop-filter: blur(24px);
+    box-shadow: var(--c-shadow-card) !important;
+    border: 1px solid var(--c-outline) !important;
   }
 
   .alert-head {
-    padding: 24px 24px 10px !important;
+    padding: 22px 22px 6px !important;
 
     .alert-title {
       font-family: 'Plus Jakarta Sans', sans-serif !important;
-      font-size: 1.1rem !important;
+      font-size: 1.05rem !important;
       font-weight: 700 !important;
-      color: #ffffff !important;
-      letter-spacing: 0.1px !important;
+      color: var(--c-text) !important;
     }
   }
 
   .alert-message {
     font-family: 'Manrope', sans-serif !important;
-    font-size: 0.88rem !important;
-    color: rgba(255, 255, 255, 0.55) !important;
-    padding: 0 24px 20px !important;
-    line-height: 1.5 !important;
+    font-size: 0.875rem !important;
+    color: var(--c-text-muted) !important;
+    padding: 4px 22px 20px !important;
+    line-height: 1.55 !important;
   }
 
   .alert-button-group {
-    padding: 0 16px 16px !important;
-    gap: 10px !important;
+    padding: 0 14px 14px !important;
+    gap: 8px !important;
     flex-direction: row !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
-    padding-top: 14px !important;
+    border-top: 1px solid var(--c-outline) !important;
+    padding-top: 12px !important;
   }
 
   .alert-button {
@@ -264,22 +263,13 @@ html.light {
     margin: 0 !important;
     text-transform: none !important;
     letter-spacing: 0 !important;
-    border: none !important;
+    background: var(--c-surface-1) !important;
+    color: var(--c-text-muted) !important;
 
-    &:not(.alert-danger-btn) {
-      background: rgba(255, 255, 255, 0.08) !important;
-      color: rgba(255, 255, 255, 0.7) !important;
-
-      &:active { background: rgba(255, 255, 255, 0.14) !important; }
+    &.alert-danger-btn {
+      background: transparent !important;
+      color: var(--c-error) !important;
     }
-  }
-
-  .alert-danger-btn {
-    background: rgba(186, 26, 26, 0.22) !important;
-    color: #ff6b6b !important;
-    border: 1px solid rgba(255, 107, 107, 0.25) !important;
-
-    &:active { background: rgba(186, 26, 26, 0.36) !important; }
 
     .alert-button-inner { justify-content: center !important; }
   }

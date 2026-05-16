@@ -301,7 +301,7 @@ export class WhiteboardComponent implements OnInit, AfterViewInit, OnDestroy {
     const alert = await this.alertCtrl.create({
       header:   this.lang.t('wb_clear_title'),
       message:  this.lang.t('wb_clear_msg'),
-      cssClass: 'wb-clear-alert',
+      cssClass: 'orion-alert',
       buttons: [
         { text: this.lang.t('chat_cancel'), role: 'cancel' },
         {

@@ -84,8 +84,9 @@ export class ContactDetailPage implements OnInit {
 
   async deleteFriendship() {
     const alert = await this.alertCtrl.create({
-      header: this.lang.t('detail_delete_friendship'),
-      message: this.lang.t('detail_delete_confirm_msg'),
+      header:   this.lang.t('detail_delete_friendship'),
+      message:  this.lang.t('detail_delete_confirm_msg'),
+      cssClass: 'orion-alert',
       buttons: [
         { text: this.lang.t('chat_cancel'), role: 'cancel' },
         {
@@ -105,8 +106,9 @@ export class ContactDetailPage implements OnInit {
 
   async blockContact() {
     const alert = await this.alertCtrl.create({
-      header: this.lang.t('detail_block'),
-      message: this.lang.t('detail_block_confirm_msg'),
+      header:   this.lang.t('detail_block'),
+      message:  this.lang.t('detail_block_confirm_msg'),
+      cssClass: 'orion-alert',
       buttons: [
         { text: this.lang.t('chat_cancel'), role: 'cancel' },
         {

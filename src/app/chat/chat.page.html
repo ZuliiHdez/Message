@@ -209,18 +209,6 @@
     </div>
   </div>
 
-  <!-- Full-screen image viewer -->
-  <div class="bomb-viewer-overlay" *ngIf="viewerUrl" (click)="closeViewer()">
-    <div class="viewer-actions" (click)="$event.stopPropagation()">
-      <button class="bomb-viewer-close" (click)="closeViewer()">
-        <ion-icon name="close"></ion-icon>
-      </button>
-      <button class="viewer-download" *ngIf="!viewerIsBomb" (click)="downloadImage(viewerUrl)">
-        <ion-icon name="download-outline"></ion-icon>
-      </button>
-    </div>
-    <img [src]="viewerUrl" class="bomb-viewer-img" (click)="$event.stopPropagation()"/>
-  </div>
 
 </ion-content>
 
@@ -266,6 +254,19 @@
   </div>
 
 </ion-footer>
+
+<!-- Image viewer — fuera de ion-content para que position:fixed cubra toda la pantalla -->
+<div class="bomb-viewer-overlay" *ngIf="viewerUrl" (click)="closeViewer()">
+  <div class="viewer-actions" (click)="$event.stopPropagation()">
+    <button type="button" class="bomb-viewer-close" title="Cerrar" (click)="closeViewer()">
+      <ion-icon name="close"></ion-icon>
+    </button>
+    <button type="button" class="viewer-download" title="Descargar" *ngIf="!viewerIsBomb" (click)="downloadImage(viewerUrl)">
+      <ion-icon name="download-outline"></ion-icon>
+    </button>
+  </div>
+  <img [src]="viewerUrl" class="bomb-viewer-img" alt="imagen" title="imagen" (click)="$event.stopPropagation()"/>
+</div>
 
 <!-- Whiteboard — fuera de ion-content para que position:fixed cubra toda la pantalla -->
 <app-whiteboard *ngIf="showWhiteboard"
