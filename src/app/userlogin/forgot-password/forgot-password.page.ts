@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { Capacitor } from '@capacitor/core';
 import { SupabaseService } from 'src/app/services/supabase.service';
 import { LanguageService } from 'src/app/services/language.service';
 
@@ -41,12 +42,13 @@ export class ForgotPasswordPage {
 
     this.loading = true;
 
+    const redirectTo = Capacitor.isNativePlatform()
+      ? 'com.message.app://reset-password'
+      : `${window.location.origin}/reset-password`;
+
     const { error } = await this.supabase.getClient().auth.resetPasswordForEmail(
       this.email,
-      {
-
-        redirectTo: 'http://localhost:8100/reset-password'
-      }
+      { redirectTo }
     );
 
     this.loading = false;

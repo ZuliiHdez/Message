@@ -59,10 +59,13 @@ export class HomePage implements OnInit, OnDestroy {
   filteredContacts: Contact[] = [];
   groupedContacts: ContactGroup[] = [];
   filteredGroupCategories: GroupCategory[] = [];
-  lastMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string }>();
-  lastGroupMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string }>();
+  lastMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string; timestamp: string; isMine: boolean }>();
+  lastGroupMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string; timestamp: string; isMine: boolean }>();
   unreadContactIds = new Set<string>();
   unreadGroupIds = new Set<string>();
+  unreadCounts = new Map<string, number>();
+  unreadGroupCounts = new Map<string, number>();
+  pendingRequestsCount = 0;
   private homeChannels: any[] = [];
 
   statusGroups = [
@@ -104,11 +107,21 @@ export class HomePage implements OnInit, OnDestroy {
     this.lastGroupMessagePreviews.clear();
     this.unreadContactIds.clear();
     this.unreadGroupIds.clear();
+    this.unreadCounts.clear();
+    this.unreadGroupCounts.clear();
     this.cleanupHomeChannels();
     this.loadCurrentUser();
     await this.loadContacts();
     await this.loadGroups();
     this.setupHomeSubscriptions();
+    this.friendshipService.getPendingRequests()
+      .then(r => this.pendingRequestsCount = r.length)
+      .catch(() => {});
+    this.friendshipService.subscribeToIncomingRequests(() => {
+      this.friendshipService.getPendingRequests()
+        .then(r => this.pendingRequestsCount = r.length)
+        .catch(() => {});
+    }).then(ch => { if (ch) this.homeChannels.push(ch); });
   }
 
   private loadCurrentUser() {
@@ -144,6 +157,8 @@ export class HomePage implements OnInit, OnDestroy {
       if (contact) {
         this.lastMessagePreviews.set(contact.id, this.buildContactPreview(contact.name, msg, false));
         this.unreadContactIds.add(contact.id);
+        this.unreadCounts.set(contact.id, (this.unreadCounts.get(contact.id) ?? 0) + 1);
+        this.filterContacts();
       }
     });
     this.homeChannels.push(msgCh);
@@ -161,12 +176,14 @@ export class HomePage implements OnInit, OnDestroy {
         }
         this.lastGroupMessagePreviews.set(g.id, this.buildContactPreview(senderName, msg, false));
         this.unreadGroupIds.add(g.id);
+        this.unreadGroupCounts.set(g.id, (this.unreadGroupCounts.get(g.id) ?? 0) + 1);
+        this.sortGroupsByLastMessage();
       });
       this.homeChannels.push(ch);
     }
   }
 
-  private buildContactPreview(senderName: string, msg: any, isMine: boolean): { prefix: string; icon?: string; text: string } {
+  private buildContactPreview(senderName: string, msg: any, isMine: boolean): { prefix: string; icon?: string; text: string; timestamp: string; isMine: boolean } {
     const prefix = isMine ? this.lang.t('chat_me') : senderName;
     let icon: string | undefined;
     let text: string;
@@ -179,7 +196,31 @@ export class HomePage implements OnInit, OnDestroy {
     } else {
       text = msg.content || '';
     }
-    return { prefix, icon, text };
+    return { prefix, icon, text, timestamp: msg.created_at || '', isMine };
+  }
+
+  formatTime(ts: string): string {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const h = d.getHours().toString().padStart(2, '0');
+    const m = d.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  getLastMsgTimestamp(id: string): string {
+    return this.lastMessagePreviews.get(id)?.timestamp || '';
+  }
+
+  getLastGroupMsgTimestamp(id: string): string {
+    return this.lastGroupMessagePreviews.get(id)?.timestamp || '';
+  }
+
+  getContactUnreadCount(id: string): number {
+    return this.unreadCounts.get(id) ?? 0;
+  }
+
+  getGroupUnreadCount(id: string): number {
+    return this.unreadGroupCounts.get(id) ?? 0;
   }
 
   loadingContacts = false;
@@ -229,10 +270,15 @@ export class HomePage implements OnInit, OnDestroy {
         this.lastMessagePreviews.set(c.id, this.buildContactPreview(c.name, msg, isMine));
         if (!isMine) {
           const lastRead = localStorage.getItem(`orion_last_read_${c.id}`);
-          if (!lastRead || msg.created_at > lastRead) this.unreadContactIds.add(c.id);
+          if (!lastRead || msg.created_at > lastRead) {
+            this.unreadContactIds.add(c.id);
+            const count = await this.chatService.getUnreadCount(c.id, lastRead);
+            this.unreadCounts.set(c.id, count);
+          }
         }
       } catch {}
     }));
+    this.filterContacts();
   }
 
   getLastMsg(contactId: string): { prefix: string; icon?: string; text: string } | null {
@@ -260,10 +306,20 @@ export class HomePage implements OnInit, OnDestroy {
 
   filterContacts() {
     const q = this.searchQuery.toLowerCase().trim();
-    this.filteredContacts = q
+    const base = q
       ? this.allContacts.filter(c => c.name.toLowerCase().includes(q))
       : [...this.allContacts];
-    this.buildGroups();
+
+    base.sort((a, b) => {
+      const ma = this.lastMessagePreviews.get(a.id);
+      const mb = this.lastMessagePreviews.get(b.id);
+      if (ma && mb) return mb.timestamp.localeCompare(ma.timestamp);
+      if (ma) return -1;
+      if (mb) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    this.filteredContacts = base;
   }
 
   filterGroups() {
@@ -324,6 +380,7 @@ export class HomePage implements OnInit, OnDestroy {
   openChat(contact: Contact) {
     localStorage.setItem(`orion_last_read_${contact.id}`, new Date().toISOString());
     this.unreadContactIds.delete(contact.id);
+    this.unreadCounts.delete(contact.id);
     this.router.navigate(['/chat'], {
       queryParams: {
         id:    contact.id,
@@ -381,15 +438,35 @@ export class HomePage implements OnInit, OnDestroy {
         this.lastGroupMessagePreviews.set(g.id, this.buildContactPreview(senderName, msg, isMine));
         if (!isMine) {
           const lastRead = localStorage.getItem(`orion_last_read_group_${g.id}`);
-          if (!lastRead || msg.created_at > lastRead) this.unreadGroupIds.add(g.id);
+          if (!lastRead || msg.created_at > lastRead) {
+            this.unreadGroupIds.add(g.id);
+            const count = await this.chatService.getUnreadGroupCount(g.id, lastRead);
+            this.unreadGroupCounts.set(g.id, count);
+          }
         }
       } catch {}
     }));
+    this.sortGroupsByLastMessage();
+  }
+
+  private sortGroupsByLastMessage() {
+    for (const cat of this.groupCategories) {
+      cat.groups.sort((a, b) => {
+        const ma = this.lastGroupMessagePreviews.get(a.id);
+        const mb = this.lastGroupMessagePreviews.get(b.id);
+        if (ma && mb) return mb.timestamp.localeCompare(ma.timestamp);
+        if (ma) return -1;
+        if (mb) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    }
+    this.filteredGroupCategories = [...this.groupCategories];
   }
 
   openGroup(group: Group) {
     localStorage.setItem(`orion_last_read_group_${group.id}`, new Date().toISOString());
     this.unreadGroupIds.delete(group.id);
+    this.unreadGroupCounts.delete(group.id);
     this.router.navigate(['/group-chat'], {
       queryParams: { id: group.id, name: group.name, color: group.avatarColor }
     });

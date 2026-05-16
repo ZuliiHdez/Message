@@ -48,11 +48,14 @@
       </div>
 
       <div class="discord-status" (click)="startEditing()">
-        <div class="ds-emoji">{{ statusEmoji || '💬' }}</div>
+        <div class="ds-emoji">
+          <span *ngIf="statusEmoji">{{ statusEmoji }}</span>
+          <ion-icon *ngIf="!statusEmoji" name="happy-outline" class="ds-default-icon"></ion-icon>
+        </div>
         <div class="ds-body">
           <span class="ds-label">{{ lang.t('profile_custom_status') }}</span>
           <span class="ds-text" [class.ds-placeholder]="!statusText">
-            {{ statusText || lang.t('profile_set_status') }}
+            <span *ngIf="statusEmoji && statusText">{{ statusEmoji }} </span>{{ statusText || lang.t('profile_set_status') }}
           </span>
         </div>
         <ion-icon name="chevron-forward-outline" class="ds-arrow"></ion-icon>
@@ -80,6 +83,63 @@
         </div>
       </div>
 
+      <!-- ── Usuarios bloqueados ── -->
+      <div class="view-card blocked-card">
+
+        <div class="blocked-header" (click)="toggleBlockedSection()">
+          <div class="view-row-icon red">
+            <ion-icon name="ban-outline"></ion-icon>
+          </div>
+          <div class="blocked-header-text">
+            <span class="blocked-title">{{ lang.t('profile_blocked_title') }}</span>
+            <span class="blocked-count">
+              {{ blockedUsers.length }}
+              {{ blockedUsers.length === 1 ? lang.t('profile_blocked_count_one') : lang.t('profile_blocked_count_many') }}
+            </span>
+          </div>
+          <ion-icon name="chevron-down-outline" class="blocked-chevron" [class.open]="showBlockedSection"></ion-icon>
+        </div>
+
+        <ng-container *ngIf="showBlockedSection">
+          <div class="view-divider"></div>
+
+          <!-- Buscador -->
+          <div class="blocked-search">
+            <ion-icon name="search-outline" class="blocked-search-icon"></ion-icon>
+            <input type="text"
+                   class="blocked-search-input"
+                   [(ngModel)]="blockedSearchQuery"
+                   [placeholder]="lang.t('profile_blocked_search')"/>
+          </div>
+
+          <!-- Lista (max 4 visible, scroll si hay más) -->
+          <div class="blocked-list" *ngIf="!blockedLoading">
+            <div class="blocked-empty" *ngIf="filteredBlockedUsers.length === 0">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <span>{{ lang.t('profile_blocked_empty') }}</span>
+            </div>
+            <div class="blocked-item" *ngFor="let user of filteredBlockedUsers">
+              <div class="blocked-avatar" [style.background]="user.avatarColor">
+                <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="blocked-avatar-img"/>
+                <ion-icon *ngIf="!user.avatarUrl" name="person"></ion-icon>
+              </div>
+              <div class="blocked-info">
+                <span class="blocked-name">{{ user.name }}</span>
+                <span class="blocked-username">@{{ user.username }}</span>
+              </div>
+              <button class="unblock-btn" (click)="unblockUser(user.id)">
+                {{ lang.t('profile_blocked_unblock') }}
+              </button>
+            </div>
+          </div>
+
+          <div class="blocked-loading" *ngIf="blockedLoading">
+            <ion-spinner name="crescent"></ion-spinner>
+          </div>
+        </ng-container>
+
+      </div>
+
       <button class="logout-btn" (click)="logout()">
         <ion-icon name="log-out-outline"></ion-icon>
         <span>{{ lang.t('profile_logout') }}</span>
@@ -98,7 +158,10 @@
         <span>{{ lang.t('nav_new_group') }}</span>
       </button>
       <button class="bnav-btn" (click)="goToRequests()">
-        <ion-icon name="mail-outline"></ion-icon>
+        <div class="bnav-icon-wrap">
+          <ion-icon name="mail-outline"></ion-icon>
+          <span class="bnav-badge" *ngIf="pendingRequestsCount > 0">{{ pendingRequestsCount }}</span>
+        </div>
         <span>{{ lang.t('nav_requests') }}</span>
       </button>
       <button class="bnav-btn active">
@@ -152,7 +215,8 @@
           <label>{{ lang.t('profile_status') }}</label>
           <div class="status-edit-wrap">
             <button class="status-emoji-btn" type="button" (click)="showEmojiGrid = !showEmojiGrid">
-              {{ statusEmoji || '😊' }}
+              <span *ngIf="statusEmoji">{{ statusEmoji }}</span>
+              <ion-icon *ngIf="!statusEmoji" name="happy-outline" class="ds-default-icon"></ion-icon>
             </button>
             <input type="text" [(ngModel)]="statusText" [placeholder]="lang.t('profile_whats_status')" (focus)="showEmojiGrid = false"/>
           </div>

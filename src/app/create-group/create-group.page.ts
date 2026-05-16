@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { FriendshipService } from '../services/friendship.service';
+import { LanguageService } from '../services/language.service';
 
 interface Contact {
   id: string;
@@ -38,6 +39,7 @@ export class CreateGroupPage implements OnInit {
   constructor(
     private router: Router,
     private friendshipService: FriendshipService,
+    public lang: LanguageService,
   ) {}
 
   async ngOnInit() {
@@ -81,7 +83,7 @@ export class CreateGroupPage implements OnInit {
       await this.friendshipService.createGroup(this.groupName.trim(), this.selectedColor, memberIds);
       this.router.navigate(['/home']);
     } catch (e: any) {
-      this.errorMsg = 'Could not create group. Please try again.';
+      this.errorMsg = this.lang.t('create_group_error');
       console.error(e);
     } finally {
       this.creating = false;

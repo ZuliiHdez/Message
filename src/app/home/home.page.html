@@ -67,8 +67,8 @@
         <ion-spinner name="crescent"></ion-spinner>
       </div>
       <ng-container *ngIf="!loadingContacts">
-        <ng-container *ngFor="let group of groupedContacts; let gi = index">
-          <div class="promo-card" *ngIf="gi === 2">
+        <ng-container *ngFor="let c of filteredContacts; let i = index">
+          <div class="promo-card" *ngIf="i === 2">
             <div class="promo-text">
               <h3>{{ lang.t('home_promo_title') }}</h3>
               <p>{{ lang.t('home_promo_desc') }}</p>
@@ -78,7 +78,7 @@
               <ion-icon name="people-outline"></ion-icon>
             </div>
           </div>
-          <div class="contact-card" *ngFor="let c of group.contacts" (click)="openChat(c)" [class.unread]="unreadContactIds.has(c.id)">
+          <div class="contact-card" (click)="openChat(c)" [class.unread]="unreadContactIds.has(c.id)">
             <div class="contact-avatar-wrap">
               <div class="contact-avatar" [style.background]="c.avatarColor">
                 <img *ngIf="c.photoUrl" [src]="c.photoUrl" class="ca-img"/>
@@ -96,7 +96,14 @@
                 <ng-container *ngIf="!getLastMsg(c.id)">{{ c.bio || getStatusLabel(c.status) }}</ng-container>
               </span>
             </div>
-            <span class="c-time">NOW</span>
+            <div class="c-time-wrap" *ngIf="lastMessagePreviews.has(c.id)">
+              <span class="unread-badge" *ngIf="unreadContactIds.has(c.id) && getContactUnreadCount(c.id) > 0">
+                {{ getContactUnreadCount(c.id) }}
+              </span>
+              <span class="c-time" *ngIf="!unreadContactIds.has(c.id) || getContactUnreadCount(c.id) === 0">
+                {{ formatTime(getLastMsgTimestamp(c.id)) }}
+              </span>
+            </div>
           </div>
         </ng-container>
       </ng-container>
@@ -128,6 +135,14 @@
                   </ng-container>
                 </span>
               </div>
+              <div class="c-time-wrap" *ngIf="lastGroupMessagePreviews.has(g.id)">
+                <span class="unread-badge" *ngIf="unreadGroupIds.has(g.id) && getGroupUnreadCount(g.id) > 0">
+                  {{ getGroupUnreadCount(g.id) }}
+                </span>
+                <span class="c-time" *ngIf="!unreadGroupIds.has(g.id) || getGroupUnreadCount(g.id) === 0">
+                  {{ formatTime(getLastGroupMsgTimestamp(g.id)) }}
+                </span>
+              </div>
             </div>
           </ng-container>
         </ng-container>
@@ -147,7 +162,10 @@
       <span>{{ lang.t('nav_new_group') }}</span>
     </button>
     <button class="bnav-btn" (click)="goToPeticiones()">
-      <ion-icon name="mail-outline"></ion-icon>
+      <div class="bnav-icon-wrap">
+        <ion-icon name="mail-outline"></ion-icon>
+        <span class="bnav-badge" *ngIf="pendingRequestsCount > 0">{{ pendingRequestsCount }}</span>
+      </div>
       <span>{{ lang.t('nav_requests') }}</span>
     </button>
     <button class="bnav-btn" (click)="goToProfile()">

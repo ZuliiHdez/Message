@@ -15,13 +15,68 @@ export class FriendshipService {
     return data.session?.user.id || '';
   }
 
+  private async getBlockedIds(myId: string): Promise<Set<string>> {
+    const { data } = await this.db
+      .from('blocked_users')
+      .select('blocker_id, blocked_id')
+      .or(`blocker_id.eq.${myId},blocked_id.eq.${myId}`);
+    const set = new Set<string>();
+    for (const row of (data || [])) {
+      set.add(row.blocker_id === myId ? row.blocked_id : row.blocker_id);
+    }
+    return set;
+  }
+
+  async removeFriend(targetId: string): Promise<void> {
+    const { error } = await this.db.rpc('remove_friend', { p_friend_id: targetId });
+    if (error) throw error;
+  }
+
+  async blockUser(targetId: string): Promise<void> {
+    const myId = await this.currentUserId();
+    const { error } = await this.db
+      .from('blocked_users')
+      .insert({ blocker_id: myId, blocked_id: targetId });
+    if (error) throw error;
+  }
+
+  async unblockUser(targetId: string): Promise<void> {
+    const myId = await this.currentUserId();
+    const { error } = await this.db
+      .from('blocked_users')
+      .delete()
+      .eq('blocker_id', myId)
+      .eq('blocked_id', targetId);
+    if (error) throw error;
+  }
+
+  async getBlockedUsers(): Promise<Array<{ id: string; name: string; username: string; avatarUrl: string; avatarColor: string }>> {
+    const myId = await this.currentUserId();
+    const { data, error } = await this.db
+      .from('blocked_users')
+      .select('blocked_id, profiles!blocked_users_blocked_id_fkey(id, full_name, username, avatar_url)')
+      .eq('blocker_id', myId)
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map((r: any) => ({
+      id: r.blocked_id,
+      name: r.profiles?.full_name || r.profiles?.username || 'Usuario',
+      username: r.profiles?.username || '',
+      avatarUrl: r.profiles?.avatar_url || '',
+      avatarColor: this.colorFromId(r.blocked_id),
+    }));
+  }
+
   async searchUsers(query: string) {
     const myId = await this.currentUserId();
+    const blocked = await this.getBlockedIds(myId);
+    const excludeIds = [myId, ...Array.from(blocked)];
+
     const { data, error } = await this.db
       .from('profiles')
       .select('id, username, full_name, avatar_url')
       .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
-      .neq('id', myId)
+      .not('id', 'in', `(${excludeIds.join(',')})`)
       .limit(20);
 
     if (error) throw error;
@@ -72,6 +127,7 @@ export class FriendshipService {
 
   async getFriends() {
     const myId = await this.currentUserId();
+    const blocked = await this.getBlockedIds(myId);
 
     const { data: myProfile, error: profileError } = await this.db
       .from('profiles')
@@ -81,7 +137,8 @@ export class FriendshipService {
 
     if (profileError) throw profileError;
 
-    const contactIds: string[] = myProfile?.contacts || [];
+    const allIds: string[] = myProfile?.contacts || [];
+    const contactIds = allIds.filter(id => !blocked.has(id));
     if (contactIds.length === 0) return [];
 
     const { data, error } = await this.db
@@ -201,5 +258,23 @@ export class FriendshipService {
       .eq('id', userId)
       .maybeSingle();
     return data ? (data.full_name || data.username || null) : null;
+  }
+
+  async subscribeToIncomingRequests(callback: () => void): Promise<any> {
+    const myId = await this.currentUserId();
+    if (!myId) return null;
+    return this.db
+      .channel(`incoming-requests-${myId}-${Date.now()}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'friendships',
+        filter: `receiver_id=eq.${myId}`,
+      }, () => callback())
+      .subscribe();
+  }
+
+  removeChannel(channel: any) {
+    if (channel) this.db.removeChannel(channel);
   }
 }

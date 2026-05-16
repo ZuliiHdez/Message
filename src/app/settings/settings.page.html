@@ -70,13 +70,22 @@
         <h3>{{ lang.t('settings_appearance') }}</h3>
       </div>
 
-      <button class="nav-row">
-        <div class="row-icon">
-          <ion-icon name="moon-outline"></ion-icon>
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon [name]="themeService.isDark ? 'moon' : 'sunny-outline'"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">{{ lang.t('settings_theme') }}</span>
+            <span class="row-sub">{{ themeService.isDark ? lang.t('settings_theme_dark') : lang.t('settings_theme_light') }}</span>
+          </div>
         </div>
-        <span class="row-title">{{ lang.t('settings_theme') }}</span>
-        <span class="nav-row-value">{{ lang.t('settings_theme_light') }}</span>
-      </button>
+        <ion-toggle
+          [ngModel]="themeService.isDark"
+          (ngModelChange)="themeService.toggle()"
+          class="orion-toggle">
+        </ion-toggle>
+      </div>
     </section>
 
     <section class="settings-card">
@@ -146,7 +155,7 @@
             <ion-icon name="cloud-upload-outline"></ion-icon>
             <input type="file" accept="audio/*" (change)="onCustomBuzzSelected($event)" style="display:none"/>
           </label>
-          <button class="buzz-reset-btn" *ngIf="buzzService.hasCustomSound" (click)="resetBuzzSound()">
+          <button class="buzz-reset-btn" *ngIf="buzzService.hasCustomSound" (click)="resetBuzzSound()" aria-label="Reset sound">
             <ion-icon name="trash-outline"></ion-icon>
           </button>
         </div>

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { FriendshipService } from '../services/friendship.service';
+import { LanguageService } from '../services/language.service';
 
 @Component({
   selector: 'app-add-contact',
@@ -25,7 +26,8 @@ export class AddContactPage {
 
   constructor(
     private router: Router,
-    private friendshipService: FriendshipService
+    private friendshipService: FriendshipService,
+    public lang: LanguageService,
   ) {}
 
   onSearch() {

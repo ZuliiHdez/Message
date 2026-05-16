@@ -81,11 +81,11 @@
 
 <ion-content class="chat-content" #scrollContent (click)="closeEmoji(); hideMenu()">
 
-  <div class="chat-loading" *ngIf="loadingMessages">
+  <div class="chat-loading" *ngIf="loadingMessages || !messagesReady">
     <ion-spinner name="crescent"></ion-spinner>
   </div>
 
-  <div class="messages-container" #messagesContainer *ngIf="!loadingMessages" [class.buzz-shaking]="isBuzzShaking">
+  <div class="messages-container" #messagesContainer *ngIf="!loadingMessages" [style.visibility]="messagesReady ? 'visible' : 'hidden'" [class.buzz-shaking]="isBuzzShaking">
     <ng-container *ngFor="let group of messageGroups">
 
       <div class="date-separator">

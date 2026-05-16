@@ -4,15 +4,15 @@
     <button class="back-btn" (click)="goBack()">
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
-    <span class="header-title">New Group</span>
+    <span class="header-title">{{ lang.t('create_group_title') }}</span>
   </header>
 
   <div class="scroll-area">
 
     <div class="editorial-header">
-      <p class="section-tag">Build Your Circle</p>
+      <p class="section-tag">{{ lang.t('create_group_tag') }}</p>
       <h2 class="section-title">
-        Create a <span class="accent">group</span><br/>chat
+        {{ lang.t('create_group_heading_pre') }} <span class="accent">{{ lang.t('create_group_heading_accent') }}</span><br/>{{ lang.t('create_group_heading_post') }}
       </h2>
     </div>
 
@@ -21,21 +21,21 @@
         <ion-icon name="people"></ion-icon>
       </div>
       <div class="preview-info">
-        <p class="preview-name">{{ groupName || 'Group name…' }}</p>
+        <p class="preview-name">{{ groupName || lang.t('create_group_preview_placeholder') }}</p>
         <p class="preview-members" *ngIf="selectedCount > 0">
-          {{ selectedCount }} member{{ selectedCount !== 1 ? 's' : '' }} selected
+          {{ selectedCount }} {{ selectedCount !== 1 ? lang.t('create_group_preview_members_many') : lang.t('create_group_preview_members_one') }}
         </p>
-        <p class="preview-members empty" *ngIf="selectedCount === 0">No members yet</p>
+        <p class="preview-members empty" *ngIf="selectedCount === 0">{{ lang.t('create_group_preview_empty') }}</p>
       </div>
     </div>
 
     <div class="form-section">
-      <p class="form-label">GROUP NAME</p>
+      <p class="form-label">{{ lang.t('create_group_name_label') | uppercase }}</p>
       <div class="pill-input-wrap">
         <ion-icon name="people-outline" class="pill-icon"></ion-icon>
         <input
           type="text"
-          placeholder="Type a name…"
+          [placeholder]="lang.t('create_group_name_placeholder')"
           [(ngModel)]="groupName"
           maxlength="40"
         />
@@ -44,7 +44,7 @@
     </div>
 
     <div class="form-section">
-      <p class="form-label">GROUP COLOR</p>
+      <p class="form-label">{{ lang.t('create_group_color_label') | uppercase }}</p>
       <div class="color-palette">
         <button
           *ngFor="let color of palette"
@@ -59,18 +59,18 @@
 
     <div class="form-section">
       <div class="members-label-row">
-        <p class="form-label">ADD MEMBERS</p>
+        <p class="form-label">{{ lang.t('create_group_members_label') | uppercase }}</p>
         <span class="members-badge" *ngIf="selectedCount > 0">{{ selectedCount }}</span>
       </div>
 
       <div class="state-empty" *ngIf="loading">
         <ion-spinner name="crescent"></ion-spinner>
-        <span>Loading contacts…</span>
+        <span>{{ lang.t('create_group_loading') }}</span>
       </div>
 
       <div class="state-empty" *ngIf="!loading && contacts.length === 0">
         <ion-icon name="people-outline"></ion-icon>
-        <span>No contacts to add</span>
+        <span>{{ lang.t('create_group_no_contacts') }}</span>
       </div>
 
       <div class="contacts-list" *ngIf="!loading && contacts.length > 0">
@@ -111,7 +111,7 @@
       <ion-spinner *ngIf="creating" name="crescent" class="btn-spinner"></ion-spinner>
       <ng-container *ngIf="!creating">
         <ion-icon name="checkmark-circle-outline"></ion-icon>
-        <span>Create Group</span>
+        <span>{{ lang.t('create_group_btn') }}</span>
       </ng-container>
     </button>
   </div>

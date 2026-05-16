@@ -5,6 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { LanguageService, Lang } from '../services/language.service';
 import { BuzzService } from '../services/buzz.service';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-settings',
@@ -32,7 +33,8 @@ export class SettingsPage implements OnInit {
   constructor(
     private router: Router,
     public lang: LanguageService,
-    public buzzService: BuzzService
+    public buzzService: BuzzService,
+    public themeService: ThemeService,
   ) {}
 
   get selectedLanguage(): Lang { return this.lang.lang; }

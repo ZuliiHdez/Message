@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, IonContent } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ChatService } from '../services/chat.service';
@@ -44,6 +44,7 @@ const EDIT_WINDOW_MS = 15 * 60 * 1000;
 })
 export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
+  @ViewChild('scrollContent') scrollContent!: IonContent;
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('fileInput') fileInput!: ElementRef;
 
@@ -113,6 +114,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   loadingMessages = false;
+  messagesReady = false;
 
   async ionViewWillEnter() {
     // Re-read params to ensure group.id is set (page may be cached)
@@ -123,6 +125,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
     this.messageGroups = [];
     this.loadingMessages = true;
+    this.messagesReady = false;
     this.explodedPhotoBombs.clear();
     this.openPhotoBombs.clear();
 
@@ -216,7 +219,10 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
     }
     this.messageGroups = this.groupByDate(formatted);
     this.loadingMessages = false;
-    this.shouldScroll = true;
+    setTimeout(() => {
+      this.scrollToBottom();
+      this.messagesReady = true;
+    }, 80);
   }
 
   formatMessage(msg: any): GroupMessage {
@@ -450,8 +456,7 @@ export class GroupChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   scrollToBottom() {
     try {
-      const el = this.messagesContainer.nativeElement;
-      el.scrollTop = el.scrollHeight;
+      this.scrollContent.scrollToBottom(0);
     } catch {}
   }
 

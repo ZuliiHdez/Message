@@ -242,7 +242,11 @@ ion-header { --background: transparent; box-shadow: none; }
 // ── Image preview overlay ──────────────
 .img-preview-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  // Usa la altura del viewport visible (excluye el teclado en móvil)
+  height: var(--vvh, 100vh);
   background: rgba(0, 0, 0, 0.92);
   z-index: 9999;
   display: flex;
@@ -619,6 +623,7 @@ ion-header { --background: transparent; box-shadow: none; }
     border-radius: $radius-sm;
     background: $surface-low;
     cursor: pointer;
+    -webkit-user-select: none;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transition: background 0.15s;

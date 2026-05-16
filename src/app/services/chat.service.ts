@@ -274,6 +274,30 @@ export class ChatService {
     return data;
   }
 
+  async getUnreadCount(otherUserId: string, since: string | null): Promise<number> {
+    const myId = await this.getCurrentUserId();
+    let query = this.db
+      .from('messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('sender_id', otherUserId)
+      .eq('receiver_id', myId);
+    if (since) query = query.gt('created_at', since);
+    const { count } = await query;
+    return count || 0;
+  }
+
+  async getUnreadGroupCount(groupId: string, since: string | null): Promise<number> {
+    const myId = await this.getCurrentUserId();
+    let query = this.db
+      .from('group_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('group_id', groupId)
+      .neq('sender_id', myId);
+    if (since) query = query.gt('created_at', since);
+    const { count } = await query;
+    return count || 0;
+  }
+
   async updateMessage(messageId: string, content: string) {
     const { error } = await this.db
       .from('messages')

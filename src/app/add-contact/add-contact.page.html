@@ -5,19 +5,19 @@
       <button class="back-btn" (click)="goBack()">
         <ion-icon name="arrow-back-outline"></ion-icon>
       </button>
-      <h1>Add Contact</h1>
+      <h1>{{ lang.t('add_title') }}</h1>
     </div>
 
     <div class="hero-text">
-      <h2>Find your<br/><span class="green">friends.</span></h2>
-      <p>Search by username to start a new chat.</p>
+      <h2>{{ lang.t('add_hero_pre') }}<br/><span class="green">{{ lang.t('add_hero_accent') }}</span></h2>
+      <p>{{ lang.t('add_hero_sub') }}</p>
     </div>
 
     <div class="search-bar" [class.focused]="searchQuery.length > 0">
       <ion-icon name="search-outline"></ion-icon>
       <input
         type="text"
-        placeholder="Search by name or email"
+        [placeholder]="lang.t('add_placeholder')"
         [(ngModel)]="searchQuery"
         (ngModelChange)="onSearch()"
         #searchInput
@@ -35,22 +35,20 @@
     </div>
 
     <ng-container *ngIf="!loading && searchQuery.length < 2">
-
       <div class="empty-illustration">
         <div class="illustration-circle">
           <div class="chat-badge"><ion-icon name="chatbubble"></ion-icon></div>
           <div class="main-icon"><ion-icon name="person-add-outline"></ion-icon></div>
           <div class="check-badge"><ion-icon name="checkmark"></ion-icon></div>
         </div>
-        <h3>Start typing to search</h3>
-        <p>Type at least 2 characters to look for Orion Messenger users around the globe.</p>
+        <h3>{{ lang.t('add_hint_title') }}</h3>
+        <p>{{ lang.t('add_hint_sub') }}</p>
       </div>
-
     </ng-container>
 
     <div class="empty-state" *ngIf="!loading && searchQuery.length >= 2 && results.length === 0">
       <ion-icon name="search-outline"></ion-icon>
-      <p>No users found for "<strong>{{ searchQuery }}</strong>"</p>
+      <p>{{ lang.t('add_no_results') }} "<strong>{{ searchQuery }}</strong>"</p>
     </div>
 
     <div class="results-list" *ngIf="!loading && results.length > 0">

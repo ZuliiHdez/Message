@@ -23,6 +23,21 @@ export class LoginComponent {
 
   constructor(private router: Router, private supabase: SupabaseService, public lang: LanguageService) {}
 
+  async ionViewWillEnter() {
+    const { data } = await this.supabase.getSession();
+    if (!data.session) return;
+
+    const remember      = localStorage.getItem('orion_remember_me');
+    const sessionActive = sessionStorage.getItem('orion_session_active');
+
+    if (remember === 'true' || sessionActive === 'true') {
+      this.router.navigate(['/home']);
+    } else {
+      // Browser was reopened without "remember me" → clear the persisted session
+      await this.supabase.getClient().auth.signOut();
+    }
+  }
+
   async login() {
     if (!this.email || !this.password) {
       this.errorMsg = 'Please fill in all fields';
@@ -58,6 +73,9 @@ export class LoginComponent {
       photoUrl: profile?.avatar_url || '',
       status:   profile?.status || 'Hey, I\'m using Orion'
     }));
+
+    localStorage.setItem('orion_remember_me', this.rememberMe ? 'true' : 'false');
+    sessionStorage.setItem('orion_session_active', 'true');
 
     this.loading = false;
     this.router.navigate(['/home']);

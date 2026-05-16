@@ -5,7 +5,10 @@ import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from 'src/app/services/supabase.service';
 import { ChatService } from 'src/app/services/chat.service';
+import { FriendshipService } from 'src/app/services/friendship.service';
 import { LanguageService } from 'src/app/services/language.service';
+
+interface BlockedUser { id: string; name: string; username: string; avatarUrl: string; avatarColor: string; }
 
 @Component({
   selector: 'app-edit-profile',
@@ -31,6 +34,13 @@ export class EditProfilePage implements OnInit {
   showAvailabilityMenu = false;
   availability: 'online' | 'away' | 'busy' | 'offline' = 'online';
 
+  showBlockedSection = false;
+  blockedUsers: BlockedUser[] = [];
+  blockedSearchQuery = '';
+  blockedLoading = false;
+  pendingRequestsCount = 0;
+  private requestsChannel: any = null;
+
   readonly commonEmojis = [
     '😊','😂','❤️','🔥','✨','🎉','😎','🤔',
     '💪','🙏','😍','🚀','💯','😅','🎵','⚡',
@@ -41,8 +51,26 @@ export class EditProfilePage implements OnInit {
     private router: Router,
     private supabase: SupabaseService,
     private chatService: ChatService,
+    private friendshipService: FriendshipService,
     public lang: LanguageService
   ) {}
+
+  async ionViewWillEnter() {
+    this.friendshipService.removeChannel(this.requestsChannel);
+    this.friendshipService.getPendingRequests()
+      .then(r => this.pendingRequestsCount = r.length)
+      .catch(() => {});
+    this.requestsChannel = await this.friendshipService.subscribeToIncomingRequests(() => {
+      this.friendshipService.getPendingRequests()
+        .then(r => this.pendingRequestsCount = r.length)
+        .catch(() => {});
+    });
+  }
+
+  ionViewWillLeave() {
+    this.friendshipService.removeChannel(this.requestsChannel);
+    this.requestsChannel = null;
+  }
 
   async ngOnInit() {
     const { data: session } = await this.supabase.getClient().auth.getSession();
@@ -62,6 +90,40 @@ export class EditProfilePage implements OnInit {
       this.photoUrl        = profile.avatar_url || '';
       this.availability    = (profile.user_status as any) || 'online';
       this.parsePersonalMessage();
+    }
+
+    // Cargar el conteo de bloqueados al inicio
+    this.loadBlockedUsers();
+  }
+
+  get filteredBlockedUsers(): BlockedUser[] {
+    const q = this.blockedSearchQuery.toLowerCase().trim();
+    if (!q) return this.blockedUsers;
+    return this.blockedUsers.filter(u =>
+      u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)
+    );
+  }
+
+  async toggleBlockedSection() {
+    this.showBlockedSection = !this.showBlockedSection;
+  }
+
+  async loadBlockedUsers() {
+    this.blockedLoading = true;
+    try {
+      this.blockedUsers = await this.friendshipService.getBlockedUsers();
+    } catch (e) {
+      console.error('Error cargando bloqueados:', e);
+    }
+    this.blockedLoading = false;
+  }
+
+  async unblockUser(userId: string) {
+    try {
+      await this.friendshipService.unblockUser(userId);
+      this.blockedUsers = this.blockedUsers.filter(u => u.id !== userId);
+    } catch (e) {
+      console.error('Error desbloqueando:', e);
     }
   }
 
@@ -184,6 +246,8 @@ export class EditProfilePage implements OnInit {
     await this.chatService.setUserStatus('offline');
     await this.supabase.getClient().auth.signOut();
     localStorage.removeItem('lastUser');
+    localStorage.removeItem('orion_remember_me');
+    sessionStorage.removeItem('orion_session_active');
     this.router.navigate(['/login']);
   }
 

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, IonContent } from '@ionic/angular';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ChatService } from '../services/chat.service';
@@ -40,6 +40,7 @@ const EDIT_WINDOW_MS = 15 * 60 * 1000;
 })
 export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
+  @ViewChild('scrollContent') scrollContent!: IonContent;
   @ViewChild('messagesContainer') messagesContainer!: ElementRef;
   @ViewChild('fileInput') fileInput!: ElementRef;
 
@@ -88,6 +89,10 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   private shouldScroll = false;
   private statusChannel: any = null;
+  private viewportResizeHandler = () => {
+    const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', `${vh}px`);
+  };
 
   constructor(
     private route: ActivatedRoute,
@@ -108,11 +113,16 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   loadingMessages = false;
+  messagesReady = false;
 
   async ionViewWillEnter() {
+    this.viewportResizeHandler();
+    window.visualViewport?.addEventListener('resize', this.viewportResizeHandler);
+
     // Limpiar mensajes del chat anterior inmediatamente
     this.messageGroups = [];
     this.loadingMessages = true;
+    this.messagesReady = false;
     this.explodedPhotoBombs.clear();
     this.openPhotoBombs.clear();
 
@@ -158,6 +168,9 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
   }
 
   ionViewWillLeave() {
+    window.visualViewport?.removeEventListener('resize', this.viewportResizeHandler);
+    document.documentElement.style.removeProperty('--vvh');
+
     this.buzzService.activeChatContactId = '';
     this.chatService.unsubscribe();
     if (this.buzzCountTimer) { clearInterval(this.buzzCountTimer); this.buzzCountTimer = null; }
@@ -184,7 +197,11 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     }
     this.messageGroups = this.groupByDate(formatted);
     this.loadingMessages = false;
-    this.shouldScroll = true;
+    // Container is in DOM but hidden; wait for IonContent to measure, then scroll and reveal
+    setTimeout(() => {
+      this.scrollToBottom();
+      this.messagesReady = true;
+    }, 80);
   }
 
   formatMessage(msg: any): Message {
@@ -418,8 +435,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
 
   scrollToBottom() {
     try {
-      const el = this.messagesContainer.nativeElement;
-      el.scrollTop = el.scrollHeight;
+      this.scrollContent.scrollToBottom(0);
     } catch {}
   }
 

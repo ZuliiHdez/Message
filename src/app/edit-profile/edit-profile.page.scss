@@ -180,6 +180,11 @@
     justify-content: center;
     font-size: 26px;
     flex-shrink: 0;
+
+    .ds-default-icon {
+      font-size: 24px;
+      color: $primary;
+    }
   }
 
   .ds-body {
@@ -225,25 +230,26 @@
   gap: 0;
 }
 
+.view-row-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+
+  &.blue  { background: rgba(0,61,124,0.08);  color: $primary; }
+  &.green { background: rgba(61,106,0,0.10);  color: $secondary; }
+  &.red   { background: rgba(186,26,26,0.08); color: $error; }
+}
+
 .view-row {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 4px 0;
-
-  .view-row-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: $radius-sm;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    flex-shrink: 0;
-
-    &.blue  { background: rgba(0,61,124,0.08);  color: $primary; }
-    &.green { background: rgba(61,106,0,0.10);  color: $secondary; }
-  }
 
   .view-row-text {
     flex: 1;
@@ -294,8 +300,8 @@
   align-items: center;
   justify-content: space-around;
   background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   padding: 10px 0 24px;
   z-index: 20;
   border-radius: $radius-lg $radius-lg 0 0;
@@ -316,6 +322,30 @@
     padding: 4px 12px;
     transition: color 0.2s;
     ion-icon { font-size: 22px; }
+
+    .bnav-icon-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .bnav-badge {
+        position: absolute;
+        top: -5px;
+        right: -7px;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        background: $primary;
+        color: $on-primary;
+        font-size: 0.6rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+      }
+    }
 
     &.active {
       color: $primary;
@@ -452,6 +482,7 @@
     flex-shrink: 0;
     transition: background 0.15s;
     &:active { background: $surface-high; }
+    ion-icon { color: $primary; font-size: 24px; }
   }
 
   input {
@@ -499,4 +530,163 @@
   align-items: center;
   justify-content: center;
   ion-spinner { color: #fff; width: 22px; height: 22px; }
+}
+
+// ── Blocked users card ─────────────────
+.blocked-card {
+  @include card;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.blocked-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  &:active { background: $surface-low; }
+
+  .blocked-header-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .blocked-title {
+    font-family: $font-body;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: $on-surface;
+  }
+
+  .blocked-count {
+    font-family: $font-body;
+    font-size: 0.78rem;
+    color: $on-surface-variant;
+  }
+
+  .blocked-chevron {
+    font-size: 18px;
+    color: $on-surface-variant;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    &.open { transform: rotate(180deg); }
+  }
+}
+
+.blocked-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-top: 1px solid $surface-high;
+
+  .blocked-search-icon {
+    font-size: 18px;
+    color: $on-surface-variant;
+    flex-shrink: 0;
+  }
+
+  .blocked-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: $font-body;
+    font-size: 0.9rem;
+    color: $on-surface;
+    &::placeholder { color: $on-surface-variant; }
+  }
+}
+
+.blocked-list {
+  max-height: 248px;
+  overflow-y: auto;
+}
+
+.blocked-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  color: $on-surface-variant;
+  ion-icon { font-size: 28px; }
+  span { font-family: $font-body; font-size: 0.875rem; }
+}
+
+.blocked-loading {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.blocked-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid $surface-high;
+
+  &:first-child { border-top: none; }
+}
+
+.blocked-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+
+  .blocked-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.blocked-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  .blocked-name {
+    font-family: $font-body;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $on-surface;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .blocked-username {
+    font-family: $font-body;
+    font-size: 0.75rem;
+    color: $on-surface-variant;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.unblock-btn {
+  background: none;
+  border: 1.5px solid $primary;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-family: $font-body;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $primary;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  &:active { background: $primary; color: #fff; }
 }
