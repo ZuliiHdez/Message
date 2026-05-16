@@ -211,7 +211,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
     return {
       ...msg,
       isMine: msg.sender_id === this.myId,
-      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      time: date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
     };
   }
 
@@ -300,7 +300,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
         is_photo_bomb: false,
         created_at: new Date().toISOString(),
         isMine: true,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
       };
       this.addMessageToGroups(newMsg);
       this.messageText = '';
@@ -377,7 +377,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
         is_photo_bomb: false,
         created_at:   new Date().toISOString(),
         isMine:       true,
-        time:         new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        time:         new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
       };
       this.addMessageToGroups(newMsg);
       this.shouldScroll = true;
@@ -407,7 +407,7 @@ export class ChatPage implements OnInit, OnDestroy, AfterViewChecked {
           is_photo_bomb: isPhotoBomb,
           created_at: new Date().toISOString(),
           isMine: true,
-          time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }),
         };
         this.addMessageToGroups(newMsg);
       }
