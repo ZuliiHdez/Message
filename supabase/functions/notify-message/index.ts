@@ -96,10 +96,9 @@ serve(async (req) => {
     }
 
     const payload = await req.json();
-    console.log("Webhook payload:", JSON.stringify(payload).slice(0, 300));
-
-    // Supabase DB webhook sends: { type, table, record, old_record }
     const record = payload.record ?? payload;
+    console.log("record fields:", Object.keys(record).join(", "));
+    console.log("sender_id:", record.sender_id, "receiver_id:", record.receiver_id, "group_id:", record.group_id);
 
     const isGroup = !!record.group_id;
     const recipientId: string = isGroup ? null : record.receiver_id;
@@ -108,14 +107,21 @@ serve(async (req) => {
       return new Response("no recipient", { status: 200 });
     }
 
+    if (!record.sender_id) {
+      console.error("sender_id missing from record");
+      return new Response("no sender_id", { status: 200 });
+    }
+
     const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Get sender display name
-    const { data: sender } = await db
+    const { data: sender, error: senderErr } = await db
       .from("profiles")
       .select("full_name, username")
       .eq("id", record.sender_id)
-      .single();
+      .maybeSingle();
+    if (senderErr) console.error("profiles query error:", senderErr.message);
+    console.log("sender row:", JSON.stringify(sender));
     const senderName = sender?.full_name || sender?.username || "Unknown";
 
     let title = senderName;
@@ -137,11 +143,13 @@ serve(async (req) => {
       // Group message: notify all members except sender
       const groupId = record.group_id;
 
-      const { data: group } = await db
+      const { data: group, error: groupErr } = await db
         .from("groups")
         .select("name")
         .eq("id", groupId)
-        .single();
+        .maybeSingle();
+      if (groupErr) console.error("groups query error:", groupErr.message);
+      console.log("group row:", JSON.stringify(group));
 
       title      = group?.name || "Group";
       body       = `${senderName}: ${body}`;
