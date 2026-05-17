@@ -4,6 +4,7 @@ import { ToastController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { PushNotifications, Token, PushNotificationSchema, ActionPerformed } from '@capacitor/push-notifications';
 import { ChatService } from './services/chat.service';
 import { BuzzService } from './services/buzz.service';
 import { FriendshipService } from './services/friendship.service';
@@ -24,6 +25,7 @@ export class AppComponent implements OnInit {
   private globalBuzzChannel: any = null;
   private notifChannels: any[] = [];
   private notifId = 1;
+  private pendingFcmToken: string | null = null;
 
   private awayTimer: any = null;
   private offlineTimer: any = null;
@@ -40,7 +42,7 @@ export class AppComponent implements OnInit {
     private toastCtrl: ToastController,
     private router: Router,
     private supabase: SupabaseService,
-    themeService: ThemeService,  // injected here so it initializes early
+    _themeService: ThemeService,  // injected here so it initializes early
   ) {}
 
   async ngOnInit() {
@@ -146,6 +148,7 @@ export class AppComponent implements OnInit {
 
   private async initNotifications() {
     if (Capacitor.isNativePlatform()) {
+      // ── Local notifications channel (buzz / foreground fallback) ──
       await LocalNotifications.requestPermissions();
       await LocalNotifications.createChannel({
         id: 'messages',
@@ -155,16 +158,65 @@ export class AppComponent implements OnInit {
         vibration: true,
       });
       LocalNotifications.addListener('localNotificationActionPerformed', (event: any) => {
-        const extra = event.notification.extra;
-        if (extra?.route && extra?.targetId) {
-          this.router.navigate([extra.route], {
-            queryParams: { id: extra.targetId, name: extra.targetName || '' },
-          });
+        const d = event.notification.extra;
+        if (d?.route && d?.targetId) {
+          this.router.navigate([d.route], { queryParams: { id: d.targetId, name: d.targetName || '' } });
         }
       });
+
+      // ── Push notifications (FCM — background / killed app) ──
+      await this.initPushNotifications();
     } else if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
+  }
+
+  private async initPushNotifications() {
+    const perm = await PushNotifications.requestPermissions();
+    if (perm.receive !== 'granted') return;
+
+    await PushNotifications.register();
+
+    // Token ready → cache locally and save to Supabase
+    PushNotifications.addListener('registration', async (token: Token) => {
+      this.pendingFcmToken = token.value;
+      localStorage.setItem('fcm_token', token.value);
+      await this.savePushToken(token.value);
+    });
+
+    PushNotifications.addListener('registrationError', (err: any) => {
+      console.error('FCM registration error', err);
+    });
+
+    // App is in FOREGROUND when push arrives → show as local notification
+    PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+      LocalNotifications.schedule({
+        notifications: [{
+          title: notification.title || '',
+          body:  notification.body  || '',
+          id:    this.notifId++,
+          channelId: 'messages',
+          extra: notification.data ?? {},
+        }],
+      }).catch(() => {});
+    });
+
+    // User tapped a push notification (from background or killed state)
+    PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
+      const d = action.notification.data;
+      if (d?.route && d?.targetId) {
+        this.router.navigate([d.route], { queryParams: { id: d.targetId, name: d.targetName || '' } });
+      }
+    });
+  }
+
+  private async savePushToken(token: string, myId?: string) {
+    const uid = myId || await this.chatService.getCurrentUserId();
+    if (!uid) return;
+    const { error } = await this.supabase.getClient()
+      .from('push_tokens')
+      .upsert({ user_id: uid, token, platform: Capacitor.getPlatform() }, { onConflict: 'user_id' });
+    if (error) console.error('[FCM] push_tokens upsert error:', error.message);
   }
 
   triggerGlobalShake() {
@@ -197,6 +249,12 @@ export class AppComponent implements OnInit {
   }
 
   private async setupNotifications(myId: string) {
+    // Save FCM token now that we have a confirmed userId — no session timing issues
+    if (Capacitor.isNativePlatform()) {
+      const token = this.pendingFcmToken ?? localStorage.getItem('fcm_token');
+      if (token) await this.savePushToken(token, myId);
+    }
+
     const dmCh = this.chatService.subscribeToIncomingMessages(myId, async (msg: any) => {
       if (msg.sender_id === this.buzzService.activeChatContactId) return;
       const name = await this.chatService.getProfileDisplayName(msg.sender_id);

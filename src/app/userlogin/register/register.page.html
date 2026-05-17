@@ -40,10 +40,36 @@
       <div class="field-group">
         <label>{{ lang.t('auth_password_label') }}</label>
         <div class="input-wrap">
-          <input [type]="showPassword ? 'text' : 'password'" placeholder="••••••••" [(ngModel)]="form.password" (ngModelChange)="clearError('password')"/>
+          <input [type]="showPassword ? 'text' : 'password'" placeholder="••••••••"
+                 [(ngModel)]="form.password"
+                 (ngModelChange)="onPasswordChange()"/>
           <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" (click)="showPassword = !showPassword"></ion-icon>
         </div>
         <span class="err" *ngIf="errors.password">{{ errors.password }}</span>
+
+        <!-- Checklist de requisitos (visible en cuanto el usuario empieza a escribir) -->
+        <div class="pwd-rules" *ngIf="passwordTouched">
+          <div class="pwd-rule" [class.met]="pwdRules.length" [class.unmet]="!pwdRules.length">
+            <ion-icon [name]="pwdRules.length ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_length') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.upper" [class.unmet]="!pwdRules.upper">
+            <ion-icon [name]="pwdRules.upper ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_upper') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.lower" [class.unmet]="!pwdRules.lower">
+            <ion-icon [name]="pwdRules.lower ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_lower') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.number" [class.unmet]="!pwdRules.number">
+            <ion-icon [name]="pwdRules.number ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_number') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.special" [class.unmet]="!pwdRules.special">
+            <ion-icon [name]="pwdRules.special ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_special') }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="field-group">

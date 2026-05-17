@@ -26,22 +26,36 @@ export class RegisterComponent {
   };
 
   errors: any = {};
-  showPassword = false;
+  showPassword        = false;
   showConfirmPassword = false;
-  loading = false;
+  loading             = false;
+  passwordTouched     = false;
 
   constructor(private router: Router, private supabase: SupabaseService, public lang: LanguageService) {}
 
-  togglePassword() {
-    this.showPassword = !this.showPassword;
+  get pwdRules() {
+    const p = this.form.password;
+    return {
+      length:  p.length >= 8,
+      upper:   /[A-Z]/.test(p),
+      lower:   /[a-z]/.test(p),
+      number:  /[0-9]/.test(p),
+      special: /[^A-Za-z0-9]/.test(p),
+    };
   }
 
-  toggleConfirmPassword() {
-    this.showConfirmPassword = !this.showConfirmPassword;
+  get pwdValid() {
+    const r = this.pwdRules;
+    return r.length && r.upper && r.lower && r.number && r.special;
   }
 
   clearError(field: string) {
     this.errors[field] = null;
+  }
+
+  onPasswordChange() {
+    this.passwordTouched = true;
+    this.clearError('password');
   }
 
   validate(): boolean {
@@ -65,8 +79,8 @@ export class RegisterComponent {
 
     if (!this.form.password)
       this.errors.password = this.lang.t('auth_err_password_required');
-    else if (this.form.password.length < 6)
-      this.errors.password = this.lang.t('auth_err_password_min');
+    else if (!this.pwdValid)
+      this.errors.password = this.lang.t('auth_err_password_weak');
 
     if (!this.form.confirmPassword)
       this.errors.confirmPassword = this.lang.t('auth_err_confirm_required');
