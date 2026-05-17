@@ -138,7 +138,7 @@ Then build and run from Android Studio, or use `npx cap run android` with a conn
 
 ## Release
 
-**v1.0** — Initial release for Android.
+[Orion v1.0](https://github.com/ZuliiHdez/Message/releases/tag/Orion) — Initial release for Android.
 
 Includes all core messaging features, Photo Bomb, Buzz, group chats, the collaborative whiteboard, push notifications, and multi-language support.
 
