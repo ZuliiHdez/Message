@@ -1,13 +1,10 @@
-<!-- chat.page.html -->
-<ion-content class="chat-content" #scrollContent>
-
-  <!-- Header -->
+<ion-header class="ion-no-border">
   <div class="chat-header">
     <button class="back-btn" (click)="goBack()">
       <ion-icon name="arrow-back-outline"></ion-icon>
     </button>
 
-    <div class="contact-info">
+    <div class="contact-info" (click)="openDetail()">
       <div class="contact-avatar" [style.background]="contact.avatarColor">
         <img *ngIf="contact.photoUrl" [src]="contact.photoUrl" class="avatar-img"/>
         <ion-icon *ngIf="!contact.photoUrl" name="person"></ion-icon>
@@ -20,96 +17,259 @@
     </div>
 
     <div class="header-actions">
-      <button class="icon-btn">
-        <ion-icon name="call-outline"></ion-icon>
-      </button>
-      <button class="icon-btn">
-        <ion-icon name="videocam-outline"></ion-icon>
+    </div>
+  </div>
+</ion-header>
+
+<!-- Image preview overlay -->
+<div class="img-preview-overlay" *ngIf="showImagePreview">
+  <div class="img-preview-header">
+    <button class="img-preview-close" (click)="cancelImagePreview()">
+      <ion-icon name="close"></ion-icon>
+    </button>
+    <span class="img-preview-count">
+      {{ selectedImages.length }} {{ selectedImages.length === 1 ? lang.t('chat_image_count_one') : lang.t('chat_image_count_many') }}
+    </span>
+    <div class="img-preview-spacer"></div>
+  </div>
+
+  <div class="img-preview-main">
+    <img [src]="selectedImages[currentPreviewIndex]?.url" class="img-preview-img"/>
+  </div>
+
+  <div class="img-preview-thumbs" *ngIf="selectedImages.length > 1">
+    <div class="thumb-item"
+         *ngFor="let img of selectedImages; let i = index"
+         [class.thumb-active]="i === currentPreviewIndex"
+         (click)="currentPreviewIndex = i">
+      <img [src]="img.url" class="thumb-img"/>
+      <button class="thumb-remove" (click)="removeSelectedImage(i); $event.stopPropagation()">
+        <ion-icon name="close-circle"></ion-icon>
       </button>
     </div>
   </div>
 
-  <!-- Mensajes -->
-  <div class="messages-container" #messagesContainer>
+  <div class="img-preview-footer">
+    <button class="preview-add-btn" (click)="addMoreImages()">
+      <ion-icon name="add-outline"></ion-icon>
+    </button>
+    <div class="preview-input-row">
+      <input type="text"
+             class="preview-caption"
+             [placeholder]="lang.t('chat_caption')"
+             [(ngModel)]="captionText"
+             (keyup.enter)="sendFromPreview()"/>
+      <button class="preview-bomb-btn"
+              *ngIf="canPhotoBomb"
+              [class.active]="isPhotoBomb"
+              (click)="isPhotoBomb = !isPhotoBomb">
+        <svg class="eye-one-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 12C2 12 5.5 5 12 5C18.5 5 22 12 22 12C22 12 18.5 19 12 19C5.5 19 2 12 2 12Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle class="pupil-circle" cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+          <text class="pupil-one" x="12" y="12" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="700" fill="currentColor" font-family="system-ui,sans-serif">1</text>
+        </svg>
+      </button>
+    </div>
+    <button class="preview-send-btn" (click)="sendFromPreview()" [disabled]="sending">
+      <ion-icon name="send"></ion-icon>
+    </button>
+  </div>
+</div>
 
+<ion-content class="chat-content" #scrollContent (click)="closeEmoji(); hideMenu()">
+
+  <div class="chat-loading" *ngIf="loadingMessages || !messagesReady">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div class="messages-container" #messagesContainer *ngIf="!loadingMessages" [style.visibility]="messagesReady ? 'visible' : 'hidden'" [class.buzz-shaking]="isBuzzShaking">
     <ng-container *ngFor="let group of messageGroups">
 
-      <!-- Separador de fecha -->
       <div class="date-separator">
-        <span>{{ group.date }}</span>
+        <span>{{ group.date | uppercase }}</span>
       </div>
 
-      <!-- Mensajes del día -->
       <ng-container *ngFor="let msg of group.messages">
         <div class="message-row" [ngClass]="msg.isMine ? 'mine' : 'theirs'">
 
-          <!-- Burbuja de texto -->
-          <div class="bubble" *ngIf="msg.content && !msg.image_url">
-            <p>{{ msg.content }}</p>
-            <span class="msg-time">{{ msg.time }}</span>
-          </div>
+          <!-- Normal message -->
+          <ng-container *ngIf="!msg.is_photo_bomb">
+            <div class="bubble" [class.image-bubble]="msg.image_url && !msg.is_deleted"
+                 (touchstart)="onPressStart(msg)" (touchend)="onPressEnd()" (touchcancel)="onPressEnd()"
+                 (mousedown)="onPressStart(msg)" (mouseup)="onPressEnd()" (mouseleave)="onPressEnd()">
 
-          <!-- Imagen -->
-          <div class="bubble image-bubble" *ngIf="msg.image_url">
-            <img [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url)"/>
-            <p *ngIf="msg.content" class="image-caption">{{ msg.content }}</p>
-            <span class="msg-time">{{ msg.time }}</span>
-          </div>
+              <!-- Deleted tombstone -->
+              <ng-container *ngIf="msg.is_deleted">
+                <div class="deleted-msg">
+                  <ion-icon name="ban-outline"></ion-icon>
+                  <span>{{ lang.t('chat_msg_deleted') }}</span>
+                </div>
+                <span class="msg-time">{{ msg.time }}</span>
+              </ng-container>
+
+              <!-- Live content -->
+              <ng-container *ngIf="!msg.is_deleted">
+                <!-- Inline edit mode -->
+                <ng-container *ngIf="editingMsgId === msg.id">
+                  <div class="edit-row">
+                    <input class="edit-input"
+                           [(ngModel)]="editText"
+                           (keyup.enter)="saveEdit(msg)"
+                           (keyup.escape)="cancelEdit()"
+                           autofocus/>
+                    <div class="edit-actions">
+                      <button class="edit-btn cancel" (click)="cancelEdit()">
+                        <ion-icon name="close-outline"></ion-icon>
+                      </button>
+                      <button class="edit-btn save" (click)="saveEdit(msg)">
+                        <ion-icon name="checkmark-outline"></ion-icon>
+                      </button>
+                    </div>
+                  </div>
+                </ng-container>
+                <!-- Normal display -->
+                <ng-container *ngIf="editingMsgId !== msg.id">
+                  <img *ngIf="msg.image_url" [src]="msg.image_url" class="msg-image" (click)="openImage(msg.image_url); $event.stopPropagation()"/>
+                  <p *ngIf="msg.content">{{ msg.content }}</p>
+                  <div class="time-row">
+                    <span class="edited-label" *ngIf="msg.isEdited">{{ lang.t('chat_edited') }}</span>
+                    <span class="msg-time">{{ msg.time }}</span>
+                  </div>
+                </ng-container>
+                <!-- Action menu -->
+                <div class="msg-menu" *ngIf="activeMenuMsgId === msg.id && msg.isMine" (click)="$event.stopPropagation()">
+                  <button *ngIf="canEdit(msg)" (click)="startEdit(msg)">
+                    <ion-icon name="create-outline"></ion-icon> {{ lang.t('chat_edit') }}
+                  </button>
+                  <button class="danger" (click)="deleteMsg(msg)">
+                    <ion-icon name="trash-outline"></ion-icon> {{ lang.t('chat_delete') }}
+                  </button>
+                </div>
+              </ng-container>
+
+            </div>
+          </ng-container>
+
+          <!-- Photo bomb message -->
+          <ng-container *ngIf="msg.is_photo_bomb">
+            <div class="bubble photo-bomb-bubble" [class.mine-bomb]="msg.isMine"
+                 (touchstart)="onPressStart(msg)" (touchend)="onPressEnd()" (touchcancel)="onPressEnd()"
+                 (mousedown)="onPressStart(msg)" (mouseup)="onPressEnd()" (mouseleave)="onPressEnd()">
+
+              <!-- Deleted tombstone -->
+              <ng-container *ngIf="msg.is_deleted">
+                <div class="deleted-msg">
+                  <ion-icon name="ban-outline"></ion-icon>
+                  <span>{{ lang.t('chat_msg_deleted') }}</span>
+                </div>
+              </ng-container>
+
+              <ng-container *ngIf="!msg.is_deleted">
+                <ng-container *ngIf="msg.isMine">
+                  <div class="bomb-private" [class.bomb-seen]="!msg.image_url">
+                    <ion-icon [name]="msg.image_url ? 'lock-closed-outline' : 'eye-outline'" class="bomb-icon"></ion-icon>
+                    <span class="bomb-label">{{ msg.image_url ? lang.t('chat_private_photo') : lang.t('chat_image_seen') }}</span>
+                  </div>
+                </ng-container>
+                <ng-container *ngIf="!msg.isMine">
+                  <div *ngIf="!openPhotoBombs.has(msg.id) && !explodedPhotoBombs.has(msg.id)"
+                       class="bomb-preview" (click)="viewPhotoBomb(msg.id, msg.image_url)">
+                    <ion-icon name="eye-outline" class="bomb-icon"></ion-icon>
+                    <span class="bomb-tap">{{ lang.t('chat_open_image') }}</span>
+                  </div>
+                  <div *ngIf="explodedPhotoBombs.has(msg.id)" class="bomb-exploded">
+                    <ion-icon name="eye-off-outline" class="bomb-icon faded"></ion-icon>
+                    <span>{{ lang.t('chat_image_deleted') }}</span>
+                  </div>
+                </ng-container>
+                <!-- Action menu for own photo bombs -->
+                <div class="msg-menu" *ngIf="activeMenuMsgId === msg.id && msg.isMine" (click)="$event.stopPropagation()">
+                  <button class="danger" (click)="deleteMsg(msg)">
+                    <ion-icon name="trash-outline"></ion-icon> {{ lang.t('chat_delete') }}
+                  </button>
+                </div>
+              </ng-container>
+
+              <span class="msg-time">{{ msg.time }}</span>
+            </div>
+          </ng-container>
 
         </div>
       </ng-container>
 
     </ng-container>
 
-    <!-- Indicador de escritura -->
     <div class="typing-indicator" *ngIf="isTyping">
-      <div class="bubble theirs-bubble">
+      <div class="dots">
         <span class="dot"></span>
         <span class="dot"></span>
         <span class="dot"></span>
       </div>
+      <span class="typing-label">{{ contact.name }} {{ lang.t('chat_is_writing') }}</span>
     </div>
-
   </div>
 
-  <!-- Preview imagen seleccionada -->
-  <div class="image-preview" *ngIf="selectedImage">
-    <img [src]="selectedImageUrl"/>
-    <button class="remove-image" (click)="removeImage()">
-      <ion-icon name="close-circle"></ion-icon>
-    </button>
+
+</ion-content>
+
+<ion-footer class="ion-no-border chat-footer">
+
+  <div class="emoji-picker-container" *ngIf="showEmojiPicker" (click)="$event.stopPropagation()">
+    <emoji-picker #emojiPicker></emoji-picker>
   </div>
 
-  <!-- Input área -->
   <div class="input-area">
-    <button class="input-icon-btn" (click)="openOptions()">
-      <ion-icon name="ellipsis-vertical"></ion-icon>
-    </button>
+    <div class="toolbar">
+      <button class="tool-btn" (click)="pickImage()">
+        <ion-icon name="image-outline"></ion-icon>
+        <input type="file" #fileInput accept="image/*" multiple (change)="onImageSelected($event)" style="display:none"/>
+      </button>
+      <button class="tool-btn" [class.active]="showWhiteboard" (click)="openWhiteboard()">
+        <ion-icon name="color-wand-outline"></ion-icon>
+      </button>
 
-    <div class="input-box">
-      <input
-        type="text"
-        placeholder="Escribe un mensaje..."
-        [(ngModel)]="messageText"
-        (keyup.enter)="sendMessage()"
-      />
-      <button class="emoji-btn" (click)="toggleEmoji()">
+      <button class="tool-btn" [class.active]="showEmojiPicker" (click)="toggleEmoji(); $event.stopPropagation()">
         <ion-icon name="happy-outline"></ion-icon>
+      </button>
+      <button class="tool-btn buzz-btn" [class.cooling]="buzzCooldown > 0" (click)="sendBuzz()">
+        <ion-icon name="flash-outline"></ion-icon>
+        <span class="buzz-cd" *ngIf="buzzCooldown > 0">{{ buzzCooldown }}</span>
       </button>
     </div>
 
-    <button class="input-icon-btn" (click)="pickImage()">
-      <ion-icon name="camera-outline"></ion-icon>
-      <input type="file" #fileInput accept="image/*" (change)="onImageSelected($event)" style="display:none"/>
-    </button>
-
-    <button class="send-btn" (click)="sendMessage()" *ngIf="messageText.trim() || selectedImage">
-      <ion-icon name="send"></ion-icon>
-    </button>
-
-    <button class="input-icon-btn mic-btn" *ngIf="!messageText.trim() && !selectedImage">
-      <ion-icon name="mic-outline"></ion-icon>
-    </button>
+    <div class="input-row">
+      <div class="input-box">
+        <input type="text"
+               [placeholder]="lang.t('chat_type')"
+               [(ngModel)]="messageText"
+               (keyup.enter)="sendMessage()"
+               (focus)="closeEmoji()"/>
+      </div>
+      <button class="send-btn" (click)="sendMessage()">
+        <ion-icon name="send"></ion-icon>
+      </button>
+    </div>
   </div>
 
-</ion-content>
+</ion-footer>
+
+<!-- Image viewer — fuera de ion-content para que position:fixed cubra toda la pantalla -->
+<div class="bomb-viewer-overlay" *ngIf="viewerUrl" (click)="closeViewer()">
+  <div class="viewer-actions" (click)="$event.stopPropagation()">
+    <button type="button" class="bomb-viewer-close" title="Cerrar" (click)="closeViewer()">
+      <ion-icon name="close"></ion-icon>
+    </button>
+    <button type="button" class="viewer-download" title="Descargar" *ngIf="!viewerIsBomb" (click)="downloadImage(viewerUrl)">
+      <ion-icon name="download-outline"></ion-icon>
+    </button>
+  </div>
+  <img [src]="viewerUrl" class="bomb-viewer-img" alt="imagen" title="imagen" (click)="$event.stopPropagation()"/>
+</div>
+
+<!-- Whiteboard — fuera de ion-content para que position:fixed cubra toda la pantalla -->
+<app-whiteboard *ngIf="showWhiteboard"
+  [chatId]="whiteboardChatId"
+  [myId]="myId"
+  (screenshotReady)="onWbScreenshot($event)"
+  (closed)="showWhiteboard = false">
+</app-whiteboard>

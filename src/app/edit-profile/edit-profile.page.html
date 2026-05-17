@@ -1,0 +1,240 @@
+<ion-content class="edit-content">
+
+  <!-- ── MODO VISTA ── -->
+  <ng-container *ngIf="!isEditing">
+
+    <div class="view-wrapper">
+
+      <div class="view-header">
+        <span class="view-title">{{ lang.t('profile_title') }}</span>
+        <button class="edit-icon-btn" (click)="startEditing()">
+          <ion-icon name="create-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="view-avatar-section">
+        <div class="avatar-ring-wrap">
+          <div class="avatar-ring" (click)="toggleAvailabilityMenu($event)">
+            <div class="avatar-circle">
+              <img *ngIf="photoUrl" [src]="photoUrl" class="avatar-img"/>
+              <ion-icon *ngIf="!photoUrl" name="person-outline"></ion-icon>
+            </div>
+            <div class="status-badge" [ngClass]="availability"></div>
+          </div>
+
+          <div class="availability-menu" *ngIf="showAvailabilityMenu" (click)="$event.stopPropagation()">
+            <p class="avail-label">{{ lang.t('status_title') }}</p>
+            <div class="avail-opt" (click)="changeAvailability('online')">
+              <div class="dot online"></div><span>{{ lang.t('status_online') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='online'"></ion-icon>
+            </div>
+            <div class="avail-opt" (click)="changeAvailability('away')">
+              <div class="dot away"></div><span>{{ lang.t('status_away') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='away'"></ion-icon>
+            </div>
+            <div class="avail-opt" (click)="changeAvailability('busy')">
+              <div class="dot busy"></div><span>{{ lang.t('status_busy') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='busy'"></ion-icon>
+            </div>
+            <div class="avail-divider"></div>
+            <div class="avail-opt" (click)="changeAvailability('offline')">
+              <div class="dot offline"></div><span>{{ lang.t('status_offline') }}</span>
+              <ion-icon name="checkmark" *ngIf="availability==='offline'"></ion-icon>
+            </div>
+          </div>
+        </div>
+        <h2 class="view-name">{{ fullName || lang.t('profile_your_name') }}</h2>
+        <span class="view-username">@{{ username }}</span>
+      </div>
+
+      <div class="discord-status" (click)="startEditing()">
+        <div class="ds-emoji">
+          <span *ngIf="statusEmoji">{{ statusEmoji }}</span>
+          <ion-icon *ngIf="!statusEmoji" name="happy-outline" class="ds-default-icon"></ion-icon>
+        </div>
+        <div class="ds-body">
+          <span class="ds-label">{{ lang.t('profile_custom_status') }}</span>
+          <span class="ds-text" [class.ds-placeholder]="!statusText">
+            <span *ngIf="statusEmoji && statusText">{{ statusEmoji }} </span>{{ statusText || lang.t('profile_set_status') }}
+          </span>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="ds-arrow"></ion-icon>
+      </div>
+
+      <div class="view-card view-info-list">
+        <div class="view-row">
+          <div class="view-row-icon blue">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+          <div class="view-row-text">
+            <span class="view-row-label">{{ lang.t('profile_full_name') }}</span>
+            <span class="view-row-value">{{ fullName || '—' }}</span>
+          </div>
+        </div>
+        <div class="view-divider"></div>
+        <div class="view-row">
+          <div class="view-row-icon green">
+            <ion-icon name="at-outline"></ion-icon>
+          </div>
+          <div class="view-row-text">
+            <span class="view-row-label">{{ lang.t('profile_username') }}</span>
+            <span class="view-row-value">@{{ username || '—' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Usuarios bloqueados ── -->
+      <div class="view-card blocked-card">
+
+        <div class="blocked-header" (click)="toggleBlockedSection()">
+          <div class="view-row-icon red">
+            <ion-icon name="ban-outline"></ion-icon>
+          </div>
+          <div class="blocked-header-text">
+            <span class="blocked-title">{{ lang.t('profile_blocked_title') }}</span>
+            <span class="blocked-count">
+              {{ blockedUsers.length }}
+              {{ blockedUsers.length === 1 ? lang.t('profile_blocked_count_one') : lang.t('profile_blocked_count_many') }}
+            </span>
+          </div>
+          <ion-icon name="chevron-down-outline" class="blocked-chevron" [class.open]="showBlockedSection"></ion-icon>
+        </div>
+
+        <ng-container *ngIf="showBlockedSection">
+          <div class="view-divider"></div>
+
+          <!-- Buscador -->
+          <div class="blocked-search">
+            <ion-icon name="search-outline" class="blocked-search-icon"></ion-icon>
+            <input type="text"
+                   class="blocked-search-input"
+                   [(ngModel)]="blockedSearchQuery"
+                   [placeholder]="lang.t('profile_blocked_search')"/>
+          </div>
+
+          <!-- Lista (max 4 visible, scroll si hay más) -->
+          <div class="blocked-list" *ngIf="!blockedLoading">
+            <div class="blocked-empty" *ngIf="filteredBlockedUsers.length === 0">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <span>{{ lang.t('profile_blocked_empty') }}</span>
+            </div>
+            <div class="blocked-item" *ngFor="let user of filteredBlockedUsers">
+              <div class="blocked-avatar" [style.background]="user.avatarColor">
+                <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="blocked-avatar-img"/>
+                <ion-icon *ngIf="!user.avatarUrl" name="person"></ion-icon>
+              </div>
+              <div class="blocked-info">
+                <span class="blocked-name">{{ user.name }}</span>
+                <span class="blocked-username">@{{ user.username }}</span>
+              </div>
+              <button class="unblock-btn" (click)="unblockUser(user.id)">
+                {{ lang.t('profile_blocked_unblock') }}
+              </button>
+            </div>
+          </div>
+
+          <div class="blocked-loading" *ngIf="blockedLoading">
+            <ion-spinner name="crescent"></ion-spinner>
+          </div>
+        </ng-container>
+
+      </div>
+
+      <button class="logout-btn" (click)="logout()">
+        <ion-icon name="log-out-outline"></ion-icon>
+        <span>{{ lang.t('profile_logout') }}</span>
+      </button>
+
+      <div style="height: 100px"></div>
+    </div>
+
+    <div class="bottom-nav">
+      <button class="bnav-btn" (click)="goToHome()">
+        <ion-icon name="home-outline"></ion-icon>
+        <span>{{ lang.t('nav_contacts') }}</span>
+      </button>
+      <button class="bnav-btn" (click)="goToCreateGroup()">
+        <ion-icon name="people-outline"></ion-icon>
+        <span>{{ lang.t('nav_new_group') }}</span>
+      </button>
+      <button class="bnav-btn" (click)="goToRequests()">
+        <div class="bnav-icon-wrap">
+          <ion-icon name="mail-outline"></ion-icon>
+          <span class="bnav-badge" *ngIf="pendingRequestsCount > 0">{{ pendingRequestsCount }}</span>
+        </div>
+        <span>{{ lang.t('nav_requests') }}</span>
+      </button>
+      <button class="bnav-btn active">
+        <ion-icon name="person-circle-outline"></ion-icon>
+        <span>{{ lang.t('nav_profile') }}</span>
+      </button>
+    </div>
+
+  </ng-container>
+
+  <!-- ── MODO EDICIÓN ── -->
+  <ng-container *ngIf="isEditing">
+
+    <div class="edit-wrapper">
+
+      <div class="edit-header">
+        <button class="back-btn" (click)="cancelEditing()">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+        </button>
+        <h1>{{ lang.t('profile_edit_title') }}</h1>
+      </div>
+
+      <div class="avatar-section">
+        <div class="avatar-ring" (click)="pickAvatar()">
+          <div class="avatar-circle">
+            <img *ngIf="photoUrl" [src]="photoUrl" class="avatar-img"/>
+            <ion-icon *ngIf="!photoUrl" name="person-outline"></ion-icon>
+          </div>
+          <div class="status-badge online"></div>
+          <input type="file" #avatarInput accept="image/*" (change)="onAvatarSelected($event)" style="display:none"/>
+        </div>
+        <a class="change-photo-link" (click)="pickAvatar()">{{ lang.t('profile_change_photo') }}</a>
+      </div>
+
+      <div class="form-card">
+        <div class="field-group">
+          <label>{{ lang.t('profile_full_name') }}</label>
+          <input type="text" [(ngModel)]="fullName" [placeholder]="lang.t('profile_your_name')"/>
+        </div>
+
+        <div class="field-group">
+          <label>{{ lang.t('profile_username') }}</label>
+          <div class="input-wrap locked">
+            <ion-icon name="lock-closed-outline" class="lock-icon"></ion-icon>
+            <input type="text" [(ngModel)]="username" disabled/>
+          </div>
+          <span class="hint">{{ lang.t('profile_username_hint') }}</span>
+        </div>
+
+        <div class="field-group">
+          <label>{{ lang.t('profile_status') }}</label>
+          <div class="status-edit-wrap">
+            <button class="status-emoji-btn" type="button" (click)="showEmojiGrid = !showEmojiGrid">
+              <span *ngIf="statusEmoji">{{ statusEmoji }}</span>
+              <ion-icon *ngIf="!statusEmoji" name="happy-outline" class="ds-default-icon"></ion-icon>
+            </button>
+            <input type="text" [(ngModel)]="statusText" [placeholder]="lang.t('profile_whats_status')" (focus)="showEmojiGrid = false"/>
+          </div>
+          <div class="emoji-grid" *ngIf="showEmojiGrid">
+            <button *ngFor="let e of commonEmojis" class="emoji-cell" type="button" (click)="pickEmoji(e)">{{ e }}</button>
+            <button class="emoji-cell emoji-clear" type="button" (click)="statusEmoji = ''; showEmojiGrid = false">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" (click)="save()" [disabled]="loading">
+        <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+        <span *ngIf="!loading">{{ lang.t('profile_save') }}</span>
+      </button>
+
+      <div style="height: 40px"></div>
+    </div>
+
+  </ng-container>
+
+</ion-content>

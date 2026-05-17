@@ -1,0 +1,168 @@
+<ion-content class="settings-content">
+
+  <div class="settings-header">
+    <button class="back-btn" (click)="goBack()">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <h1>{{ lang.t('settings_title') }}</h1>
+  </div>
+
+  <div class="scroll-area">
+
+    <section class="profile-card" (click)="goToProfile()">
+      <div class="profile-bg-blob"></div>
+      <div class="profile-avatar-wrap">
+        <div class="profile-avatar">
+          <img *ngIf="currentUser.photoUrl" [src]="currentUser.photoUrl" class="av-img"/>
+          <ion-icon *ngIf="!currentUser.photoUrl" name="person-outline"></ion-icon>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+      <h2 class="profile-name">{{ currentUser.name }}</h2>
+      <span class="profile-username">@{{ currentUser.username || 'usuario' }}</span>
+      <div class="profile-badge">
+        <span>{{ lang.t('settings_edit_profile') }}</span>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon blue">
+          <ion-icon name="notifications-outline"></ion-icon>
+        </div>
+        <h3>{{ lang.t('settings_notifications') }}</h3>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon name="volume-high-outline"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">{{ lang.t('settings_sound') }}</span>
+            <span class="row-sub">{{ lang.t('settings_sound_sub') }}</span>
+          </div>
+        </div>
+        <ion-toggle [(ngModel)]="soundEnabled" class="orion-toggle"></ion-toggle>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon name="phone-portrait-outline"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">{{ lang.t('settings_vibration') }}</span>
+            <span class="row-sub">{{ lang.t('settings_vibration_sub') }}</span>
+          </div>
+        </div>
+        <ion-toggle [(ngModel)]="vibrationEnabled" class="orion-toggle"></ion-toggle>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon green">
+          <ion-icon name="color-palette-outline"></ion-icon>
+        </div>
+        <h3>{{ lang.t('settings_appearance') }}</h3>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon [name]="themeService.isDark ? 'moon' : 'sunny-outline'"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">{{ lang.t('settings_theme') }}</span>
+            <span class="row-sub">{{ themeService.isDark ? lang.t('settings_theme_dark') : lang.t('settings_theme_light') }}</span>
+          </div>
+        </div>
+        <ion-toggle
+          [ngModel]="themeService.isDark"
+          (ngModelChange)="themeService.toggle()"
+          class="orion-toggle">
+        </ion-toggle>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon amber">
+          <ion-icon name="language-outline"></ion-icon>
+        </div>
+        <h3>{{ lang.t('settings_language') }}</h3>
+      </div>
+
+      <p class="card-desc">{{ lang.t('settings_language_desc') }}</p>
+
+      <div class="lang-dropdown" [class.open]="showLangDropdown">
+        <button class="lang-trigger" (click)="toggleLangDropdown()">
+          <span [class]="flagClass(currentLangOption.code)" class="lang-flag"></span>
+          <span class="lang-label">{{ currentLangOption.label }}</span>
+          <ion-icon name="chevron-down-outline" class="lang-chevron"></ion-icon>
+        </button>
+        <div class="lang-options" *ngIf="showLangDropdown">
+          <button class="lang-opt"
+                  *ngFor="let l of languages"
+                  [class.selected]="l.value === selectedLanguage"
+                  (click)="selectLanguage(l.value)">
+            <span [class]="flagClass(l.code)" class="lang-flag"></span>
+            <span class="lang-opt-label">{{ l.label }}</span>
+            <ion-icon name="checkmark" class="lang-check" *ngIf="l.value === selectedLanguage"></ion-icon>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings-card">
+      <div class="card-header">
+        <div class="card-icon purple">
+          <ion-icon name="flash-outline"></ion-icon>
+        </div>
+        <h3>{{ lang.t('settings_buzz') }}</h3>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-left">
+          <div class="row-icon">
+            <ion-icon name="flash-outline"></ion-icon>
+          </div>
+          <div class="row-text">
+            <span class="row-title">{{ lang.t('settings_buzz') }}</span>
+            <span class="row-sub">{{ lang.t('settings_buzz_sub') }}</span>
+          </div>
+        </div>
+        <ion-toggle [(ngModel)]="buzzEnabled" (ngModelChange)="onBuzzToggle($event)" class="orion-toggle"></ion-toggle>
+      </div>
+
+      <div class="row-divider"></div>
+
+      <div class="buzz-sound-row">
+        <div class="row-icon">
+          <ion-icon name="musical-notes-outline"></ion-icon>
+        </div>
+        <div class="row-text buzz-sound-text">
+          <span class="row-title">{{ lang.t('settings_buzz_custom') }}</span>
+          <span class="row-sub buzz-filename">
+            {{ buzzService.customSoundName || lang.t('settings_buzz_default') }}
+          </span>
+        </div>
+        <div class="buzz-file-actions">
+          <label class="buzz-file-btn">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            <input type="file" accept="audio/*" (change)="onCustomBuzzSelected($event)" style="display:none"/>
+          </label>
+          <button class="buzz-reset-btn" *ngIf="buzzService.hasCustomSound" (click)="resetBuzzSound()" aria-label="Reset sound">
+            <ion-icon name="trash-outline"></ion-icon>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <div style="height: 40px"></div>
+  </div>
+
+</ion-content>

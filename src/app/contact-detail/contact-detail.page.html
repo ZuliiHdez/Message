@@ -1,0 +1,158 @@
+<ion-content class="detail-content">
+
+  <!-- ── Media Viewer ── -->
+  <div class="media-overlay" *ngIf="showMediaViewer">
+
+    <div class="media-header">
+      <button class="media-back-btn" (click)="handleMediaBack()">
+        <ion-icon [name]="viewerIndex >= 0 ? 'arrow-back-outline' : 'close-outline'"></ion-icon>
+      </button>
+      <span class="media-title">
+        {{ viewerIndex >= 0 ? (viewerIndex + 1) + ' / ' + mediaItems.length : lang.t('detail_shared_media') }}
+      </span>
+      <div class="media-header-spacer"></div>
+    </div>
+
+    <div class="media-loading" *ngIf="loadingMedia">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <div class="media-empty" *ngIf="!loadingMedia && mediaItems.length === 0">
+      <ion-icon name="images-outline"></ion-icon>
+      <p>{{ lang.t('detail_no_media') }}</p>
+    </div>
+
+    <!-- Grouped grid -->
+    <div class="media-groups-wrap" *ngIf="!loadingMedia && mediaItems.length > 0 && viewerIndex < 0">
+      <div class="media-group" *ngFor="let group of mediaGroups">
+        <div class="media-group-header" (click)="group.expanded = !group.expanded">
+          <ion-icon [name]="group.expanded ? 'chevron-down' : 'chevron-forward'"></ion-icon>
+          <span class="group-label">{{ group.label }}</span>
+          <span class="group-count">{{ group.items.length }}</span>
+        </div>
+        <div class="media-grid" *ngIf="group.expanded">
+          <div class="media-thumb" *ngFor="let item of group.items; let i = index" (click)="openGroupItem(group, i)">
+            <img *ngIf="item.type === 'image'" [src]="item.url" class="thumb-img" [alt]="item.filename" [title]="item.filename"/>
+            <div *ngIf="item.type !== 'image'" class="thumb-doc">
+              <ion-icon [name]="item.type === 'pdf' ? 'document-text-outline' : 'document-outline'"></ion-icon>
+              <span>{{ item.filename }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-screen viewer -->
+    <div class="media-fullscreen" *ngIf="!loadingMedia && viewerIndex >= 0">
+      <ng-container *ngIf="mediaItems[viewerIndex] as item">
+        <img *ngIf="item.type === 'image'" [src]="item.url" class="fullscreen-img" [alt]="item.filename"/>
+        <div *ngIf="item.type !== 'image'" class="fullscreen-doc">
+          <ion-icon [name]="item.type === 'pdf' ? 'document-text-outline' : 'document-outline'" class="doc-icon"></ion-icon>
+          <span class="doc-filename">{{ item.filename }}</span>
+          <a [href]="item.url" target="_blank" class="doc-download">
+            <ion-icon name="download-outline"></ion-icon>
+            {{ lang.t('detail_download') }}
+          </a>
+        </div>
+      </ng-container>
+
+      <button class="nav-btn nav-prev" *ngIf="viewerIndex > 0" (click)="viewerIndex = viewerIndex - 1">
+        <ion-icon name="chevron-back-outline"></ion-icon>
+      </button>
+      <button class="nav-btn nav-next" *ngIf="viewerIndex < mediaItems.length - 1" (click)="viewerIndex = viewerIndex + 1">
+        <ion-icon name="chevron-forward-outline"></ion-icon>
+      </button>
+    </div>
+
+  </div>
+
+  <div class="page-wrapper">
+
+    <div class="page-header">
+      <button class="back-btn" (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+
+      <div class="header-spacer"></div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="avatar-wrap">
+        <div class="avatar-glow"></div>
+        <div class="hero-avatar" [style.background]="contact.color">
+          <img *ngIf="contact.photo" [src]="contact.photo" class="av-img"/>
+          <ion-icon *ngIf="!contact.photo" name="person"></ion-icon>
+        </div>
+        <div class="status-badge" [ngClass]="contact.status"></div>
+      </div>
+      <h2 class="hero-name">{{ contact.name }}</h2>
+      <div class="hero-meta">
+        <span class="status-label" [ngClass]="contact.status">{{ getStatusLabel(contact.status) }}</span>
+        <span class="meta-dot"></span>
+        <span class="hero-username">@{{ contact.bio || contact.name }}</span>
+      </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+    </div>
+
+    <!-- Privacy & Preferences -->
+    <div class="section-label">{{ lang.t('detail_privacy') }}</div>
+    <div class="action-card">
+      <button class="action-row">
+        <div class="action-icon">
+          <ion-icon name="notifications-off-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title">{{ lang.t('detail_mute_notifications') }}</p>
+          <p class="action-sub">{{ lang.t('detail_mute_sub') }}</p>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="action-chevron"></ion-icon>
+      </button>
+      <div class="card-divider"></div>
+      <button class="action-row" (click)="openSharedMedia()">
+        <div class="action-icon">
+          <ion-icon name="images-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title">{{ lang.t('detail_shared_media') }}</p>
+          <p class="action-sub">{{ lang.t('detail_shared_media_sub') }}</p>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="action-chevron"></ion-icon>
+      </button>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="section-label danger-label">{{ lang.t('detail_danger_zone') }}</div>
+    <div class="action-card danger-card">
+      <button class="action-row danger-row" (click)="blockContact()">
+        <div class="action-icon danger-icon">
+          <ion-icon name="ban-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title danger-title">{{ lang.t('detail_block') }}</p>
+          <p class="action-sub">{{ lang.t('detail_block_sub') }}</p>
+        </div>
+      </button>
+      <div class="card-divider"></div>
+      <button class="action-row danger-row" (click)="deleteFriendship()">
+        <div class="action-icon danger-icon">
+          <ion-icon name="person-remove-outline"></ion-icon>
+        </div>
+        <div class="action-text">
+          <p class="action-title danger-title">{{ lang.t('detail_delete_friendship') }}</p>
+          <p class="action-sub">{{ lang.t('detail_delete_sub') }}</p>
+        </div>
+      </button>
+    </div>
+
+    <div class="page-footer">
+      <div class="footer-line"></div>
+      <ion-icon name="chatbubble" class="footer-icon"></ion-icon>
+      <div class="footer-line"></div>
+    </div>
+
+  </div>
+</ion-content>

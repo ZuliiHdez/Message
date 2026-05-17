@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from 'src/app/services/supabase.service';
+import { LanguageService } from 'src/app/services/language.service';
 
 @Component({
   selector: 'app-login',
@@ -13,53 +14,78 @@ import { SupabaseService } from 'src/app/services/supabase.service';
   imports: [CommonModule, FormsModule, IonicModule],
 })
 export class LoginComponent {
-  email: string = '';
-  password: string = '';
-  showPassword: boolean = false;
+  email        = '';
+  password     = '';
+  showPassword = false;
+  rememberMe   = false;
+  loading      = false;
+  errorMsg     = '';
 
-  constructor(private router: Router, private supabase: SupabaseService) {}
+  constructor(private router: Router, private supabase: SupabaseService, public lang: LanguageService) {}
 
-  togglePassword() {
-    this.showPassword = !this.showPassword;
+  async ionViewWillEnter() {
+    const { data } = await this.supabase.getSession();
+    if (!data.session) return;
+
+    const remember      = localStorage.getItem('orion_remember_me');
+    const sessionActive = sessionStorage.getItem('orion_session_active');
+
+    if (remember === 'true' || sessionActive === 'true') {
+      this.router.navigate(['/home']);
+    } else {
+      // Browser was reopened without "remember me" → clear the persisted session
+      await this.supabase.getClient().auth.signOut();
+    }
   }
 
-async login() {
-  if (!this.email || !this.password) return;
+  async login() {
+    if (!this.email || !this.password) {
+      this.errorMsg = 'Please fill in all fields';
+      return;
+    }
 
-  const { data, error } = await this.supabase.login(this.email, this.password);
+    this.loading  = true;
+    this.errorMsg = '';
 
-  if (error) {
-    console.error('Error:', error.message);
-    return;
+    const { data, error } = await this.supabase.login(this.email, this.password);
+
+    if (error) {
+      if (error.message.includes('Email not confirmed')) {
+        this.errorMsg = 'Please confirm your email before signing in';
+      } else if (error.message.includes('Invalid login')) {
+        this.errorMsg = 'Invalid email or password';
+      } else {
+        this.errorMsg = error.message;
+      }
+      this.loading = false;
+      return;
+    }
+
+    const { data: profile } = await this.supabase.getClient()
+      .from('profiles')
+      .select('full_name, status, avatar_url')
+      .eq('id', data.user?.id)
+      .maybeSingle();
+
+    localStorage.setItem('lastUser', JSON.stringify({
+      name:     profile?.full_name || data.user?.email,
+      email:    data.user?.email,
+      photoUrl: profile?.avatar_url || '',
+      status:   profile?.status || 'Hey, I\'m using Orion'
+    }));
+
+    localStorage.setItem('orion_remember_me', this.rememberMe ? 'true' : 'false');
+    sessionStorage.setItem('orion_session_active', 'true');
+
+    this.loading = false;
+    this.router.navigate(['/home']);
   }
 
-const userId = data.user?.id;
-
-const { data: profile, error: profileError } = await this.supabase.getClient()
-  .from('profiles')
-  .select('full_name, status, avatar_url')
-  .eq('id', userId)
-  .maybeSingle(); 
-
-console.log('Profile:', profile);
-console.log('Profile error:', profileError);
-
-  localStorage.setItem('lastUser', JSON.stringify({
-    name: profile?.full_name || data.user?.email,
-    email: data.user?.email,
-    photoUrl: profile?.avatar_url || '',
-    status: profile?.status || 'Hey, estoy usando Orion'
-  }));
-
-  this.router.navigate(['/home']);
-}
-
+  goToForgot() {
+    this.router.navigate(['/forgot-password']);
+  }
 
   goToRegister() {
     this.router.navigate(['/register']);
-    }
-
-    goToForgotPassword() {
-  this.router.navigate(['/forgot-password']);
-}
+  }
 }

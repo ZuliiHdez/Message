@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { SupabaseService } from 'src/app/services/supabase.service';
+import { LanguageService } from 'src/app/services/language.service';
 
 @Component({
   selector: 'app-reset-password',
@@ -24,7 +25,8 @@ export class ResetPasswordPage implements OnInit {
 
   constructor(
     private router: Router,
-    private supabase: SupabaseService
+    private supabase: SupabaseService,
+    public lang: LanguageService
   ) {}
 
   ngOnInit() {
@@ -47,7 +49,11 @@ export class ResetPasswordPage implements OnInit {
   }
 
   get strengthLabel(): string {
-    const map: any = { weak: 'Débil', medium: 'Media', strong: 'Fuerte' };
+    const map: any = {
+      weak:   this.lang.t('auth_strength_weak'),
+      medium: this.lang.t('auth_strength_medium'),
+      strong: this.lang.t('auth_strength_strong'),
+    };
     return map[this.strengthClass];
   }
 
@@ -60,14 +66,14 @@ export class ResetPasswordPage implements OnInit {
     this.errors = {};
 
     if (!this.password)
-      this.errors.password = 'Introduce una contraseña';
+      this.errors.password = this.lang.t('auth_err_password_enter');
     else if (this.password.length < 6)
-      this.errors.password = 'Mínimo 6 caracteres';
+      this.errors.password = this.lang.t('auth_err_password_min');
 
     if (!this.confirmPassword)
-      this.errors.confirmPassword = 'Confirma tu contraseña';
+      this.errors.confirmPassword = this.lang.t('auth_err_confirm_required');
     else if (this.password !== this.confirmPassword)
-      this.errors.confirmPassword = 'Las contraseñas no coinciden';
+      this.errors.confirmPassword = this.lang.t('auth_err_passwords_mismatch');
 
     return Object.keys(this.errors).length === 0;
   }
@@ -83,7 +89,7 @@ export class ResetPasswordPage implements OnInit {
     this.loading = false;
 
     if (error) {
-      this.errors.password = 'Error al actualizar la contraseña. El enlace puede haber expirado.';
+      this.errors.password = this.lang.t('auth_err_link_expired');
       console.error('Error reset:', error.message);
       return;
     }

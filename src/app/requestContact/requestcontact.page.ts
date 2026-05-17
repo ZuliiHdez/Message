@@ -1,14 +1,14 @@
-// peticiones.page.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { FriendshipService } from '../services/friendship.service';
+import { LanguageService } from '../services/language.service';
 
 @Component({
   selector: 'app-peticiones',
-  templateUrl: './peticiones.page.html',
-  styleUrls: ['./peticiones.page.scss'],
+  templateUrl: './requestcontact.page.html',
+  styleUrls: ['./requestcontact.page.scss'],
   standalone: true,
   imports: [CommonModule, IonicModule],
 })
@@ -17,16 +17,31 @@ export class PeticionesPage implements OnInit {
   requests: any[] = [];
   loading = false;
   processingIds: string[] = [];
+  private requestsChannel: any = null;
 
   private colors = ['#27ae60','#2980b9','#8e44ad','#e67e22','#c0392b','#16a085','#d35400'];
 
   constructor(
     private router: Router,
-    private friendshipService: FriendshipService
+    private friendshipService: FriendshipService,
+    public lang: LanguageService,
   ) {}
 
   async ngOnInit() {
     await this.loadRequests();
+  }
+
+  async ionViewWillEnter() {
+    this.friendshipService.removeChannel(this.requestsChannel);
+    await this.loadRequests();
+    this.requestsChannel = await this.friendshipService.subscribeToIncomingRequests(() => {
+      this.loadRequests();
+    });
+  }
+
+  ionViewWillLeave() {
+    this.friendshipService.removeChannel(this.requestsChannel);
+    this.requestsChannel = null;
   }
 
   async loadRequests() {
@@ -44,7 +59,6 @@ export class PeticionesPage implements OnInit {
     this.processingIds.push(req.id);
     try {
       await this.friendshipService.acceptRequest(req.id);
-      // Quitar de la lista
       this.requests = this.requests.filter(r => r.id !== req.id);
     } catch (e) {
       console.error('Error aceptando petición:', e);
@@ -70,7 +84,9 @@ export class PeticionesPage implements OnInit {
     return this.colors[index];
   }
 
-  goBack() {
-    this.router.navigate(['/home']);
-  }
+  goBack()            { this.router.navigate(['/home']); }
+  goToHome()          { this.router.navigate(['/home']); }
+  goToCreateGroup()   { this.router.navigate(['/create-group']); }
+  goToRequests()      { }
+  goToProfile()       { this.router.navigate(['/edit-profile']); }
 }

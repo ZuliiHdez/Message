@@ -1,142 +1,93 @@
 <ion-content class="register-content">
   <div class="register-wrapper">
 
-    <div class="brand">
-      <div class="brand-icon">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-          <circle cx="14" cy="6" r="2.5" fill="#4A6FA5"/>
-          <circle cx="6" cy="18" r="2.5" fill="#4A6FA5"/>
-          <circle cx="22" cy="18" r="2.5" fill="#4A6FA5"/>
-          <circle cx="14" cy="22" r="2" fill="#4A6FA5"/>
-          <line x1="14" y1="6" x2="6" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
-          <line x1="14" y1="6" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
-          <line x1="6" y1="18" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
-          <line x1="14" y1="22" x2="6" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
-          <line x1="14" y1="22" x2="22" y2="18" stroke="#4A6FA5" stroke-width="1.5"/>
-        </svg>
-      </div>
-      <span class="brand-name">ORION</span>
-    </div>
-
-    <div class="page-title">
-      <h2>Crea una cuenta</h2>
-      <p>Completa tus datos para registrarte</p>
+    <div class="hero-text">
+      <h1>{{ lang.t('auth_register_hero') }}<br/><span class="green">{{ lang.t('auth_register_hero_accent') }}</span></h1>
+      <p>{{ lang.t('auth_register_sub') }}</p>
     </div>
 
     <div class="form-card">
-
-      <div class="input-group" [class.error]="errors.nombre">
-        <div class="input-icon">
-          <ion-icon name="person-outline"></ion-icon>
-        </div>
-        <input
-          type="text"
-          placeholder="Nombre"
-          class="custom-input"
-          [(ngModel)]="form.nombre"
-          (ngModelChange)="clearError('nombre')"
-        />
-      </div>
-      <span class="error-msg" *ngIf="errors.nombre">{{ errors.nombre }}</span>
-
-      <div class="input-group" [class.error]="errors.apellido">
-        <div class="input-icon">
-          <ion-icon name="person-outline"></ion-icon>
-        </div>
-        <input
-          type="text"
-          placeholder="Apellido"
-          class="custom-input"
-          [(ngModel)]="form.apellido"
-          (ngModelChange)="clearError('apellido')"
-        />
-      </div>
-      <span class="error-msg" *ngIf="errors.apellido">{{ errors.apellido }}</span>
-
-      <div class="input-group" [class.error]="errors.fechaNacimiento">
-        <div class="input-icon">
-          <ion-icon name="calendar-outline"></ion-icon>
-        </div>
-        <input
-          type="date"
-          class="custom-input date-input"
-          [(ngModel)]="form.fechaNacimiento"
-          (ngModelChange)="clearError('fechaNacimiento')"
-        />
-      </div>
-      <span class="error-msg" *ngIf="errors.fechaNacimiento">{{ errors.fechaNacimiento }}</span>
-
-      <div class="input-group" [class.error]="errors.username">
-        <div class="input-icon">
-          <ion-icon name="at-outline"></ion-icon>
-        </div>
-        <input
-          type="text"
-          placeholder="Nombre de usuario"
-          class="custom-input"
-          [(ngModel)]="form.username"
-          (ngModelChange)="clearError('username')"
-        />
-      </div>
-      <span class="error-msg" *ngIf="errors.username">{{ errors.username }}</span>
-
-      <div class="input-group" [class.error]="errors.email">
-        <div class="input-icon">
-          <ion-icon name="mail-outline"></ion-icon>
-        </div>
-        <input
-          type="email"
-          placeholder="example@gmail.com"
-          class="custom-input"
-          [(ngModel)]="form.email"
-          (ngModelChange)="clearError('email')"
-        />
-      </div>
-      <span class="error-msg" *ngIf="errors.email">{{ errors.email }}</span>
-
-      <div class="input-group" [class.error]="errors.password">
-        <div class="input-icon">
-          <ion-icon name="lock-closed-outline"></ion-icon>
-        </div>
-        <input
-          [type]="showPassword ? 'text' : 'password'"
-          placeholder="Contraseña"
-          class="custom-input"
-          [(ngModel)]="form.password"
-          (ngModelChange)="clearError('password')"
-        />
-        <div class="input-icon-right" (click)="togglePassword()">
-          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+      <div class="form-header">
+        <div>
+          <h2>{{ lang.t('auth_create_account_title') }}</h2>
         </div>
       </div>
-      <span class="error-msg" *ngIf="errors.password">{{ errors.password }}</span>
 
-      <div class="input-group" [class.error]="errors.confirmPassword">
-        <div class="input-icon">
-          <ion-icon name="lock-closed-outline"></ion-icon>
+      <div class="field-group">
+        <label>{{ lang.t('auth_full_name') }}</label>
+        <input type="text" placeholder="Buddy Holly" [(ngModel)]="form.nombre" (ngModelChange)="clearError('nombre')"/>
+        <span class="err" *ngIf="errors.nombre">{{ errors.nombre }}</span>
+      </div>
+
+      <div class="field-group">
+        <label>{{ lang.t('auth_username') }}</label>
+        <input type="text" placeholder="buddy_99" [(ngModel)]="form.username" (ngModelChange)="clearError('username')"/>
+        <span class="err" *ngIf="errors.username">{{ errors.username }}</span>
+      </div>
+
+      <div class="field-group">
+        <label>{{ lang.t('auth_email_label') }}</label>
+        <input type="email" placeholder="hello@orion.com" [(ngModel)]="form.email" (ngModelChange)="clearError('email')"/>
+        <span class="err" *ngIf="errors.email">{{ errors.email }}</span>
+      </div>
+
+      <div class="field-group">
+        <label>{{ lang.t('auth_dob') }}</label>
+        <input type="date" [(ngModel)]="form.fechaNacimiento" (ngModelChange)="clearError('fechaNacimiento')"/>
+        <span class="err" *ngIf="errors.fechaNacimiento">{{ errors.fechaNacimiento }}</span>
+      </div>
+
+      <div class="field-group">
+        <label>{{ lang.t('auth_password_label') }}</label>
+        <div class="input-wrap">
+          <input [type]="showPassword ? 'text' : 'password'" placeholder="••••••••"
+                 [(ngModel)]="form.password"
+                 (ngModelChange)="onPasswordChange()"/>
+          <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'" (click)="showPassword = !showPassword"></ion-icon>
         </div>
-        <input
-          [type]="showConfirmPassword ? 'text' : 'password'"
-          placeholder="Confirmar contraseña"
-          class="custom-input"
-          [(ngModel)]="form.confirmPassword"
-          (ngModelChange)="clearError('confirmPassword')"
-        />
-        <div class="input-icon-right" (click)="toggleConfirmPassword()">
-          <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+        <span class="err" *ngIf="errors.password">{{ errors.password }}</span>
+
+        <!-- Checklist de requisitos (visible en cuanto el usuario empieza a escribir) -->
+        <div class="pwd-rules" *ngIf="passwordTouched">
+          <div class="pwd-rule" [class.met]="pwdRules.length" [class.unmet]="!pwdRules.length">
+            <ion-icon [name]="pwdRules.length ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_length') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.upper" [class.unmet]="!pwdRules.upper">
+            <ion-icon [name]="pwdRules.upper ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_upper') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.lower" [class.unmet]="!pwdRules.lower">
+            <ion-icon [name]="pwdRules.lower ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_lower') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.number" [class.unmet]="!pwdRules.number">
+            <ion-icon [name]="pwdRules.number ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_number') }}</span>
+          </div>
+          <div class="pwd-rule" [class.met]="pwdRules.special" [class.unmet]="!pwdRules.special">
+            <ion-icon [name]="pwdRules.special ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+            <span>{{ lang.t('auth_pwd_rule_special') }}</span>
+          </div>
         </div>
       </div>
-      <span class="error-msg" *ngIf="errors.confirmPassword">{{ errors.confirmPassword }}</span>
 
-      <button class="btn-register" (click)="register()" [disabled]="loading">
-        <span *ngIf="!loading">Crear cuenta</span>
-        <ion-spinner name="crescent" *ngIf="loading"></ion-spinner>
+      <div class="field-group">
+        <label>{{ lang.t('auth_confirm_password') }}</label>
+        <div class="input-wrap">
+          <input [type]="showConfirmPassword ? 'text' : 'password'" placeholder="••••••••" [(ngModel)]="form.confirmPassword" (ngModelChange)="clearError('confirmPassword')"/>
+          <ion-icon [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'" (click)="showConfirmPassword = !showConfirmPassword"></ion-icon>
+        </div>
+        <span class="err" *ngIf="errors.confirmPassword">{{ errors.confirmPassword }}</span>
+      </div>
+
+      <button class="btn-primary" (click)="register()" [disabled]="loading">
+        <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+        <span *ngIf="!loading">{{ lang.t('auth_register_btn') }}</span>
       </button>
 
-      <div class="login-link">
-        ¿Ya tienes cuenta? <a (click)="goToLogin()">Inicia sesión</a>
-      </div>
-
+      <p class="signin-link">{{ lang.t('auth_already_account') }} <a (click)="goToLogin()">{{ lang.t('auth_back_signin') }}</a></p>
     </div>
+
   </div>
 </ion-content>

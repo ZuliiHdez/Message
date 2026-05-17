@@ -1,0 +1,156 @@
+<div class="wb-overlay">
+
+  <!-- Header -->
+  <div class="wb-header">
+    <button class="wb-back-btn" type="button" (click)="close()" title="Cerrar pizarra">
+      <ion-icon name="arrow-back-outline"></ion-icon>
+    </button>
+    <span class="wb-title">{{ lang.t('wb_title') }}</span>
+    <div class="wb-header-actions">
+      <button class="wb-action-btn" type="button" (click)="confirmClear()" title="Limpiar pizarra">
+        <ion-icon name="trash-outline"></ion-icon>
+      </button>
+      <button class="wb-screenshot-btn" type="button" (click)="sendScreenshot()" [disabled]="sending" title="Enviar al chat">
+        <ion-icon name="send"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="wb-canvas-wrap">
+    <div class="wb-loading" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+    <canvas #canvas class="wb-canvas"
+      [style.cursor]="selectedTool === 'eraser' ? 'cell' : 'crosshair'"
+      (pointerdown)="closeColorPicker(); onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp($event)"
+      (pointercancel)="onPointerUp($event)"
+      (pointerleave)="onPointerUp($event)">
+    </canvas>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="wb-toolbar">
+
+    <!-- Color picker panel (floats above toolbar) -->
+    <div class="wb-cp-panel" *ngIf="showColorPicker" (click)="$event.stopPropagation()">
+
+      <!-- Preview + hex -->
+      <div class="wb-cp-top">
+        <div class="wb-cp-preview" [style.background]="selectedColor"></div>
+        <span class="wb-cp-hex">{{ selectedColor.toUpperCase() }}</span>
+      </div>
+
+      <!-- Hue -->
+      <div class="wb-cp-slider-row">
+        <span class="wb-cp-label">H</span>
+        <input type="range" class="wb-cp-slider hue-slider"
+          min="0" max="360" step="1"
+          [(ngModel)]="cpHue"
+          (input)="onCpChange()"
+          title="Hue"/>
+      </div>
+
+      <!-- Saturation -->
+      <div class="wb-cp-slider-row">
+        <span class="wb-cp-label">S</span>
+        <input type="range" class="wb-cp-slider sat-slider"
+          min="0" max="100" step="1"
+          [(ngModel)]="cpSaturation"
+          (input)="onCpChange()"
+          title="Saturation"
+          [style.--sat-from]="'hsl(' + cpHue + ',0%,' + cpLightness + '%)'"
+          [style.--sat-to]="'hsl(' + cpHue + ',100%,' + cpLightness + '%)'"/>
+      </div>
+
+      <!-- Lightness -->
+      <div class="wb-cp-slider-row">
+        <span class="wb-cp-label">L</span>
+        <input type="range" class="wb-cp-slider lit-slider"
+          min="0" max="100" step="1"
+          [(ngModel)]="cpLightness"
+          (input)="onCpChange()"
+          title="Lightness"
+          [style.--lit-from]="'hsl(' + cpHue + ',' + cpSaturation + '%,0%)'"
+          [style.--lit-mid]="'hsl(' + cpHue + ',' + cpSaturation + '%,50%)'"
+          [style.--lit-to]="'hsl(' + cpHue + ',' + cpSaturation + '%,100%)'"/>
+      </div>
+
+      <!-- Presets -->
+      <div class="wb-cp-presets">
+        <button class="wb-preset-swatch" type="button"
+          *ngFor="let c of presetColors"
+          [style.background]="c"
+          [class.selected]="selectedColor === c"
+          (click)="applyPreset(c)"
+          [title]="c"
+          [attr.aria-label]="c">
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Row 1: color picker + tools -->
+    <div class="wb-row">
+
+      <!-- Color swatch button -->
+      <button class="wb-color-swatch-btn" type="button"
+        [class.active]="showColorPicker"
+        [style.--swatch-color]="selectedColor"
+        (click)="toggleColorPicker()"
+        title="Seleccionar color">
+        <div class="wb-swatch-inner"></div>
+      </button>
+
+      <div class="wb-vsep"></div>
+
+      <!-- Pen / Eraser -->
+      <div class="wb-tools">
+        <button class="wb-tool-btn" type="button" [title]="lang.t('wb_pen')" aria-label="Pen"
+          [class.active]="selectedTool === 'pen'"
+          (click)="setTool('pen'); closeColorPicker()">
+          <ion-icon name="pencil-outline"></ion-icon>
+        </button>
+        <button class="wb-tool-btn" type="button" [title]="lang.t('wb_eraser')" aria-label="Eraser"
+          [class.active]="selectedTool === 'eraser'"
+          (click)="setTool('eraser'); closeColorPicker()">
+          <svg class="wb-eraser-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 19H7L3 15L13 5L21 13L17 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="13" y1="5" x2="21" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Row 2: widths + opacity -->
+    <div class="wb-row">
+      <div class="wb-widths">
+        <button class="wb-width-btn" type="button"
+          *ngFor="let w of widths"
+          [title]="w + 'px'"
+          [attr.aria-label]="w + 'px brush'"
+          [class.active]="selectedWidth === w"
+          (click)="selectedWidth = w">
+          <span class="wb-dot" [style.width.px]="w" [style.height.px]="w"
+            [style.background]="selectedTool === 'eraser' ? '#aaa' : selectedColor">
+          </span>
+        </button>
+      </div>
+
+      <div class="wb-vsep"></div>
+
+      <div class="wb-opacity-wrap">
+        <ion-icon name="water-outline" class="wb-opacity-icon"></ion-icon>
+        <input type="range" class="wb-slider"
+          min="0.1" max="1" step="0.05"
+          [(ngModel)]="selectedOpacity"
+          [title]="lang.t('wb_opacity')"
+          aria-label="Opacity"/>
+        <span class="wb-opacity-val">{{ (selectedOpacity * 100).toFixed(0) }}%</span>
+      </div>
+    </div>
+
+  </div>
+</div>

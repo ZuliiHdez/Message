@@ -1,15 +1,19 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { ChatService } from '../services/chat.service';
+import { FriendshipService } from '../services/friendship.service';
+import { LanguageService } from '../services/language.service';
 
 interface Contact {
-  id: number;
+  id: string;
   name: string;
   bio: string;
   status: 'online' | 'away' | 'busy' | 'offline';
   avatarColor: string;
+  photoUrl: string;
 }
 
 interface ContactGroup {
@@ -19,7 +23,7 @@ interface ContactGroup {
 }
 
 interface Group {
-  id: number;
+  id: string;
   name: string;
   avatarColor: string;
   photoUrl?: string;
@@ -38,94 +42,312 @@ interface GroupCategory {
   standalone: true,
   imports: [CommonModule, FormsModule, IonicModule],
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
 
   activeTab: 'chats' | 'grupos' = 'chats';
   searchQuery = '';
+  showStatusMenu = false;
 
   currentUser = {
-    name: 'Iria',
-    bio: 'Soy nueva',
-    status: 'online',
+    name: 'Usuario',
+    bio: 'Hey, I\'m using Orion',
+    status: 'online' as 'online' | 'away' | 'busy' | 'offline',
     photoUrl: '',
   };
 
-  allContacts: Contact[] = [
-    { id: 1,  name: 'Ana',       bio: 'Carpe diem 😏',             status: 'online',  avatarColor: '#27ae60' },
-    { id: 2,  name: 'Jaime',     bio: 'Working...',                status: 'online',  avatarColor: '#2980b9' },
-    { id: 3,  name: 'Carmen',    bio: 'Feliz y viviendo 😁',       status: 'away',    avatarColor: '#e67e22' },
-    { id: 4,  name: 'Miguel',    bio: 'De vacaciones...',          status: 'away',    avatarColor: '#8e44ad' },
-    { id: 5,  name: 'Alejandro', bio: 'Durmiendo, no molestar...', status: 'busy',    avatarColor: '#c0392b' },
-    { id: 6,  name: 'José',      bio: 'En una entrevista',         status: 'busy',    avatarColor: '#d35400' },
-    { id: 7,  name: 'Laura',     bio: 'Sin conexión',              status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 8,  name: 'Pedro',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 9,  name: 'Sofia',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 10, name: 'Carlos',    bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-    { id: 11, name: 'Marta',     bio: '',                          status: 'offline', avatarColor: '#7f8c8d' },
-  ];
-
+  allContacts: Contact[] = [];
   filteredContacts: Contact[] = [];
   groupedContacts: ContactGroup[] = [];
+  filteredGroupCategories: GroupCategory[] = [];
+  lastMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string; timestamp: string; isMine: boolean }>();
+  lastGroupMessagePreviews = new Map<string, { prefix: string; icon?: string; text: string; timestamp: string; isMine: boolean }>();
+  unreadContactIds = new Set<string>();
+  unreadGroupIds = new Set<string>();
+  unreadCounts = new Map<string, number>();
+  unreadGroupCounts = new Map<string, number>();
+  pendingRequestsCount = 0;
+  private homeChannels: any[] = [];
 
   statusGroups = [
-    { status: 'online'  as const, label: 'En línea' },
-    { status: 'away'    as const, label: 'Ausente' },
-    { status: 'busy'    as const, label: 'Ocupado' },
-    { status: 'offline' as const, label: 'Desconectado' },
+    { status: 'online'  as const, label: 'Online' },
+    { status: 'away'    as const, label: 'Away' },
+    { status: 'busy'    as const, label: 'Busy' },
+    { status: 'offline' as const, label: 'Offline' },
   ];
 
-  groupCategories: GroupCategory[] = [
-    {
-      name: 'Amigos',
-      expanded: false,
-      groups: [
-        { id: 1, name: 'Grupo Amigos',  avatarColor: '#27ae60' },
-        { id: 2, name: 'Salidas finde', avatarColor: '#2980b9' },
-      ]
-    },
-    {
-      name: 'Trabajo',
-      expanded: true,
-      groups: [
-        { id: 3, name: 'Grupo PAMN',    avatarColor: '#e74c3c' },
-        { id: 4, name: 'Trabajo tarde', avatarColor: '#f39c12' },
-        { id: 5, name: 'Proyecto TFG',  avatarColor: '#7f8c8d' },
-      ]
-    },
-    {
-      name: 'Familia',
-      expanded: true,
-      groups: [
-        { id: 6, name: 'Family', avatarColor: '#8e44ad' },
-      ]
-    },
-    {
-      name: 'Sin asignar',
-      expanded: false,
-      groups: []
-    },
-  ];
+  groupCategories: GroupCategory[] = [];
 
-  constructor(private router: Router) {}
+  private myId = '';
+  private profileChannel: any = null;
 
-ngOnInit() {
-  const stored = localStorage.getItem('lastUser');
-  if (stored) {
-    const user = JSON.parse(stored);
-    this.currentUser.name     = user.name     || 'Usuario';
-    this.currentUser.photoUrl = user.photoUrl || '';
-    this.currentUser.bio      = user.status   || 'Hey, estoy usando Orion'; // ← añade esto
+  constructor(
+    private router: Router,
+    private chatService: ChatService,
+    private friendshipService: FriendshipService,
+    public lang: LanguageService
+  ) {}
+
+  async ngOnInit() {
+    const saved = localStorage.getItem('lastUserAvailability') as any;
+    await this.chatService.setUserStatus(saved || 'online');
+    this.myId = await this.chatService.getCurrentUserId();
+    this.loadCurrentUser();
+    await this.loadContacts();
+    await this.loadGroups();
+
+    // Suscripción en tiempo real: cuando cambia contacts del perfil propio, recargar lista
+    this.profileChannel = this.chatService.subscribeToProfileContacts(this.myId, () => {
+      this.loadContacts();
+    });
   }
-  this.filterContacts();
-}
+
+  async ionViewWillEnter() {
+    this.myId = await this.chatService.getCurrentUserId();
+    this.lastMessagePreviews.clear();
+    this.lastGroupMessagePreviews.clear();
+    this.unreadContactIds.clear();
+    this.unreadGroupIds.clear();
+    this.unreadCounts.clear();
+    this.unreadGroupCounts.clear();
+    this.cleanupHomeChannels();
+    this.loadCurrentUser();
+    await this.loadContacts();
+    await this.loadGroups();
+    this.setupHomeSubscriptions();
+    this.friendshipService.getPendingRequests()
+      .then(r => this.pendingRequestsCount = r.length)
+      .catch(() => {});
+    this.friendshipService.subscribeToIncomingRequests(() => {
+      this.friendshipService.getPendingRequests()
+        .then(r => this.pendingRequestsCount = r.length)
+        .catch(() => {});
+    }).then(ch => { if (ch) this.homeChannels.push(ch); });
+  }
+
+  private loadCurrentUser() {
+    const stored = localStorage.getItem('lastUser');
+    if (stored) {
+      const user = JSON.parse(stored);
+      this.currentUser.name     = user.name     || 'User';
+      this.currentUser.photoUrl = user.photoUrl || '';
+      this.currentUser.bio      = user.status   || 'Hey, I\'m using Orion';
+    }
+    const avail = localStorage.getItem('lastUserAvailability') as any;
+    if (avail) this.currentUser.status = avail;
+  }
+
+  async ngOnDestroy() {
+    await this.chatService.setUserStatus('offline');
+    this.chatService.unsubscribeStatusChannels();
+    this.cleanupHomeChannels();
+    if (this.profileChannel) {
+      this.chatService.unsubscribeContactsStatus(this.profileChannel);
+      this.profileChannel = null;
+    }
+  }
+
+  private cleanupHomeChannels() {
+    for (const ch of this.homeChannels) this.chatService.removeChannel(ch);
+    this.homeChannels = [];
+  }
+
+  private setupHomeSubscriptions() {
+    const msgCh = this.chatService.subscribeToIncomingMessages(this.myId, (msg) => {
+      const contact = this.allContacts.find(c => c.id === msg.sender_id);
+      if (contact) {
+        this.lastMessagePreviews.set(contact.id, this.buildContactPreview(contact.name, msg, false));
+        this.unreadContactIds.add(contact.id);
+        this.unreadCounts.set(contact.id, (this.unreadCounts.get(contact.id) ?? 0) + 1);
+        this.filterContacts();
+      }
+    });
+    this.homeChannels.push(msgCh);
+
+    const allGroups: Group[] = ([] as Group[]).concat(...this.groupCategories.map(cat => cat.groups));
+    for (const g of allGroups) {
+      const ch = this.chatService.subscribeToIncomingGroupMessages(g.id, async (msg) => {
+        if (msg.sender_id === this.myId) return;
+        let senderName = 'Member';
+        const contact = this.allContacts.find(c => c.id === msg.sender_id);
+        if (contact) senderName = contact.name;
+        else {
+          const name = await this.friendshipService.getProfileName(msg.sender_id);
+          if (name) senderName = name;
+        }
+        this.lastGroupMessagePreviews.set(g.id, this.buildContactPreview(senderName, msg, false));
+        this.unreadGroupIds.add(g.id);
+        this.unreadGroupCounts.set(g.id, (this.unreadGroupCounts.get(g.id) ?? 0) + 1);
+        this.sortGroupsByLastMessage();
+      });
+      this.homeChannels.push(ch);
+
+      const metaCh = this.friendshipService.subscribeToGroupChanges(g.id, (data) => {
+        for (const cat of this.groupCategories) {
+          const found = cat.groups.find(gr => gr.id === g.id);
+          if (found) {
+            if (data.name)        found.name       = data.name;
+            if (data.avatar_color) found.avatarColor = data.avatar_color;
+            found.photoUrl = data.avatar_url || '';
+          }
+        }
+        this.filteredGroupCategories = [...this.groupCategories];
+      });
+      this.homeChannels.push(metaCh);
+    }
+  }
+
+  private buildContactPreview(senderName: string, msg: any, isMine: boolean): { prefix: string; icon?: string; text: string; timestamp: string; isMine: boolean } {
+    const prefix = isMine ? this.lang.t('chat_me') : senderName;
+    let icon: string | undefined;
+    let text: string;
+    if (msg.is_photo_bomb) {
+      icon = isMine ? (msg.image_url ? 'lock-closed-outline' : 'eye-outline') : (msg.image_url ? 'eye-outline' : 'eye-off-outline');
+      text = isMine ? (msg.image_url ? 'Private photo' : 'Image seen') : (msg.image_url ? 'Open image' : 'Image deleted');
+    } else if (msg.image_url) {
+      icon = 'camera-outline';
+      text = 'Image';
+    } else {
+      text = msg.content || '';
+    }
+    return { prefix, icon, text, timestamp: msg.created_at || '', isMine };
+  }
+
+  formatTime(ts: string): string {
+    if (!ts) return '';
+    const d = new Date(ts);
+    const h = d.getHours().toString().padStart(2, '0');
+    const m = d.getMinutes().toString().padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  getLastMsgTimestamp(id: string): string {
+    return this.lastMessagePreviews.get(id)?.timestamp || '';
+  }
+
+  getLastGroupMsgTimestamp(id: string): string {
+    return this.lastGroupMessagePreviews.get(id)?.timestamp || '';
+  }
+
+  getContactUnreadCount(id: string): number {
+    return this.unreadCounts.get(id) ?? 0;
+  }
+
+  getGroupUnreadCount(id: string): number {
+    return this.unreadGroupCounts.get(id) ?? 0;
+  }
+
+  loadingContacts = false;
+  loadingGroups   = false;
+
+  async loadContacts() {
+    this.loadingContacts = true;
+    this.chatService.unsubscribeStatusChannels();
+
+    try {
+      const friends = await this.friendshipService.getFriends();
+      this.allContacts = friends.map(f => ({
+        id:          f.id,
+        name:        f.name,
+        bio:         f.bio || '',
+        status:      f.status,
+        avatarColor: f.avatarColor,
+        photoUrl:    f.avatarUrl || '',
+      }));
+    } catch (e) {
+      console.error('Error cargando contactos:', e);
+    }
+
+    this.loadingContacts = false;
+    this.filterContacts();
+    this.loadLastMessages();
+
+    for (const contact of this.allContacts) {
+      this.chatService.subscribeToUserStatus(contact.id, (status, avatarUrl) => {
+        const c = this.allContacts.find(x => x.id === contact.id);
+        if (c) {
+          c.status = status as any;
+          if (avatarUrl !== undefined) c.photoUrl = avatarUrl;
+          this.filterContacts();
+        }
+      });
+    }
+  }
+
+  private async loadLastMessages() {
+    const myId = this.myId;
+    await Promise.all(this.allContacts.map(async c => {
+      try {
+        const msg = await this.chatService.getLastMessage(c.id);
+        if (!msg) return;
+        const isMine = msg.sender_id === myId;
+        this.lastMessagePreviews.set(c.id, this.buildContactPreview(c.name, msg, isMine));
+        if (!isMine) {
+          const lastRead = localStorage.getItem(`orion_last_read_${c.id}`);
+          if (!lastRead || msg.created_at > lastRead) {
+            this.unreadContactIds.add(c.id);
+            const count = await this.chatService.getUnreadCount(c.id, lastRead);
+            this.unreadCounts.set(c.id, count);
+          }
+        }
+      } catch {}
+    }));
+    this.filterContacts();
+  }
+
+  getLastMsg(contactId: string): { prefix: string; icon?: string; text: string } | null {
+    return this.lastMessagePreviews.get(contactId) ?? null;
+  }
+
+  getLastGroupMsg(groupId: string): { prefix: string; icon?: string; text: string } | null {
+    return this.lastGroupMessagePreviews.get(groupId) ?? null;
+  }
+
+  onSearch() {
+    if (this.activeTab === 'chats') {
+      this.filterContacts();
+    } else {
+      this.filterGroups();
+    }
+  }
+
+  setTab(tab: 'chats' | 'grupos') {
+    this.activeTab = tab;
+    this.searchQuery = '';
+    this.filterContacts();
+    this.filteredGroupCategories = [...this.groupCategories];
+  }
 
   filterContacts() {
     const q = this.searchQuery.toLowerCase().trim();
-    this.filteredContacts = q
-      ? this.allContacts.filter(c =>
-          c.name.toLowerCase().includes(q) || c.bio.toLowerCase().includes(q))
+    const base = q
+      ? this.allContacts.filter(c => c.name.toLowerCase().includes(q))
       : [...this.allContacts];
-    this.buildGroups();
+
+    base.sort((a, b) => {
+      const ma = this.lastMessagePreviews.get(a.id);
+      const mb = this.lastMessagePreviews.get(b.id);
+      if (ma && mb) return mb.timestamp.localeCompare(ma.timestamp);
+      if (ma) return -1;
+      if (mb) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    this.filteredContacts = base;
+  }
+
+  filterGroups() {
+    const q = this.searchQuery.toLowerCase().trim();
+    if (!q) {
+      this.filteredGroupCategories = [...this.groupCategories];
+      return;
+    }
+    this.filteredGroupCategories = this.groupCategories
+      .map(cat => ({
+        ...cat,
+        expanded: true,
+        groups: cat.groups.filter(g => g.name.toLowerCase().includes(q)),
+      }))
+      .filter(cat => cat.groups.length > 0);
   }
 
   buildGroups() {
@@ -138,39 +360,151 @@ ngOnInit() {
       .filter(g => g.contacts.length > 0);
   }
 
-  toggleCategory(category: GroupCategory) {
-    category.expanded = !category.expanded;
+  toggleStatusMenu() {
+    this.showStatusMenu = !this.showStatusMenu;
+  }
+
+  async changeStatus(status: 'online' | 'away' | 'busy' | 'offline') {
+    this.currentUser.status = status;
+    this.showStatusMenu = false;
+    localStorage.setItem('lastUserAvailability', status);
+    await this.chatService.setUserStatus(status);
+  }
+
+  @HostListener('document:click')
+  closeStatusMenu() {
+    this.showStatusMenu = false;
+  }
+
+  getStatusLabel(status: string): string {
+    const map: any = {
+      online:  this.lang.t('status_online'),
+      away:    this.lang.t('status_away'),
+      busy:    this.lang.t('status_busy'),
+      offline: this.lang.t('status_offline'),
+    };
+    return map[status] || this.lang.t('status_offline');
+  }
+
+  toggleCategory(cat: GroupCategory) {
+    cat.expanded = !cat.expanded;
   }
 
   openChat(contact: Contact) {
+    localStorage.setItem(`orion_last_read_${contact.id}`, new Date().toISOString());
+    this.unreadContactIds.delete(contact.id);
+    this.unreadCounts.delete(contact.id);
     this.router.navigate(['/chat'], {
       queryParams: {
-        id: contact.id,
-        name: contact.name,
+        id:    contact.id,
+        name:  contact.name,
+        bio:   contact.bio,
         color: contact.avatarColor,
+        photo: contact.photoUrl || ''
       }
     });
+  }
+
+  async loadGroups() {
+    this.loadingGroups = true;
+    try {
+      const groups = await this.friendshipService.getGroups();
+      this.groupCategories = groups.length > 0 ? [{
+        name: 'My groups',
+        expanded: true,
+        groups: groups.map(g => ({
+          id: g.id,
+          name: g.name,
+          avatarColor: g.avatar_color || '#4a9fd4',
+          photoUrl: g.avatar_url || '',
+        })),
+      }] : [];
+    } catch (e) {
+      console.error('Error cargando grupos:', e);
+      this.groupCategories = [];
+    }
+    this.filteredGroupCategories = [...this.groupCategories];
+    this.loadingGroups = false;
+    this.loadLastGroupMessages();
+  }
+
+  private async loadLastGroupMessages() {
+    const myId = this.myId;
+    const allGroups: Group[] = ([] as Group[]).concat(...this.groupCategories.map((cat: GroupCategory) => cat.groups));
+    await Promise.all(allGroups.map(async g => {
+      try {
+        const msg = await this.chatService.getLastGroupMessage(g.id);
+        if (!msg) return;
+        const isMine = msg.sender_id === myId;
+        let senderName = 'Member';
+        if (isMine) {
+          senderName = this.lang.t('chat_me');
+        } else {
+          const contact = this.allContacts.find(c => c.id === msg.sender_id);
+          if (contact) {
+            senderName = contact.name;
+          } else {
+            const name = await this.friendshipService.getProfileName(msg.sender_id);
+            if (name) senderName = name;
+          }
+        }
+        this.lastGroupMessagePreviews.set(g.id, this.buildContactPreview(senderName, msg, isMine));
+        if (!isMine) {
+          const lastRead = localStorage.getItem(`orion_last_read_group_${g.id}`);
+          if (!lastRead || msg.created_at > lastRead) {
+            this.unreadGroupIds.add(g.id);
+            const count = await this.chatService.getUnreadGroupCount(g.id, lastRead);
+            this.unreadGroupCounts.set(g.id, count);
+          }
+        }
+      } catch {}
+    }));
+    this.sortGroupsByLastMessage();
+  }
+
+  private sortGroupsByLastMessage() {
+    for (const cat of this.groupCategories) {
+      cat.groups.sort((a, b) => {
+        const ma = this.lastGroupMessagePreviews.get(a.id);
+        const mb = this.lastGroupMessagePreviews.get(b.id);
+        if (ma && mb) return mb.timestamp.localeCompare(ma.timestamp);
+        if (ma) return -1;
+        if (mb) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    }
+    this.filteredGroupCategories = [...this.groupCategories];
   }
 
   openGroup(group: Group) {
-    this.router.navigate(['/chat'], {
-      queryParams: {
-        id: group.id,
-        name: group.name,
-        color: group.avatarColor,
-        photo: group.photoUrl || '',
-      }
+    localStorage.setItem(`orion_last_read_group_${group.id}`, new Date().toISOString());
+    this.unreadGroupIds.delete(group.id);
+    this.unreadGroupCounts.delete(group.id);
+    this.router.navigate(['/group-chat'], {
+      queryParams: { id: group.id, name: group.name, color: group.avatarColor, photo: group.photoUrl || '' }
     });
   }
 
-  goToSettings() {
+  addContact() {
+    this.router.navigate(['/add-contact']);
   }
 
-  goToAddContact() {
-    this.router.navigate(['/add-contact']);
+  createGroup() {
+    this.router.navigate(['/create-group']);
+  }
+
+  goToHome() {
   }
 
   goToPeticiones() {
     this.router.navigate(['/peticiones']);
+  }
+
+  goToSettings() {
+    this.router.navigate(['/settings']);
+  }
+
+  goToProfile() {
+    this.router.navigate(['/edit-profile']);
   }
 }

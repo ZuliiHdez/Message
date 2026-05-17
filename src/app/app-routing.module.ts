@@ -36,7 +36,31 @@ const routes: Routes = [
   },
   {
     path: 'peticiones',
-    loadComponent: () => import('./peticiones/peticiones.page').then(m => m.PeticionesPage)
+    loadComponent: () => import('./requestContact/requestcontact.page').then(m => m.PeticionesPage)
+  },
+    {
+    path: 'create-group',
+    loadComponent: () => import('./create-group/create-group.page').then(m => m.CreateGroupPage)
+  },
+  {
+    path: 'settings',
+    loadComponent: () => import('./settings/settings.page').then(m => m.SettingsPage)
+  },
+  {
+    path: 'group-chat',
+    loadComponent: () => import('./group-chat/group-chat.page').then(m => m.GroupChatPage)
+  },
+  {
+    path: 'edit-profile',
+    loadComponent: () => import('./edit-profile/edit-profile.page').then(m => m.EditProfilePage)
+  },
+  {
+    path: 'contact-detail',
+    loadComponent: () => import('./contact-detail/contact-detail.page').then(m => m.ContactDetailPage)
+  },
+  {
+    path: 'group-detail',
+    loadComponent: () => import('./group-detail/group-detail.page').then(m => m.GroupDetailPage)
   },
   {
     path: '',
